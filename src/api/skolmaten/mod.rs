@@ -1,3 +1,5 @@
+pub mod crawl;
+
 static API_TOKEN: &str = "j44i0zuqo8izmlwg5blh";
 
 #[cfg(test)]

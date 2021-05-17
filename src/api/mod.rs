@@ -17,6 +17,7 @@ pub struct Menu {
 #[derive(Serialize, Deserialize, Debug)]
 pub struct School {
     pub id: String,
+    pub name: String,
 }
 
 #[cfg(test)]
