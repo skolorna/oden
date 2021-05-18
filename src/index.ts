@@ -1,5 +1,5 @@
-import crawlSchools from "./upstream/skolmaten/crawlSchools";
+import { getSkolmatenSchools } from "./upstream/skolmaten/crawler";
 
-crawlSchools().then((schools) => {
+getSkolmatenSchools().then((schools) => {
   console.log(schools);
 })

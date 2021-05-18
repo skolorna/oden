@@ -1,8 +1,9 @@
 import { DistrictsResponse, ProvincesResponse, SchoolsResponse } from "./types";
 import School from "../../types/school";
 import performSkolmatenRequest from "./request";
+import { GetSchools } from "../types";
 
-const crawlSchools = async (): Promise<School[]> => {
+export const getSkolmatenSchools: GetSchools = async () => {
   const { provinces } = await performSkolmatenRequest<ProvincesResponse>("/provinces");
 
   const schools: School[][][] = await Promise.all(provinces.map(async (province) => {
@@ -22,5 +23,3 @@ const crawlSchools = async (): Promise<School[]> => {
 
   return schools.flat(2);
 }
-
-export default crawlSchools;
