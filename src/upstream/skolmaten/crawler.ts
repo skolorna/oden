@@ -1,7 +1,7 @@
 import { DistrictsResponse, ProvincesResponse, SchoolsResponse } from "./types";
-import School from "../../types/school";
 import performSkolmatenRequest from "./request";
 import { GetSchools } from "../types";
+import { School } from "../../types";
 
 export const getSkolmatenSchools: GetSchools = async () => {
 	const { provinces } = await performSkolmatenRequest<ProvincesResponse>("/provinces");
