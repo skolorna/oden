@@ -1,16 +1,16 @@
 export interface SkolmatenObject {
-  id: number;
-  name: string;
+	id: number;
+	name: string;
 }
 
 export interface ProvincesResponse {
-  provinces: SkolmatenObject[];
+	provinces: SkolmatenObject[];
 }
 
 export interface DistrictsResponse {
-  districts: SkolmatenObject[];
+	districts: SkolmatenObject[];
 }
 
 export interface SchoolsResponse {
-  schools: SkolmatenObject[];
+	schools: SkolmatenObject[];
 }

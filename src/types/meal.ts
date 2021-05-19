@@ -1,3 +1,3 @@
 export default interface Meal {
-  value: string;
+	value: string;
 }

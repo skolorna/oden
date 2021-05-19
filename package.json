@@ -1,28 +1,39 @@
 {
-  "name": "menu-proxy",
-  "version": "0.1.0",
-  "main": "dist/index.js",
-  "repository": "git@github.com:ThePicoNerd/menu-proxy.git",
-  "author": "ThePicoNerd <ake.amcoff@gmail.com>",
-  "license": "MIT",
-  "private": true,
-  "scripts": {
-    "build": "tsc",
-    "dev": "tsc && node .",
-    "test": "jest"
-  },
-  "dependencies": {
-    "express": "^4.17.1",
-    "luxon": "^1.27.0",
-    "node-fetch": "^2.6.1"
-  },
-  "devDependencies": {
-    "@types/jest": "^26.0.23",
-    "@types/luxon": "^1.26.5",
-    "@types/node": "^15.3.0",
-    "@types/node-fetch": "^2.5.10",
-    "jest": "^26.6.3",
-    "ts-jest": "^26.5.6",
-    "typescript": "^4.2.4"
-  }
+	"name": "menu-proxy",
+	"version": "0.1.0",
+	"main": "dist/index.js",
+	"repository": "git@github.com:ThePicoNerd/menu-proxy.git",
+	"author": "ThePicoNerd <ake.amcoff@gmail.com>",
+	"license": "MIT",
+	"private": true,
+	"scripts": {
+		"build": "tsc",
+		"dev": "tsc && node .",
+		"test": "jest",
+		"lint": "eslint ."
+	},
+	"dependencies": {
+		"eslint-config-airbnb": "^18.2.1",
+		"express": "^4.17.1",
+		"luxon": "^1.27.0",
+		"node-fetch": "^2.6.1"
+	},
+	"devDependencies": {
+		"@types/jest": "^26.0.23",
+		"@types/luxon": "^1.26.5",
+		"@types/node": "^15.3.0",
+		"@types/node-fetch": "^2.5.10",
+		"@typescript-eslint/eslint-plugin": "^4.24.0",
+		"@typescript-eslint/parser": "^4.24.0",
+		"eslint": "^7.26.0",
+		"eslint-config-airbnb-typescript": "^12.3.1",
+		"eslint-config-prettier": "^8.3.0",
+		"eslint-plugin-import": "^2.23.2",
+		"eslint-plugin-jest": "^24.3.6",
+		"eslint-plugin-prettier": "^3.4.0",
+		"jest": "^26.6.3",
+		"prettier": "^2.3.0",
+		"ts-jest": "^26.5.6",
+		"typescript": "^4.2.4"
+	}
 }
