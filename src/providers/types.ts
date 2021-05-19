@@ -16,3 +16,8 @@ export interface GetMenuQuery {
 }
 
 export type GetMenu = (query: GetMenuQuery) => Promise<Day[]>;
+
+export interface Provider {
+	getSchools: GetSchools;
+	getMenu: GetMenu;
+}

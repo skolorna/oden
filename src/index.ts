@@ -1,4 +1,4 @@
-import { getSkolmatenSchools } from "./upstream/skolmaten/crawler";
+import { getSkolmatenSchools } from "./providers/skolmaten/crawler";
 
 getSkolmatenSchools().then((schools) => {
 	console.log(schools);
