@@ -1,22 +1,22 @@
 {
 	"name": "menu-proxy",
 	"version": "0.1.0",
-	"main": "dist/index.js",
+	"main": "dist/server.js",
 	"repository": "git@github.com:ThePicoNerd/menu-proxy.git",
 	"author": "ThePicoNerd <ake.amcoff@gmail.com>",
 	"license": "MIT",
 	"private": true,
 	"scripts": {
-		"build": "tsc",
-		"dev": "tsc && node .",
+		"build": "tsc --build src",
+		"dev": "build && node .",
 		"test": "jest",
 		"lint": "eslint ."
 	},
 	"dependencies": {
-		"eslint-config-airbnb": "^18.2.1",
-		"express": "^4.17.1",
+		"fastify": "^3.15.1",
 		"luxon": "^1.27.0",
-		"node-fetch": "^2.6.1"
+		"node-fetch": "^2.6.1",
+		"pino-pretty": "^4.8.0"
 	},
 	"devDependencies": {
 		"@types/jest": "^26.0.23",
@@ -26,6 +26,7 @@
 		"@typescript-eslint/eslint-plugin": "^4.24.0",
 		"@typescript-eslint/parser": "^4.24.0",
 		"eslint": "^7.26.0",
+		"eslint-config-airbnb": "^18.2.1",
 		"eslint-config-airbnb-typescript": "^12.3.1",
 		"eslint-config-prettier": "^8.3.0",
 		"eslint-plugin-import": "^2.23.2",

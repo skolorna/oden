@@ -1,4 +1,4 @@
-import { getSkolmatenSchools } from "./crawler";
+import { getSkolmatenSchools } from "../../../src/providers/skolmaten/crawler";
 
 test("crawler", async () => {
 	jest.setTimeout(20000);

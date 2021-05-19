@@ -11,10 +11,10 @@ module.exports = {
 		"plugin:jest/recommended",
 	],
 	parserOptions: {
-		project: "./tsconfig.json",
+		project: ["./src/tsconfig.json", "./tests/tsconfig.json"],
 	},
 	rules: {
 		"import/prefer-default-export": "off",
 	},
-	ignorePatterns: ["*.js"],
+	ignorePatterns: ["*.js", "dist"],
 };

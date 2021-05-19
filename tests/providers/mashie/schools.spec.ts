@@ -1,4 +1,4 @@
-import { getMashieSchools } from "./schools";
+import { getMashieSchools } from "../../../src/providers/mashie/schools";
 
 test("mashie schools", async () => {
 	const schools = await getMashieSchools();

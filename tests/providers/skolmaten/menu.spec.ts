@@ -1,5 +1,5 @@
 import { DateTime } from "luxon";
-import { getSkolmatenMenu } from "./menu";
+import { getSkolmatenMenu } from "../../../src/providers/skolmaten/menu";
 
 test("menu", async () => {
 	const menu = await getSkolmatenMenu({
