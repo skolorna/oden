@@ -3,6 +3,10 @@ import performSkolmatenRequest from "./request";
 import { GetSchools } from "../types";
 import { School } from "../../types";
 
+export function validateSchoolName(name: string): boolean {
+	return !/info/i.test(name);
+}
+
 export const getSkolmatenSchools: GetSchools = async () => {
 	const { provinces } = await performSkolmatenRequest<ProvincesResponse>("/provinces");
 
@@ -25,5 +29,7 @@ export const getSkolmatenSchools: GetSchools = async () => {
 		}),
 	);
 
-	return school3d.flat(2);
+	const schools = school3d.flat(2).filter(({ name }) => validateSchoolName(name));
+
+	return schools;
 };

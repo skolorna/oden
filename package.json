@@ -8,7 +8,7 @@
 	"private": true,
 	"scripts": {
 		"build": "tsc --build src",
-		"dev": "build && node .",
+		"dev": "yarn build && node .",
 		"test": "jest",
 		"lint": "eslint ."
 	},
