@@ -5,7 +5,6 @@ test("menu", async () => {
 	const menu = await getSkolmatenMenu({
 		school: "85957002",
 		first: DateTime.now(),
-		limit: 7,
 	});
 
 	expect(menu.length).toBeGreaterThan(0);

@@ -30,7 +30,7 @@ export async function getRawMenu({
 	return performSkolmatenRequest<MenuResponse>(`/menu?${params.toString()}`);
 }
 
-export const getSkolmatenMenu: GetMenu = async ({ school, first = DateTime.now(), limit = 7 }) => {
+export const getSkolmatenMenu: GetMenu = async ({ school, first = DateTime.now(), last }) => {
 	const skolmatenSchool = parseInt(school, 10);
 
 	if (!Number.isInteger(skolmatenSchool)) {
@@ -39,11 +39,12 @@ export const getSkolmatenMenu: GetMenu = async ({ school, first = DateTime.now()
 
 	const start = first.startOf("day");
 	const offset = Math.floor(start.diffNow().as("days"));
+	const limit = (last ?? first.plus({ weeks: 1 })).startOf("day").diff(start).as("weeks");
 
 	const res = await getRawMenu({
 		school: skolmatenSchool,
 		offset,
-		limit: Math.ceil(limit / 7),
+		limit: Math.ceil(limit),
 	});
 
 	const days = res.weeks.flatMap((week) => week.days);
