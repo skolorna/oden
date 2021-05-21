@@ -40,7 +40,7 @@ describe("main application tests", () => {
 	test("provider schools", async () => {
 		const response = await app.inject({
 			method: "GET",
-			url: "/providers/mashie/schools",
+			url: "/providers/sodexo/schools",
 		});
 
 		expect(response.statusCode).toBe(200);
