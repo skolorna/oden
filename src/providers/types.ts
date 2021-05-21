@@ -20,6 +20,7 @@ export interface ProviderInfo {
 
 export interface ProviderImplementation {
 	listSchools: ListSchools;
+	querySchool: QuerySchool;
 	getMenu: GetMenu;
 }
 

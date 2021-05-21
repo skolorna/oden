@@ -37,7 +37,7 @@ describe("main application tests", () => {
 		);
 	});
 
-	test("provider schools", async () => {
+	test("list schools", async () => {
 		const response = await app.inject({
 			method: "GET",
 			url: "/providers/sodexo/schools",
@@ -45,5 +45,21 @@ describe("main application tests", () => {
 
 		expect(response.statusCode).toBe(200);
 		expect(response.json<School[]>().length).toBeGreaterThan(0);
+	});
+
+	test("query school", async () => {
+		const schoolResponse = await app.inject({
+			method: "GET",
+			url: "/providers/sodexo/schools/2ae66740-672e-4183-ab2d-ac1e00b66a5f",
+		});
+
+		expect(schoolResponse.statusCode).toBe(200);
+
+		const notFoundResponse = await app.inject({
+			method: "GET",
+			url: "/providers/sodexo/schools/bruh",
+		});
+
+		expect(notFoundResponse.statusCode).toBe(404);
 	});
 });

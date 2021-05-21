@@ -1,4 +1,5 @@
 import { FastifyPluginCallback } from "fastify";
+import { QuerySchoolOptions, QuerySchoolOptionsType } from "./route-types";
 import { Provider } from "./types";
 
 export function generateProviderRoutes({ info, implementation }: Provider): FastifyPluginCallback {
@@ -12,5 +13,23 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 
 			return schools;
 		});
+
+		fastify.get<{
+			Params: QuerySchoolOptionsType;
+		}>(
+			"/schools/:schoolId",
+			{
+				schema: {
+					params: QuerySchoolOptions,
+				},
+			},
+			async (req) => {
+				const { schoolId } = req.params;
+
+				const school = await implementation.querySchool(schoolId);
+
+				return school;
+			},
+		);
 	};
 }

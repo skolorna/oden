@@ -3,6 +3,19 @@ export interface SkolmatenObject {
 	name: string;
 }
 
+export interface DetailedSkolmatenObject extends SkolmatenObject {
+	URLName: string;
+}
+
+export interface DetailedDistrict extends DetailedSkolmatenObject {
+	province: DetailedSkolmatenObject;
+}
+
+export interface DetailedSchool extends DetailedSkolmatenObject {
+	imageURL: string;
+	district: DetailedDistrict;
+}
+
 export interface ProvincesResponse {
 	provinces: SkolmatenObject[];
 }
@@ -38,6 +51,6 @@ export interface SkolmatenWeek {
 
 export interface MenuResponse {
 	weeks: SkolmatenWeek[];
-	school: SkolmatenObject;
+	school: DetailedSchool;
 	bulletins: Bulletin[];
 }

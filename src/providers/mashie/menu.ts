@@ -5,7 +5,7 @@ import { URL } from "url";
 import { ParseError } from "../../errors";
 import { Day, Meal } from "../../types";
 import { GetMenu } from "../types";
-import { getMashieSchoolQuerier } from "./schools";
+import { getRawMashieSchoolQuerier } from "./schools";
 import { MashieGenerator } from "./types";
 
 export const monthLiterals = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
@@ -68,7 +68,7 @@ export function parseDayNode(element: Element): Day {
 }
 
 export const getMashieMenuGetter: MashieGenerator<GetMenu> = (baseUrl) => {
-	const queryMashieSchool = getMashieSchoolQuerier(baseUrl);
+	const queryMashieSchool = getRawMashieSchoolQuerier(baseUrl);
 
 	return async ({ school, first = DateTime.now(), last }) => {
 		const { url: path } = await queryMashieSchool(school);

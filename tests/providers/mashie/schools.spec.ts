@@ -1,4 +1,5 @@
-import { getMashieSchoolLister, getMashieSchoolQuerier } from "../../../src/providers/mashie/schools";
+import { NotFound } from "http-errors";
+import { getMashieSchoolLister, getRawMashieSchoolQuerier } from "../../../src/providers/mashie/schools";
 
 test("list schools", async () => {
 	const listMashieSchools = getMashieSchoolLister("https://sodexo.mashie.com");
@@ -9,12 +10,10 @@ test("list schools", async () => {
 });
 
 describe("querying schools", () => {
-	const queryMashieSchool = getMashieSchoolQuerier("https://sodexo.mashie.com");
+	const queryMashieSchool = getRawMashieSchoolQuerier("https://sodexo.mashie.com");
 
 	it("should throw an error if no school is found", async () => {
-		await expect(queryMashieSchool("invalid-id-that-should-not-be-used")).rejects.toThrowErrorMatchingInlineSnapshot(
-			`"school with ID \`invalid-id-that-should-not-be-used\` not found!"`,
-		);
+		await expect(queryMashieSchool("invalid-id-that-should-not-be-used")).rejects.toThrowError(NotFound);
 	});
 
 	it("should work as expected", async () => {

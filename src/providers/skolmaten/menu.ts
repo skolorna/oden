@@ -1,6 +1,7 @@
 import { DateTime } from "luxon";
 import { URLSearchParams } from "url";
 import { GetMenu } from "../types";
+import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
 import { MenuResponse } from "./types";
 
@@ -31,11 +32,7 @@ export async function getRawMenu({
 }
 
 export const getSkolmatenMenu: GetMenu = async ({ school, first = DateTime.now(), last }) => {
-	const skolmatenSchool = parseInt(school, 10);
-
-	if (!Number.isInteger(skolmatenSchool)) {
-		throw new Error("School ID must be an integer!");
-	}
+	const skolmatenSchool = toSkolmatenID(school);
 
 	const start = first.startOf("day");
 	const offset = Math.floor(start.diffNow().as("days"));
