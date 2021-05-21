@@ -1,6 +1,6 @@
 import cheerio from "cheerio";
 import { DateTime } from "luxon";
-import { getMashieMenu, monthLiterals, parseDateText, parseMealNode } from "../../../src/providers/mashie/menu";
+import { getMashieMenuGetter, monthLiterals, parseDateText, parseMealNode } from "../../../src/providers/mashie/menu";
 import { Meal } from "../../../src/types";
 
 describe("mashie menu", () => {
@@ -28,7 +28,9 @@ describe("mashie menu", () => {
 	});
 
 	it("should work as intended", async () => {
-		const menu = await getMashieMenu({
+		const getMashieMenus = getMashieMenuGetter("https://sodexo.mashie.com");
+
+		const menu = await getMashieMenus({
 			school: "b4639689-60f2-4a19-a2dc-abe500a08e45",
 		});
 

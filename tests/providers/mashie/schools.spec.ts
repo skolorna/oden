@@ -1,12 +1,16 @@
-import { listMashieSchools, queryMashieSchool } from "../../../src/providers/mashie/schools";
+import { getMashieSchoolLister, getMashieSchoolQuerier } from "../../../src/providers/mashie/schools";
 
 test("list schools", async () => {
+	const listMashieSchools = getMashieSchoolLister("https://sodexo.mashie.com");
+
 	const schools = await listMashieSchools();
 
 	expect(schools.length).toBeGreaterThan(100);
 });
 
 describe("querying schools", () => {
+	const queryMashieSchool = getMashieSchoolQuerier("https://sodexo.mashie.com");
+
 	it("should throw an error if no school is found", async () => {
 		await expect(queryMashieSchool("invalid-id-that-should-not-be-used")).rejects.toThrowErrorMatchingInlineSnapshot(
 			`"school with ID \`invalid-id-that-should-not-be-used\` not found!"`,

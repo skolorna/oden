@@ -1,16 +1,11 @@
-import { Provider } from "../types";
-import { getMashieMenu } from "./menu";
-import { listMashieSchools } from "./schools";
+import { ProviderImplementation } from "../types";
+import { getMashieMenuGetter } from "./menu";
+import { getMashieSchoolLister } from "./schools";
+import { MashieGenerator } from "./types";
 
-const mashie: Provider = {
-	info: {
-		name: "Sodexo (Mashie)",
-		id: "mashie",
-	},
-	implementation: {
-		getSchools: listMashieSchools,
-		getMenu: getMashieMenu,
-	},
+export const generateMashieImplementation: MashieGenerator<ProviderImplementation> = (baseUrl) => {
+	return {
+		getMenu: getMashieMenuGetter(baseUrl),
+		listSchools: getMashieSchoolLister(baseUrl),
+	};
 };
-
-export default mashie;

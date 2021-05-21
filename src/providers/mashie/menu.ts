@@ -5,8 +5,8 @@ import { URL } from "url";
 import { ParseError } from "../../errors";
 import { Day, Meal } from "../../types";
 import { GetMenu } from "../types";
-import { queryMashieSchool } from "./schools";
-import { BASE_URL } from "./url";
+import { getMashieSchoolQuerier } from "./schools";
+import { MashieGenerator } from "./types";
 
 export const monthLiterals = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 
@@ -67,29 +67,33 @@ export function parseDayNode(element: Element): Day {
 	};
 }
 
-export const getMashieMenu: GetMenu = async ({ school, first = DateTime.now(), last }) => {
-	const { url: path } = await queryMashieSchool(school);
-	const url = new URL(path, BASE_URL);
-	const html = await fetch(url).then((res) => res.text());
+export const getMashieMenuGetter: MashieGenerator<GetMenu> = (baseUrl) => {
+	const queryMashieSchool = getMashieSchoolQuerier(baseUrl);
 
-	const $ = cheerio.load(html);
+	return async ({ school, first = DateTime.now(), last }) => {
+		const { url: path } = await queryMashieSchool(school);
+		const url = new URL(path, baseUrl);
+		const html = await fetch(url).then((res) => res.text());
 
-	const days: Day[] = $(".panel-group > .panel")
-		.map((_i, element) => parseDayNode(element))
-		.toArray();
+		const $ = cheerio.load(html);
 
-	const start = first.startOf("day");
-	const end = last?.endOf("day");
+		const days: Day[] = $(".panel-group > .panel")
+			.map((_i, element) => parseDayNode(element))
+			.toArray();
 
-	return days.filter(({ timestamp }) => {
-		if (timestamp < start) {
-			return false;
-		}
+		const start = first.startOf("day");
+		const end = last?.endOf("day");
 
-		if (end && timestamp > end) {
-			return false;
-		}
+		return days.filter(({ timestamp }) => {
+			if (timestamp < start) {
+				return false;
+			}
 
-		return true;
-	});
+			if (end && timestamp > end) {
+				return false;
+			}
+
+			return true;
+		});
+	};
 };

@@ -1,13 +1,13 @@
 import { DistrictsResponse, ProvincesResponse, SchoolsResponse } from "./types";
 import performSkolmatenRequest from "./request";
-import { GetSchools } from "../types";
+import { ListSchools } from "../types";
 import { School } from "../../types";
 
 export function validateSchoolName(name: string): boolean {
 	return !/info/i.test(name);
 }
 
-export const getSkolmatenSchools: GetSchools = async () => {
+export const getSkolmatenSchools: ListSchools = async () => {
 	const { provinces } = await performSkolmatenRequest<ProvincesResponse>("/provinces");
 
 	const school3d: School[][][] = await Promise.all(

@@ -8,7 +8,7 @@ const skolmaten: Provider = {
 		id: "skolmaten",
 	},
 	implementation: {
-		getSchools: getSkolmatenSchools,
+		listSchools: getSkolmatenSchools,
 		getMenu: getSkolmatenMenu,
 	},
 };

@@ -8,7 +8,7 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 		});
 
 		fastify.get("/schools", async () => {
-			const schools = await implementation.getSchools();
+			const schools = await implementation.listSchools();
 
 			return schools;
 		});

@@ -1,10 +1,10 @@
 import { FastifyPluginCallback } from "fastify";
 import { generateProviderRoutes } from "./provider-routes";
 import skolmaten from "./skolmaten";
-import mashie from "./mashie";
+import sodexo from "./sodexo";
 import { Provider } from "./types";
 
-export const providers: Provider[] = [skolmaten, mashie];
+export const providers: Provider[] = [skolmaten, sodexo];
 
 export const providerInfo = providers.map((provider) => provider.info);
 

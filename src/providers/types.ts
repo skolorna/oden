@@ -1,7 +1,9 @@
 import { DateTime } from "luxon";
 import { Day, School, SchoolID } from "../types";
 
-export type GetSchools = () => Promise<School[]>;
+export type ListSchools = () => Promise<School[]>;
+
+export type QuerySchool = (id: SchoolID) => Promise<School>;
 
 export interface GetMenuQuery {
 	school: SchoolID;
@@ -17,7 +19,7 @@ export interface ProviderInfo {
 }
 
 export interface ProviderImplementation {
-	getSchools: GetSchools;
+	listSchools: ListSchools;
 	getMenu: GetMenu;
 }
 
