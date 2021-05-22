@@ -26,7 +26,9 @@ export function getSkolmatenTimeRanges(start: LocalDate, end: LocalDate): Skolma
 			segmentEnd = segmentStart.withMonth(12).withDayOfMonth(31);
 		}
 
-		const count = Math.ceil(segmentStart.until(segmentEnd, ChronoUnit.DAYS) / 7) + 1;
+		const days = segmentStart.until(segmentEnd, ChronoUnit.DAYS) + 1;
+
+		const count = Math.ceil(days / 7);
 
 		/**
 		 * Week number, but never 53.
