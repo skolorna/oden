@@ -32,6 +32,8 @@ describe("mashie menu", () => {
 
 		const menu = await getMashieMenus({
 			school: "b4639689-60f2-4a19-a2dc-abe500a08e45",
+			first: DateTime.utc(2000),
+			last: DateTime.utc(2077),
 		});
 
 		expect(menu.length).toBeGreaterThan(0);
