@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { LocalDate } from "js-joda";
 import { Day, School, SchoolID } from "../types";
 
 export type ListSchools = () => Promise<School[]>;
@@ -7,8 +7,8 @@ export type QuerySchool = (id: SchoolID) => Promise<School>;
 
 export interface GetMenuQuery {
 	school: SchoolID;
-	first: DateTime;
-	last: DateTime;
+	first: LocalDate;
+	last: LocalDate;
 }
 
 export type GetMenu = (query: GetMenuQuery) => Promise<Day[]>;

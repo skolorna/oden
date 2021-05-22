@@ -1,12 +1,11 @@
-import { DateTime } from "luxon";
 import { URLSearchParams } from "url";
+import { LocalDate } from "js-joda";
 import { Day } from "../../types";
 import { GetMenu } from "../types";
 import { getSkolmatenTimeRanges } from "./time-range";
 import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
 import { MenuResponse, SkolmatenTimeRange } from "./types";
-import { SKOLMATEN_TZ } from "./tz";
 
 export interface GetRawMenusOptions extends SkolmatenTimeRange, Record<string, number | undefined> {
 	/**
@@ -56,16 +55,11 @@ export const getSkolmatenMenu: GetMenu = async ({ school, first, last }) => {
 		.flatMap((week) => week.days)
 		.reduce((acc, { year, month, day, meals }) => {
 			if (meals && meals.length > 0) {
-				const timestamp = DateTime.fromObject({
-					year,
-					month,
-					day,
-					zone: SKOLMATEN_TZ,
-				});
+				const date = LocalDate.of(year, month, day);
 
-				if (timestamp >= first && timestamp <= last) {
+				if (date >= first && date <= last) {
 					acc.push({
-						timestamp,
+						date,
 						meals: meals.map((meal) => ({
 							value: meal.value,
 						})),

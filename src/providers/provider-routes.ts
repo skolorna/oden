@@ -1,7 +1,7 @@
 import { FastifyPluginCallback } from "fastify";
 import { BadRequest } from "http-errors";
-import { DateTime } from "luxon";
-import { parseISO8601 } from "../utils/parser";
+import { LocalDate } from "js-joda";
+import { parseISODate } from "../utils/parser";
 import { GetMenuQuery, GetMenuQueryType, QuerySchoolParams, QuerySchoolParamsType } from "./route-types";
 import { Provider } from "./types";
 
@@ -50,8 +50,8 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 				const { schoolId } = req.params;
 				const { first: firstLiteral, last: lastLiteral } = req.query;
 
-				const first = firstLiteral ? parseISO8601(firstLiteral) : DateTime.now();
-				const last = lastLiteral ? parseISO8601(lastLiteral) : first.plus({ weeks: 4 });
+				const first = firstLiteral ? parseISODate(firstLiteral) : LocalDate.now();
+				const last = lastLiteral ? parseISODate(lastLiteral) : first.plusWeeks(4);
 
 				if (last && first > last) {
 					throw new BadRequest("?first cannot be after ?last");

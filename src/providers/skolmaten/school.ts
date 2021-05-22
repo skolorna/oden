@@ -1,15 +1,15 @@
 import { NotFound } from "http-errors";
-import { DateTime } from "luxon";
+import { LocalDate } from "js-joda";
 import { QuerySchool } from "../types";
 import { getRawMenu } from "./menu";
 import { toSkolmatenID } from "./parser";
 import { getSkolmatenTimeRanges } from "./time-range";
 
 export const querySkolmatenSchool: QuerySchool = async (id) => {
-	const now = DateTime.now();
+	const now = LocalDate.now();
 
 	const { menu } = await getRawMenu({
-		...getSkolmatenTimeRanges(now, now.plus({ weeks: 1 }))[0],
+		...getSkolmatenTimeRanges(now, now.plusWeeks(1))[0],
 		station: toSkolmatenID(id),
 	});
 

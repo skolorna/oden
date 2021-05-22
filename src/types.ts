@@ -1,4 +1,4 @@
-import { DateTime } from "luxon";
+import { LocalDate } from "js-joda";
 
 export type SchoolID = string;
 
@@ -14,6 +14,6 @@ export interface Meal {
 }
 
 export interface Day {
-	timestamp: DateTime;
+	date: LocalDate;
 	meals: Meal[];
 }

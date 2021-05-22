@@ -1,10 +1,10 @@
-import { DateTime } from "luxon";
+import { LocalDate } from "js-joda";
 import { getSkolmatenMenu } from "../../../src/providers/skolmaten/menu";
 
 describe("menu test", () => {
 	it("should work", async () => {
-		const first = DateTime.utc(2021, 6, 1);
-		const last = first.plus({ weeks: 1 }).endOf("day");
+		const first = LocalDate.of(2021, 6, 1);
+		const last = first.plusWeeks(1);
 
 		const menu = await getSkolmatenMenu({
 			school: "85957002",
@@ -19,8 +19,8 @@ describe("menu test", () => {
 	it("should not return empty arrays", async () => {
 		const menu = await getSkolmatenMenu({
 			school: "85957002",
-			first: DateTime.utc(2077),
-			last: DateTime.utc(2079),
+			first: LocalDate.of(2077, 1, 1),
+			last: LocalDate.of(2079, 1, 1),
 		});
 
 		menu.forEach((day) => {
@@ -32,8 +32,8 @@ describe("menu test", () => {
 		await expect(
 			getSkolmatenMenu({
 				school: "invalid-id-because-they-want-to-use-integers-for-some-stupid-reason",
-				first: DateTime.now(),
-				last: DateTime.now(),
+				first: LocalDate.now(),
+				last: LocalDate.now(),
 			}),
 		).rejects.toThrow();
 	});

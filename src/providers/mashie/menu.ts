@@ -1,5 +1,5 @@
 import cheerio, { Element } from "cheerio";
-import { DateTime } from "luxon";
+import { LocalDate } from "js-joda";
 import fetch from "node-fetch";
 import { URL } from "url";
 import { ParseError } from "../../errors";
@@ -7,11 +7,10 @@ import { Day, Meal } from "../../types";
 import { GetMenu } from "../types";
 import { getRawMashieSchoolQuerier } from "./schools";
 import { MashieGenerator } from "./types";
-import { MASHIE_TZ } from "./tz";
 
 export const monthLiterals = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 
-export function parseDateText(input: string): DateTime {
+export function parseDateText(input: string): LocalDate {
 	const segments = input.split(" ");
 
 	if (segments.length > 3) {
@@ -22,24 +21,19 @@ export function parseDateText(input: string): DateTime {
 
 	const day = parseInt(dayLiteral, 10);
 	const monthIndex = monthLiterals.indexOf(monthLiteral);
-	const year = typeof yearLiteral === "string" ? parseInt(yearLiteral, 10) : undefined;
+	const year = typeof yearLiteral === "string" ? parseInt(yearLiteral, 10) : new Date().getFullYear();
 
 	if (monthIndex < 0) {
 		throw new ParseError(`${monthLiteral} is not a valid month literal`);
 	}
 
-	const date = DateTime.fromObject({
-		day,
-		month: monthIndex + 1,
-		year,
-		zone: MASHIE_TZ,
-	});
+	try {
+		const date = LocalDate.of(year, monthIndex + 1, day);
 
-	if (!date.isValid) {
-		throw new ParseError(date.invalidExplanation ?? `cannot parse ${input}`);
+		return date;
+	} catch (error) {
+		throw new ParseError(error.message);
 	}
-
-	return date;
 }
 
 export function parseMealNode(element: Element): Meal {
@@ -63,7 +57,7 @@ export function parseDayNode(element: Element): Day {
 		.toArray();
 
 	return {
-		timestamp: parseDateText(dateText),
+		date: parseDateText(dateText),
 		meals,
 	};
 }
@@ -71,7 +65,7 @@ export function parseDayNode(element: Element): Day {
 export const getMashieMenuGetter: MashieGenerator<GetMenu> = (baseUrl) => {
 	const queryMashieSchool = getRawMashieSchoolQuerier(baseUrl);
 
-	return async ({ school, first = DateTime.now(), last }) => {
+	return async ({ school, first, last }) => {
 		const { url: path } = await queryMashieSchool(school);
 		const url = new URL(path, baseUrl);
 		const html = await fetch(url).then((res) => res.text());
@@ -82,19 +76,6 @@ export const getMashieMenuGetter: MashieGenerator<GetMenu> = (baseUrl) => {
 			.map((_i, element) => parseDayNode(element))
 			.toArray();
 
-		const start = first.startOf("day");
-		const end = last?.endOf("day");
-
-		return days.filter(({ timestamp }) => {
-			if (timestamp < start) {
-				return false;
-			}
-
-			if (end && timestamp > end) {
-				return false;
-			}
-
-			return true;
-		});
+		return days.filter(({ date }) => date >= first && date <= last);
 	};
 };

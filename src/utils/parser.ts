@@ -1,12 +1,10 @@
 import { UnprocessableEntity } from "http-errors";
-import { DateTime } from "luxon";
+import { LocalDate } from "js-joda";
 
-export function parseISO8601(input: string): DateTime {
-	const timestamp = DateTime.fromISO(input);
-
-	if (!timestamp.isValid) {
-		throw new UnprocessableEntity(timestamp.invalidReason ?? `\`${input}\` is not a valid ISO8601 timestamp`);
+export function parseISODate(input: string): LocalDate {
+	try {
+		return LocalDate.parse(input);
+	} catch (error) {
+		throw new UnprocessableEntity(error.message);
 	}
-
-	return timestamp;
 }

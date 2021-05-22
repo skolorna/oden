@@ -1,4 +1,3 @@
-import { DateTime } from "luxon";
 import build from "../src/app";
 import { ProviderInfo } from "../src/providers/types";
 import { School } from "../src/types";
@@ -80,8 +79,8 @@ describe("main application tests", () => {
 				method: "GET",
 				url: "/providers/skolmaten/schools/85957002/menu",
 				query: {
-					first: DateTime.utc(2021).toISO(),
-					last: DateTime.utc(2020).toISO(),
+					first: "2021-01-01",
+					last: "2020-01-01",
 				},
 			});
 
