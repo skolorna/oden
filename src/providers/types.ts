@@ -7,8 +7,8 @@ export type QuerySchool = (id: SchoolID) => Promise<School>;
 
 export interface GetMenuQuery {
 	school: SchoolID;
-	first?: DateTime;
-	last?: DateTime;
+	first: DateTime;
+	last: DateTime;
 }
 
 export type GetMenu = (query: GetMenuQuery) => Promise<Day[]>;

@@ -7,6 +7,7 @@ import { Day, Meal } from "../../types";
 import { GetMenu } from "../types";
 import { getRawMashieSchoolQuerier } from "./schools";
 import { MashieGenerator } from "./types";
+import { MASHIE_TZ } from "./tz";
 
 export const monthLiterals = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 
@@ -31,7 +32,7 @@ export function parseDateText(input: string): DateTime {
 		day,
 		month: monthIndex + 1,
 		year,
-		zone: "Europe/Stockholm",
+		zone: MASHIE_TZ,
 	});
 
 	if (!date.isValid) {

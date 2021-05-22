@@ -1,13 +1,14 @@
 import fetch from "node-fetch";
 
-const API_TOKEN = "j44i0zuqo8izmlwg5blh";
-
 const performSkolmatenRequest = async <T>(path: string): Promise<T> => {
-	const url = `https://skolmaten.se/api/3${path}`;
+	const url = `https://skolmaten.se/api/4${path}`;
 
 	const data: T = await fetch(url, {
 		headers: {
-			client: API_TOKEN,
+			"API-Version": "4.0",
+			"Client-Token": "web",
+			"Client-Version-Token": "web",
+			Locale: "sv_SE",
 		},
 	}).then((res) => res.json());
 

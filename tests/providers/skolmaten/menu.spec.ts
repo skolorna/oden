@@ -3,9 +3,13 @@ import { getSkolmatenMenu } from "../../../src/providers/skolmaten/menu";
 
 describe("menu test", () => {
 	it("should work", async () => {
+		const first = DateTime.utc(2021, 6, 1);
+		const last = first.plus({ weeks: 1 }).endOf("day");
+
 		const menu = await getSkolmatenMenu({
 			school: "85957002",
-			first: DateTime.now(),
+			first,
+			last,
 		});
 
 		expect(menu.length).toBeGreaterThan(0);
@@ -16,6 +20,7 @@ describe("menu test", () => {
 		const menu = await getSkolmatenMenu({
 			school: "85957002",
 			first: DateTime.utc(2077),
+			last: DateTime.utc(2079),
 		});
 
 		menu.forEach((day) => {
@@ -27,6 +32,8 @@ describe("menu test", () => {
 		await expect(
 			getSkolmatenMenu({
 				school: "invalid-id-because-they-want-to-use-integers-for-some-stupid-reason",
+				first: DateTime.now(),
+				last: DateTime.now(),
 			}),
 		).rejects.toThrow();
 	});

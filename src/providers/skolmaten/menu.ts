@@ -2,61 +2,75 @@ import { DateTime } from "luxon";
 import { URLSearchParams } from "url";
 import { Day } from "../../types";
 import { GetMenu } from "../types";
+import { getSkolmatenTimeRanges } from "./time-range";
 import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
-import { MenuResponse } from "./types";
+import { MenuResponse, SkolmatenTimeRange } from "./types";
+import { SKOLMATEN_TZ } from "./tz";
 
-export interface GetRawMenusOptions extends Record<string, number | undefined> {
-	school: number;
-	offset?: number;
-	limit?: number;
-	year?: number;
-	week?: number;
+export interface GetRawMenusOptions extends SkolmatenTimeRange, Record<string, number | undefined> {
+	/**
+	 * ~~School~~ Station ID, Skolmaten.se style.
+	 */
+	station: number;
 }
 
-export async function getRawMenu({
-	school,
-	offset = 0,
-	limit = 1,
-	year,
-	week,
-}: GetRawMenusOptions): Promise<MenuResponse> {
+/**
+ * Return the raw, unvalidated menu. Skolmaten.se has a tendency to disrespect
+ * offsets and limits at extreme values, smh.
+ *
+ * @param {GetRawMenusOptions} options Options.
+ *
+ * @returns {Promise<MenuResponse>} The raw menu response.
+ */
+export async function getRawMenu({ station, year, weekOfYear, count }: GetRawMenusOptions): Promise<MenuResponse> {
 	const params = new URLSearchParams({
-		school: school?.toString(),
-		offset: offset?.toString(),
-		limit: limit?.toString(),
+		station: station?.toString(),
 		year: year?.toString(),
-		week: week?.toString(),
+		weekOfYear: weekOfYear?.toString(),
+		count: count?.toString(),
 	});
 
-	return performSkolmatenRequest<MenuResponse>(`/menu?${params.toString()}`);
+	const res = await performSkolmatenRequest<MenuResponse>(`/menu?${params.toString()}`);
+
+	return res;
 }
 
-export const getSkolmatenMenu: GetMenu = async ({ school, first = DateTime.now(), last }) => {
+export const getSkolmatenMenu: GetMenu = async ({ school, first, last }) => {
 	const skolmatenSchool = toSkolmatenID(school);
 
-	const start = first.startOf("day");
-	const offset = Math.floor(start.diffNow().as("days"));
-	const limit = (last ?? first.plus({ weeks: 1 })).startOf("day").diff(start).as("weeks");
+	const ranges = getSkolmatenTimeRanges(first, last);
 
-	const res = await getRawMenu({
-		school: skolmatenSchool,
-		offset,
-		limit: Math.ceil(limit),
-	});
+	const responses = await Promise.all(
+		ranges.map((range) =>
+			getRawMenu({
+				...range,
+				station: skolmatenSchool,
+			}),
+		),
+	);
 
-	const days = res.weeks
+	const weeks = responses.flatMap(({ menu }) => menu.weeks);
+
+	const days = weeks
 		.flatMap((week) => week.days)
-		.reduce((acc, { date, meals }) => {
+		.reduce((acc, { year, month, day, meals }) => {
 			if (meals && meals.length > 0) {
-				const day: Day = {
-					timestamp: DateTime.fromMillis(date * 1000),
-					meals: meals.map((meal) => ({
-						value: meal.value,
-					})),
-				};
+				const timestamp = DateTime.fromObject({
+					year,
+					month,
+					day,
+					zone: SKOLMATEN_TZ,
+				});
 
-				acc.push(day);
+				if (timestamp >= first && timestamp <= last) {
+					acc.push({
+						timestamp,
+						meals: meals.map((meal) => ({
+							value: meal.value,
+						})),
+					});
+				}
 			}
 
 			return acc;

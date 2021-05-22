@@ -1,4 +1,4 @@
-import { DistrictsResponse, ProvincesResponse, SchoolsResponse } from "./types";
+import { DistrictsResponse, ProvincesResponse, SkolmatenStationsResponse } from "./types";
 import performSkolmatenRequest from "./request";
 import { ListSchools } from "../types";
 import { School } from "../../types";
@@ -10,15 +10,17 @@ export function validateSchoolName(name: string): boolean {
 export const getSkolmatenSchools: ListSchools = async () => {
 	const { provinces } = await performSkolmatenRequest<ProvincesResponse>("/provinces");
 
-	const school3d: School[][][] = await Promise.all(
+	const schools3d: School[][][] = await Promise.all(
 		provinces.map(async (province) => {
 			const { districts } = await performSkolmatenRequest<DistrictsResponse>(`/districts?province=${province.id}`);
 
 			return Promise.all(
 				districts.map(async (district) => {
-					const { schools } = await performSkolmatenRequest<SchoolsResponse>(`/schools?district=${district.id}`);
+					const { stations } = await performSkolmatenRequest<SkolmatenStationsResponse>(
+						`/stations?district=${district.id}`,
+					);
 
-					return schools.map(({ id, name }) => ({
+					return stations.map(({ id, name }) => ({
 						id: id.toString(),
 						name,
 						district: district.name,
@@ -29,7 +31,7 @@ export const getSkolmatenSchools: ListSchools = async () => {
 		}),
 	);
 
-	const schools = school3d.flat(2).filter(({ name }) => validateSchoolName(name));
+	const schools = schools3d.flat(2).filter(({ name }) => validateSchoolName(name));
 
 	return schools;
 };

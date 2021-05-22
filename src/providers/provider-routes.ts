@@ -51,7 +51,7 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 				const { first: firstLiteral, last: lastLiteral } = req.query;
 
 				const first = firstLiteral ? parseISO8601(firstLiteral) : DateTime.now();
-				const last = lastLiteral ? parseISO8601(lastLiteral) : undefined;
+				const last = lastLiteral ? parseISO8601(lastLiteral) : first.plus({ weeks: 4 });
 
 				if (last && first > last) {
 					throw new BadRequest("?first cannot be after ?last");

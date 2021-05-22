@@ -11,9 +11,13 @@ export interface DetailedDistrict extends DetailedSkolmatenObject {
 	province: DetailedSkolmatenObject;
 }
 
-export interface DetailedSchool extends DetailedSkolmatenObject {
+export interface DetailedStation extends DetailedSkolmatenObject {
 	imageURL: string;
 	district: DetailedDistrict;
+	location?: {
+		latitude: number;
+		longitude: number;
+	};
 }
 
 export interface ProvincesResponse {
@@ -24,8 +28,8 @@ export interface DistrictsResponse {
 	districts: SkolmatenObject[];
 }
 
-export interface SchoolsResponse {
-	schools: SkolmatenObject[];
+export interface SkolmatenStationsResponse {
+	stations: SkolmatenObject[];
 }
 
 export interface Bulletin {
@@ -38,19 +42,31 @@ export interface SkolmatenMeal {
 }
 
 export interface SkolmatenDay {
-	date: number;
+	year: number;
+	month: number;
+	day: number;
 	meals?: SkolmatenMeal[];
 	reason?: string;
 }
 
 export interface SkolmatenWeek {
 	year: number;
-	number: number;
+	weekOfYear: number;
 	days: SkolmatenDay[];
 }
 
 export interface MenuResponse {
-	weeks: SkolmatenWeek[];
-	school: DetailedSchool;
-	bulletins: Bulletin[];
+	menu: {
+		isFeedbackAllowed: boolean;
+		weeks: SkolmatenWeek[];
+		station: DetailedStation;
+		id: number;
+		bulletins: Bulletin[];
+	};
+}
+
+export interface SkolmatenTimeRange {
+	year: number;
+	weekOfYear: number;
+	count: number;
 }
