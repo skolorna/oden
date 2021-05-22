@@ -1,5 +1,8 @@
 import { FastifyPluginCallback } from "fastify";
-import { QuerySchoolOptions, QuerySchoolOptionsType } from "./route-types";
+import { BadRequest } from "http-errors";
+import { DateTime } from "luxon";
+import { parseISO8601 } from "../utils/parser";
+import { GetMenuQuery, GetMenuQueryType, QuerySchoolParams, QuerySchoolParamsType } from "./route-types";
 import { Provider } from "./types";
 
 export function generateProviderRoutes({ info, implementation }: Provider): FastifyPluginCallback {
@@ -15,12 +18,12 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 		});
 
 		fastify.get<{
-			Params: QuerySchoolOptionsType;
+			Params: QuerySchoolParamsType;
 		}>(
 			"/schools/:schoolId",
 			{
 				schema: {
-					params: QuerySchoolOptions,
+					params: QuerySchoolParams,
 				},
 			},
 			async (req) => {
@@ -29,6 +32,38 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 				const school = await implementation.querySchool(schoolId);
 
 				return school;
+			},
+		);
+
+		fastify.get<{
+			Params: QuerySchoolParamsType;
+			Querystring: GetMenuQueryType;
+		}>(
+			"/schools/:schoolId/menu",
+			{
+				schema: {
+					params: QuerySchoolParams,
+					querystring: GetMenuQuery,
+				},
+			},
+			async (req) => {
+				const { schoolId } = req.params;
+				const { first: firstLiteral, last: lastLiteral } = req.query;
+
+				const first = firstLiteral ? parseISO8601(firstLiteral) : DateTime.now();
+				const last = lastLiteral ? parseISO8601(lastLiteral) : undefined;
+
+				if (last && first > last) {
+					throw new BadRequest("?first cannot be after ?last");
+				}
+
+				const menu = await implementation.getMenu({
+					school: schoolId,
+					first,
+					last,
+				});
+
+				return menu;
 			},
 		);
 	};

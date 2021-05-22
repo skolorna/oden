@@ -1,7 +1,14 @@
 import { Static, Type } from "@sinclair/typebox";
 
-export const QuerySchoolOptions = Type.Object({
+export const QuerySchoolParams = Type.Object({
 	schoolId: Type.String(),
 });
 
-export type QuerySchoolOptionsType = Static<typeof QuerySchoolOptions>;
+export type QuerySchoolParamsType = Static<typeof QuerySchoolParams>;
+
+export const GetMenuQuery = Type.Object({
+	first: Type.Optional(Type.String()),
+	last: Type.Optional(Type.String()),
+});
+
+export type GetMenuQueryType = Static<typeof GetMenuQuery>;

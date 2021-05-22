@@ -1,5 +1,6 @@
 import { DateTime } from "luxon";
 import { URLSearchParams } from "url";
+import { Day } from "../../types";
 import { GetMenu } from "../types";
 import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
@@ -44,13 +45,22 @@ export const getSkolmatenMenu: GetMenu = async ({ school, first = DateTime.now()
 		limit: Math.ceil(limit),
 	});
 
-	const days = res.weeks.flatMap((week) => week.days);
+	const days = res.weeks
+		.flatMap((week) => week.days)
+		.reduce((acc, { date, meals }) => {
+			if (meals && meals.length > 0) {
+				const day: Day = {
+					timestamp: DateTime.fromMillis(date * 1000),
+					meals: meals.map((meal) => ({
+						value: meal.value,
+					})),
+				};
 
-	return days.map((day) => ({
-		timestamp: DateTime.fromMillis(day.date),
-		meals:
-			day.meals?.map((meal) => ({
-				value: meal.value,
-			})) ?? [],
-	}));
+				acc.push(day);
+			}
+
+			return acc;
+		}, [] as Day[]);
+
+	return days;
 };

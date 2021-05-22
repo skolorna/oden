@@ -1,3 +1,4 @@
+import { DateTime } from "luxon";
 import build from "../src/app";
 import { ProviderInfo } from "../src/providers/types";
 import { School } from "../src/types";
@@ -61,5 +62,39 @@ describe("main application tests", () => {
 		});
 
 		expect(notFoundResponse.statusCode).toBe(404);
+	});
+
+	describe("school menu", () => {
+		it("should not accept invalid timestamps", async () => {
+			const nonISOResponse = await app.inject({
+				method: "GET",
+				url: "/providers/skolmaten/schools/85957002/menu",
+				query: {
+					first: "invalid-iso8601",
+				},
+			});
+
+			expect(nonISOResponse.statusCode).toBe(422);
+
+			const wrongTimesResponse = await app.inject({
+				method: "GET",
+				url: "/providers/skolmaten/schools/85957002/menu",
+				query: {
+					first: DateTime.utc(2021).toISO(),
+					last: DateTime.utc(2020).toISO(),
+				},
+			});
+
+			expect(wrongTimesResponse.statusCode).toBe(400);
+		});
+
+		it("should work without any parameters", async () => {
+			const response = await app.inject({
+				method: "GET",
+				url: "/providers/skolmaten/schools/85957002/menu",
+			});
+
+			expect(response.statusCode).toBe(200);
+		});
 	});
 });
