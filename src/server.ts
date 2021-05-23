@@ -1,6 +1,6 @@
 import app from "./app";
 
-const { PORT = 8000 } = process.env;
+const { PORT = 8000, ADDRESS = "0.0.0.0" } = process.env;
 
 const server = app({
 	logger: {
@@ -9,7 +9,7 @@ const server = app({
 	},
 });
 
-server.listen(PORT, (error) => {
+server.listen(PORT, ADDRESS, (error) => {
 	if (error) {
 		// eslint-disable-next-line no-console
 		console.error(error);
