@@ -25,10 +25,10 @@ export interface GetRawMenusOptions extends SkolmatenTimeRange, Record<string, n
  */
 export async function getRawMenu({ station, year, weekOfYear, count }: GetRawMenusOptions): Promise<MenuResponse> {
 	const params = new URLSearchParams({
-		station: station?.toString(),
-		year: year?.toString(),
-		weekOfYear: weekOfYear?.toString(),
-		count: count?.toString(),
+		station: station.toString(),
+		year: year.toString(),
+		weekOfYear: weekOfYear.toString(),
+		count: count.toString(),
 	});
 
 	const res = await performSkolmatenRequest<MenuResponse>(`/menu?${params.toString()}`);
