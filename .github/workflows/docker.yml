@@ -20,7 +20,7 @@ jobs:
 
       # Remove the following step if the repo path is all-lowercase
       - name: Fetch Docker repository name
-        run: echo "DOCKER_REPOSITORY=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')" >> $GITHUB_ENV
+        run: echo "DOCKER_REPOSITORY=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')/menu-proxy" >> $GITHUB_ENV
 
       - name: Build container image
         uses: docker/build-push-action@v2
