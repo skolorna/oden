@@ -4,6 +4,7 @@ import fetch from "node-fetch";
 import { URL } from "url";
 import { ParseError } from "../../errors";
 import { Day, Meal } from "../../types";
+import { dedupMeals } from "../../utils/dedupMeals";
 import { GetMenu } from "../types";
 import { getRawMashieSchoolQuerier } from "./schools";
 import { MashieGenerator } from "./types";
@@ -49,12 +50,15 @@ export function parseMealNode(element: Element): Meal {
 }
 
 export function parseDayNode(element: Element): Day {
-	const dateText = cheerio(element).find(".panel-heading .pull-right").text();
+	const $ = cheerio(element);
 
-	const meals: Meal[] = cheerio(element)
-		.find(".app-daymenu-name")
-		.map((_, mealNode) => parseMealNode(mealNode))
-		.toArray();
+	const dateText = $.find(".panel-heading .pull-right").text();
+
+	const meals = dedupMeals(
+		$.find(".app-daymenu-name")
+			.toArray()
+			.map((mealNode) => parseMealNode(mealNode)),
+	);
 
 	return {
 		date: parseDateText(dateText),

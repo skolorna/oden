@@ -1,8 +1,14 @@
 import cheerio from "cheerio";
 import { LocalDate } from "js-joda";
 import { ParseError } from "../../../src/errors";
-import { getMashieMenuGetter, monthLiterals, parseDateText, parseMealNode } from "../../../src/providers/mashie/menu";
-import { Meal } from "../../../src/types";
+import {
+	getMashieMenuGetter,
+	monthLiterals,
+	parseDateText,
+	parseDayNode,
+	parseMealNode,
+} from "../../../src/providers/mashie/menu";
+import { Day, Meal } from "../../../src/types";
 
 describe("mashie menu", () => {
 	test("date parsing", () => {
@@ -25,6 +31,31 @@ describe("mashie menu", () => {
 		expect(() => parseMealNode(cheerio.load("<div />")("div")[0])).toThrow();
 		expect(parseMealNode(cheerio.load("<div>Fisk Björkeby</div>")("div")[0])).toEqual<Meal>({
 			value: "Fisk Björkeby",
+		});
+	});
+
+	test("day node parsing", () => {
+		const html = `<div class="day">
+			<h4 class="panel-heading">
+				<span class="pull-right">17 maj</span>
+			</h4>
+			<ul>
+				<li class="app-daymenu-name">Fisk Björkeby</li>
+				<li class="app-daymenu-name">Fisk Björkeby</li>
+				<li class="app-daymenu-name">Tacobuffé</li>
+			</ul>
+		</div>`;
+
+		expect(parseDayNode(cheerio.load(html)(".day")[0])).toEqual<Day>({
+			date: LocalDate.of(new Date().getFullYear(), 5, 17),
+			meals: [
+				{
+					value: "Fisk Björkeby",
+				},
+				{
+					value: "Tacobuffé",
+				},
+			],
 		});
 	});
 

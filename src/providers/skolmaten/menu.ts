@@ -6,6 +6,7 @@ import { getSkolmatenTimeRanges } from "./time-range";
 import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
 import { MenuResponse, SkolmatenTimeRange } from "./types";
+import { dedupMeals } from "../../utils/dedupMeals";
 
 export interface GetRawMenusOptions extends SkolmatenTimeRange, Record<string, number | undefined> {
 	/**
@@ -53,16 +54,16 @@ export const getSkolmatenMenu: GetMenu = async ({ school, first, last }) => {
 
 	const days = weeks
 		.flatMap((week) => week.days)
-		.reduce((acc, { year, month, day, meals }) => {
-			if (meals && meals.length > 0) {
+		.reduce((acc, { year, month, day, meals: inputMeals }) => {
+			if (inputMeals && inputMeals.length > 0) {
 				const date = LocalDate.of(year, month, day);
 
 				if (date >= first && date <= last) {
+					const meals = dedupMeals(inputMeals);
+
 					acc.push({
 						date,
-						meals: meals.map((meal) => ({
-							value: meal.value,
-						})),
+						meals,
 					});
 				}
 			}
