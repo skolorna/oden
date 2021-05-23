@@ -29,3 +29,4 @@ jobs:
           tags: |
             docker.pkg.github.com/${{ env.DOCKER_REPOSITORY }}:${{ github.sha }}
             docker.pkg.github.com/${{ env.DOCKER_REPOSITORY }}:${{ github.event.release.tag_name }}
+            docker.pkg.github.com/${{ env.DOCKER_REPOSITORY }}:latest

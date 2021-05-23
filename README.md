@@ -19,8 +19,7 @@ The API is far from complete, and breaking changes should be expected. Therefore
 The easiest way to get started is to clone this repository and then run this program with Docker:
 
 ```
-docker build -t menu-proxy .
-docker run -d -p 8000:80 menu-proxy
+docker run -d -p 8000:80 docker.pkg.github.com/thepiconerd/menu-proxy/menu-proxy
 ```
 
 ## Customizing
