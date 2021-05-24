@@ -18,15 +18,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      # Remove the following step if the repo path is all-lowercase
-      - name: Fetch Docker repository name
-        run: echo "DOCKER_REPOSITORY=$(echo ${{ github.repository }} | tr '[:upper:]' '[:lower:]')/menu-proxy" >> $GITHUB_ENV
+      - id: prep
+        run: |
+          echo ::set-output name=tags::ghcr.io/thepiconerd/menu-proxy:${GITHUB_REF#refs/tags/v}
 
       - name: Build container image
         uses: docker/build-push-action@v2
         with:
           push: true
-          tags: |
-            docker.pkg.github.com/${{ env.DOCKER_REPOSITORY }}:${{ github.sha }}
-            docker.pkg.github.com/${{ env.DOCKER_REPOSITORY }}:${{ github.event.release.tag_name }}
-            docker.pkg.github.com/${{ env.DOCKER_REPOSITORY }}:latest
+          tags: ${{ steps.prep.outputs.tags }}
