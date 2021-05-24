@@ -6,7 +6,7 @@ import { getSkolmatenTimeRanges } from "./time-range";
 import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
 import { MenuResponse, SkolmatenTimeRange } from "./types";
-import { dedupMeals } from "../../utils/dedupMeals";
+import { dedupMeals } from "../../utils/dedup-meals";
 
 export interface GetRawMenusOptions extends SkolmatenTimeRange, Record<string, number | undefined> {
 	/**

@@ -8,7 +8,7 @@
   </a>
 </p>
 
-An API used to digest the various cafeteria menus from Swedish schools.
+Menu Proxy aggregates the various cafeteria menus from Swedish schools.
 
 ## API reference
 
@@ -16,7 +16,7 @@ The API is far from complete, and breaking changes should be expected. Therefore
 
 ## Getting started
 
-The easiest way to get started is to clone this repository and then run this program with Docker:
+The easiest way to get started is to run this program with Docker:
 
 ```
 docker run -d -p 8000:80 ghcr.io/inteskolplattformen/menu-proxy:<VERSION>

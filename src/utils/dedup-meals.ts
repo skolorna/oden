@@ -7,8 +7,11 @@ export function dedupMeals(meals: Meal[]): Meal[] {
 	for (let i = 0; i < meals.length; i += 1) {
 		const meal = meals[i];
 
-		if (!seen[meal.value]) {
-			seen[meal.value] = true;
+		// TODO: This could be a bit more ambitious ...
+		const comp = meal.value.trim().toLocaleLowerCase();
+
+		if (!seen[comp]) {
+			seen[comp] = true;
 			out.push(meal);
 		}
 	}

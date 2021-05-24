@@ -4,7 +4,7 @@ import fetch from "node-fetch";
 import { URL } from "url";
 import { ParseError } from "../../errors";
 import { Day, Meal } from "../../types";
-import { dedupMeals } from "../../utils/dedupMeals";
+import { dedupMeals } from "../../utils/dedup-meals";
 import { GetMenu } from "../types";
 import { getRawMashieSchoolQuerier } from "./schools";
 import { MashieGenerator } from "./types";
