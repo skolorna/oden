@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://codeclimate.com/github/inteskolplattformen/menu-proxy/test_coverage">
-    <img src="https://api.codeclimate.com/v1/badges/bc6aeee3f21af2b46e7a/test_coverage" />
+  <a href="https://codecov.io/gh/inteskolplattformen/menu-proxy">
+    <img src="https://codecov.io/gh/inteskolplattformen/menu-proxy/branch/main/graph/badge.svg?token=rUytc5q58t"/>
   </a>
 </p>
 

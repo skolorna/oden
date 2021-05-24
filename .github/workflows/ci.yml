@@ -57,7 +57,7 @@ jobs:
       - run: yarn install --frozen-lockfile
       - run: yarn test --coverage
 
-      - name: Upload coverage
-        uses: paambaati/codeclimate-action@v2.7.5
-        env:
-          CC_TEST_REPORTER_ID: 538a24f77fdef07944e3a28548528249a8fd823a8e475a82e4a480134c99d0c6
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v1
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
