@@ -20,7 +20,7 @@ jobs:
 
       - id: prep
         run: |
-          echo ::set-output name=tags::ghcr.io/thepiconerd/menu-proxy:${GITHUB_REF#refs/tags/v}
+          echo ::set-output name=tags::ghcr.io/inteskolplattformen/menu-proxy:${GITHUB_REF#refs/tags/v}
 
       - name: Build container image
         uses: docker/build-push-action@v2
