@@ -1,17 +1,22 @@
 import { LocalDate } from "js-joda";
-import { Day, School, SchoolID } from "../types";
+import { Day } from "../types";
 
-export type ListSchools = () => Promise<School[]>;
+export interface ProviderMenu {
+	id: string;
+	title: string;
+}
 
-export type QuerySchool = (id: SchoolID) => Promise<School>;
+export type ListMenus = () => Promise<ProviderMenu[]>;
 
-export interface GetMenuQuery {
-	school: SchoolID;
+export type QueryMenu = (id: string) => Promise<ProviderMenu>;
+
+export interface ListDaysQuery {
+	menu: string;
 	first: LocalDate;
 	last: LocalDate;
 }
 
-export type GetMenu = (query: GetMenuQuery) => Promise<Day[]>;
+export type ListDays = (query: ListDaysQuery) => Promise<Day[]>;
 
 export interface ProviderInfo {
 	name: string;
@@ -19,9 +24,9 @@ export interface ProviderInfo {
 }
 
 export interface ProviderImplementation {
-	listSchools: ListSchools;
-	querySchool: QuerySchool;
-	getMenu: GetMenu;
+	listMenus: ListMenus;
+	queryMenu: QueryMenu;
+	listDays: ListDays;
 }
 
 export interface Provider {

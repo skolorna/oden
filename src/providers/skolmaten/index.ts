@@ -1,7 +1,7 @@
 import { Provider } from "../types";
 import { getSkolmatenSchools } from "./crawler";
-import { getSkolmatenMenu } from "./menu";
-import { querySkolmatenSchool } from "./school";
+import { listSkolmatenDays } from "./days";
+import { querySkolmatenMenu } from "./menu";
 
 const skolmaten: Provider = {
 	info: {
@@ -9,9 +9,9 @@ const skolmaten: Provider = {
 		id: "skolmaten",
 	},
 	implementation: {
-		listSchools: getSkolmatenSchools,
-		querySchool: querySkolmatenSchool,
-		getMenu: getSkolmatenMenu,
+		listMenus: getSkolmatenSchools,
+		queryMenu: querySkolmatenMenu,
+		listDays: listSkolmatenDays,
 	},
 };
 

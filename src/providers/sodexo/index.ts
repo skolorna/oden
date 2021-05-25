@@ -1,12 +1,11 @@
-import { generateMashieImplementation } from "../mashie";
-import { Provider } from "../types";
+import { generateMashieProvider } from "../mashie";
 
-const sodexo: Provider = {
+const sodexo = generateMashieProvider({
 	info: {
 		name: "Sodexo",
 		id: "sodexo",
 	},
-	implementation: generateMashieImplementation("https://sodexo.mashie.com"),
-};
+	baseUrl: "https://sodexo.mashie.com",
+});
 
 export default sodexo;

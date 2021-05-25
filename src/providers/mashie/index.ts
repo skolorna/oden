@@ -1,12 +1,15 @@
-import { ProviderImplementation } from "../types";
-import { getMashieMenuGetter } from "./menu";
-import { getMashieSchoolLister, getMashieSchoolQuerier } from "./schools";
+import { Provider } from "../types";
+import { getMashieDayLister } from "./days";
+import { getMashieSchoolLister, getMashieMenuQuerier } from "./menus";
 import { MashieGenerator } from "./types";
 
-export const generateMashieImplementation: MashieGenerator<ProviderImplementation> = (baseUrl) => {
+export const generateMashieProvider: MashieGenerator<Provider> = (options) => {
 	return {
-		getMenu: getMashieMenuGetter(baseUrl),
-		listSchools: getMashieSchoolLister(baseUrl),
-		querySchool: getMashieSchoolQuerier(baseUrl),
+		info: options.info,
+		implementation: {
+			listDays: getMashieDayLister(options),
+			listMenus: getMashieSchoolLister(options),
+			queryMenu: getMashieMenuQuerier(options),
+		},
 	};
 };

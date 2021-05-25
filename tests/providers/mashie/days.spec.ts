@@ -2,12 +2,12 @@ import cheerio from "cheerio";
 import { LocalDate } from "js-joda";
 import { ParseError } from "../../../src/errors";
 import {
-	getMashieMenuGetter,
+	getMashieDayLister,
 	monthLiterals,
 	parseDateText,
 	parseDayNode,
 	parseMealNode,
-} from "../../../src/providers/mashie/menu";
+} from "../../../src/providers/mashie/days";
 import { Day, Meal } from "../../../src/types";
 
 describe("mashie menu", () => {
@@ -60,10 +60,10 @@ describe("mashie menu", () => {
 	});
 
 	it("should work as intended", async () => {
-		const getMashieMenus = getMashieMenuGetter("https://sodexo.mashie.com");
+		const getMashieMenus = getMashieDayLister("https://sodexo.mashie.com");
 
 		const menu = await getMashieMenus({
-			school: "b4639689-60f2-4a19-a2dc-abe500a08e45",
+			menu: "b4639689-60f2-4a19-a2dc-abe500a08e45",
 			first: LocalDate.of(2000, 1, 1),
 			last: LocalDate.of(2077, 1, 1),
 		});

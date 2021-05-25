@@ -1,14 +1,21 @@
-export interface MashieSchool {
+import { ProviderInfo } from "../types";
+
+export interface MashieMenu {
 	id: string;
 	title: string;
 	url: string;
 }
 
-export type GetSchoolsResponse = MashieSchool[];
+export type ListMenusResponse = MashieMenu[];
+
+export interface MashieGeneratorOptions {
+	info: ProviderInfo;
+	baseUrl: string;
+}
 
 /**
  * A function that generates a provider-specific implementation of something.
  */
-export type MashieGenerator<T> = (baseUrl: string) => T;
+export type MashieGenerator<T> = (options: MashieGeneratorOptions) => T;
 
-export type QueryMashieSchool = (id: string) => Promise<MashieSchool>;
+export type QueryMashieMenu = (id: string) => Promise<MashieMenu>;

@@ -1,16 +1,15 @@
 import { DistrictsResponse, ProvincesResponse, SkolmatenStationsResponse } from "./types";
 import performSkolmatenRequest from "./request";
-import { ListSchools } from "../types";
-import { School } from "../../types";
+import { ListMenus, ProviderMenu } from "../types";
 
 export function validateSchoolName(name: string): boolean {
 	return !/info/i.test(name);
 }
 
-export const getSkolmatenSchools: ListSchools = async () => {
+export const getSkolmatenSchools: ListMenus = async () => {
 	const { provinces } = await performSkolmatenRequest<ProvincesResponse>("/provinces");
 
-	const schools3d: School[][][] = await Promise.all(
+	const menus3d: ProviderMenu[][][] = await Promise.all(
 		provinces.map(async (province) => {
 			const { districts } = await performSkolmatenRequest<DistrictsResponse>(`/districts?province=${province.id}`);
 
@@ -22,16 +21,14 @@ export const getSkolmatenSchools: ListSchools = async () => {
 
 					return stations.map(({ id, name }) => ({
 						id: id.toString(),
-						name,
-						district: district.name,
-						province: province.name,
+						title: name,
 					}));
 				}),
 			);
 		}),
 	);
 
-	const schools = schools3d.flat(2).filter(({ name }) => validateSchoolName(name));
+	const schools = menus3d.flat(2).filter(({ title: name }) => validateSchoolName(name));
 
 	return schools;
 };

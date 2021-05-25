@@ -12,7 +12,7 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 		});
 
 		fastify.get("/schools", async () => {
-			const schools = await implementation.listSchools();
+			const schools = await implementation.listMenus();
 
 			return schools;
 		});
@@ -29,7 +29,7 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 			async (req) => {
 				const { schoolId } = req.params;
 
-				const school = await implementation.querySchool(schoolId);
+				const school = await implementation.queryMenu(schoolId);
 
 				return school;
 			},
@@ -57,8 +57,8 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 					throw new BadRequest("?first cannot be after ?last");
 				}
 
-				const menu = await implementation.getMenu({
-					school: schoolId,
+				const menu = await implementation.listDays({
+					menu: schoolId,
 					first,
 					last,
 				});

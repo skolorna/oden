@@ -1,12 +1,11 @@
-import { generateMashieImplementation } from "../mashie";
-import { Provider } from "../types";
+import { generateMashieProvider } from "../mashie";
 
-const mpi: Provider = {
+const mpi = generateMashieProvider({
 	info: {
 		name: "MPI",
 		id: "mpi",
 	},
-	implementation: generateMashieImplementation("https://mpi.mashie.com"),
-};
+	baseUrl: "https://mpi.mashie.com",
+});
 
 export default mpi;

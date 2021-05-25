@@ -5,8 +5,8 @@ import { URL } from "url";
 import { ParseError } from "../../errors";
 import { Day, Meal } from "../../types";
 import { dedupMeals } from "../../utils/dedup-meals";
-import { GetMenu } from "../types";
-import { getRawMashieSchoolQuerier } from "./schools";
+import { ListDays } from "../types";
+import { getRawMashieMenuQuerier } from "./menus";
 import { MashieGenerator } from "./types";
 
 export const monthLiterals = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
@@ -66,12 +66,12 @@ export function parseDayNode(element: Element): Day {
 	};
 }
 
-export const getMashieMenuGetter: MashieGenerator<GetMenu> = (baseUrl) => {
-	const queryMashieSchool = getRawMashieSchoolQuerier(baseUrl);
+export const getMashieDayLister: MashieGenerator<ListDays> = (options) => {
+	const queryMashieSchool = getRawMashieMenuQuerier(options);
 
-	return async ({ school, first, last }) => {
+	return async ({ menu: school, first, last }) => {
 		const { url: path } = await queryMashieSchool(school);
-		const url = new URL(path, baseUrl);
+		const url = new URL(path, options.baseUrl);
 		const html = await fetch(url).then((res) => res.text());
 
 		const $ = cheerio.load(html);
