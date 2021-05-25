@@ -12,7 +12,24 @@ Menu Proxy aggregates the various cafeteria menus from Swedish schools.
 
 ## API reference
 
-The API is far from complete, and breaking changes should be expected. Therefore, we provide no documentation at the moment.
+### Providers
+
+The providers can be viewed at `/providers`.
+
+### Schools
+
+List schools by GETting `/providers/<PROVIDER>/schools`.
+
+### Menu
+
+Get the menu at `/providers/<PROVIDER>/schools/<SCHOOL>/menu`.
+
+#### Parameters
+
+| Parameter | Description                                                   | Default value            |
+| --------- | ------------------------------------------------------------- | ------------------------ |
+| `?first`  | The date of the first menu (inclusive). `YYYY-MM-DD`, please. | The current date in UTC. |
+| `?last`   | The date of the last menu (inclusive). `YYYY-MM-DD`, please.  | `?first` plus 4 weeks.   |
 
 ## Getting started
 

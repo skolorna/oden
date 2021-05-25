@@ -1,6 +1,6 @@
 import { FastifyPluginCallback } from "fastify";
 import { BadRequest } from "http-errors";
-import { LocalDate } from "js-joda";
+import { LocalDate, ZoneId } from "js-joda";
 import { parseISODate } from "../utils/parser";
 import { GetMenuQuery, GetMenuQueryType, QuerySchoolParams, QuerySchoolParamsType } from "./route-types";
 import { Provider } from "./types";
@@ -50,7 +50,7 @@ export function generateProviderRoutes({ info, implementation }: Provider): Fast
 				const { schoolId } = req.params;
 				const { first: firstLiteral, last: lastLiteral } = req.query;
 
-				const first = firstLiteral ? parseISODate(firstLiteral) : LocalDate.now();
+				const first = firstLiteral ? parseISODate(firstLiteral) : LocalDate.now(ZoneId.UTC);
 				const last = lastLiteral ? parseISODate(lastLiteral) : first.plusWeeks(4);
 
 				if (last && first > last) {
