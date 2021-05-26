@@ -17,7 +17,9 @@ test("list menus", async () => {
 
 describe("query menus", () => {
 	it("should throw an error if no menu is found", async () => {
-		await expect(provider.implementation.queryMenu("invalid-id-that-should-not-be-used")).rejects.toThrowError(NotFound);
+		await expect(provider.implementation.queryMenu("invalid-id-that-should-not-be-used")).rejects.toThrowError(
+			NotFound,
+		);
 	});
 
 	it("should work as expected", async () => {
