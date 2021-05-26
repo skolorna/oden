@@ -14,6 +14,8 @@ describe("main application tests", () => {
 	});
 
 	test("list menus", async () => {
+		jest.setTimeout(20000);
+
 		const response = await app.inject({
 			method: "GET",
 			url: "/menus",
