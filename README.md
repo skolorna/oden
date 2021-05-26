@@ -10,26 +10,21 @@
 
 Menu Proxy aggregates the various cafeteria menus from Swedish schools.
 
-## API reference
+## Reference
 
-### Providers
+### Terminology
 
-The providers can be viewed at `/providers`.
+- A **school** is associated with one or more **menus**.
+- A **menu** consists of many **days**.
+- A day lists the meals served for a specific date on a particular menu.
 
-### Schools
+### API
 
-List schools by GETting `/providers/<PROVIDER>/schools`.
+_Sorry for the poor documentation. It will be fixed._
 
-### Menu
-
-Get the menu at `/providers/<PROVIDER>/schools/<SCHOOL>/menu`.
-
-#### Parameters
-
-| Parameter | Description                                                   | Default value            |
-| --------- | ------------------------------------------------------------- | ------------------------ |
-| `?first`  | The date of the first menu (inclusive). `YYYY-MM-DD`, please. | The current date in UTC. |
-| `?last`   | The date of the last menu (inclusive). `YYYY-MM-DD`, please.  | `?first` plus 4 weeks.   |
+- List all menus at `/menus`.
+- Query individual menus at `/menus/:menuId`.
+- Query the days of a menu at `/menus/:menuId/days`. Use query parameters `?first` and `?last` (ISO8601 dates) to specify the range.
 
 ## Getting started
 
