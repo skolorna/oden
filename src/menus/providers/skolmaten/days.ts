@@ -1,12 +1,12 @@
 import { URLSearchParams } from "url";
 import { LocalDate } from "js-joda";
-import { Day } from "../../types";
+import { Day } from "../../../types";
 import { ListDays } from "../types";
 import { getSkolmatenTimeRanges } from "./time-range";
 import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
 import { MenuResponse, SkolmatenTimeRange } from "./types";
-import { dedupMeals } from "../../utils/dedup-meals";
+import { dedupMeals } from "../../../utils/dedup-meals";
 
 export interface GetRawDaysOptions extends SkolmatenTimeRange, Record<string, number | undefined> {
 	/**
@@ -36,8 +36,8 @@ export async function getRawDays({ station, year, weekOfYear, count }: GetRawDay
 	return res;
 }
 
-export const listSkolmatenDays: ListDays = async ({ menu: school, first, last }) => {
-	const skolmatenSchool = toSkolmatenID(school);
+export const listSkolmatenDays: ListDays = async ({ menu: menuId, first, last }) => {
+	const station = toSkolmatenID(menuId);
 
 	const ranges = getSkolmatenTimeRanges(first, last);
 
@@ -45,7 +45,7 @@ export const listSkolmatenDays: ListDays = async ({ menu: school, first, last })
 		ranges.map((range) =>
 			getRawDays({
 				...range,
-				station: skolmatenSchool,
+				station,
 			}),
 		),
 	);

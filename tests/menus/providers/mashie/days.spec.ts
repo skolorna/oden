@@ -1,16 +1,19 @@
 import cheerio from "cheerio";
 import { LocalDate } from "js-joda";
-import { ParseError } from "../../../src/errors";
-import {
-	getMashieDayLister,
-	monthLiterals,
-	parseDateText,
-	parseDayNode,
-	parseMealNode,
-} from "../../../src/providers/mashie/days";
-import { Day, Meal } from "../../../src/types";
+import { ParseError } from "../../../../src/errors";
+import { generateMashieProvider } from "../../../../src/menus/providers/mashie";
+import { monthLiterals, parseDateText, parseDayNode, parseMealNode } from "../../../../src/menus/providers/mashie/days";
+import { Day, Meal } from "../../../../src/types";
 
-describe("mashie menu", () => {
+const provider = generateMashieProvider({
+	info: {
+		name: "My Provider",
+		id: "my-mashie-provider",
+	},
+	baseUrl: "https://sodexo.mashie.com",
+});
+
+describe("mashie days", () => {
 	test("date parsing", () => {
 		const year = new Date().getFullYear();
 
@@ -60,14 +63,12 @@ describe("mashie menu", () => {
 	});
 
 	it("should work as intended", async () => {
-		const getMashieMenus = getMashieDayLister("https://sodexo.mashie.com");
-
-		const menu = await getMashieMenus({
+		const days = await provider.implementation.listDays({
 			menu: "b4639689-60f2-4a19-a2dc-abe500a08e45",
 			first: LocalDate.of(2000, 1, 1),
 			last: LocalDate.of(2077, 1, 1),
 		});
 
-		expect(menu.length).toBeGreaterThan(0);
+		expect(days.length).toBeGreaterThan(0);
 	});
 });

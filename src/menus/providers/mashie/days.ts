@@ -2,9 +2,9 @@ import cheerio, { Element } from "cheerio";
 import { LocalDate } from "js-joda";
 import fetch from "node-fetch";
 import { URL } from "url";
-import { ParseError } from "../../errors";
-import { Day, Meal } from "../../types";
-import { dedupMeals } from "../../utils/dedup-meals";
+import { ParseError } from "../../../errors";
+import { Day, Meal } from "../../../types";
+import { dedupMeals } from "../../../utils/dedup-meals";
 import { ListDays } from "../types";
 import { getRawMashieMenuQuerier } from "./menus";
 import { MashieGenerator } from "./types";
@@ -40,7 +40,7 @@ export function parseDateText(input: string): LocalDate {
 export function parseMealNode(element: Element): Meal {
 	const value = cheerio(element).text();
 
-	if (value?.length <= 0) {
+	if (value.length <= 0) {
 		throw new ParseError("unable to parse meal node");
 	}
 
@@ -67,10 +67,10 @@ export function parseDayNode(element: Element): Day {
 }
 
 export const getMashieDayLister: MashieGenerator<ListDays> = (options) => {
-	const queryMashieSchool = getRawMashieMenuQuerier(options);
+	const queryMashieMenu = getRawMashieMenuQuerier(options);
 
-	return async ({ menu: school, first, last }) => {
-		const { url: path } = await queryMashieSchool(school);
+	return async ({ menu, first, last }) => {
+		const { url: path } = await queryMashieMenu(menu);
 		const url = new URL(path, options.baseUrl);
 		const html = await fetch(url).then((res) => res.text());
 

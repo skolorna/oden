@@ -1,6 +1,6 @@
 import { LocalDate } from "js-joda";
-import { getSkolmatenTimeRanges } from "../../../src/providers/skolmaten/time-range";
-import { SkolmatenTimeRange } from "../../../src/providers/skolmaten/types";
+import { getSkolmatenTimeRanges } from "../../../../src/menus/providers/skolmaten/time-range";
+import { SkolmatenTimeRange } from "../../../../src/menus/providers/skolmaten/types";
 
 test("skolmaten time range conversion", () => {
 	expect(getSkolmatenTimeRanges(LocalDate.of(2020, 1, 1), LocalDate.of(2020, 5, 1))).toEqual<SkolmatenTimeRange[]>([

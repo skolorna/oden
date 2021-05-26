@@ -1,5 +1,5 @@
 import { LocalDate } from "js-joda";
-import { listSkolmatenDays } from "../../../src/providers/skolmaten/days";
+import { listSkolmatenDays } from "../../../../src/menus/providers/skolmaten/days";
 
 describe("menu test", () => {
 	it("should work", async () => {

@@ -1,5 +1,5 @@
-import performSkolmatenRequest from "../../../src/providers/skolmaten/request";
-import { DistrictsResponse } from "../../../src/providers/skolmaten/types";
+import performSkolmatenRequest from "../../../../src/menus/providers/skolmaten/request";
+import { DistrictsResponse } from "../../../../src/menus/providers/skolmaten/types";
 
 test("skolmaten api client", async () => {
 	const { districts } = await performSkolmatenRequest<DistrictsResponse>("/districts/?province=5662940552232960");

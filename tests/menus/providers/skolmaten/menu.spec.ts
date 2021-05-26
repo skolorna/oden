@@ -1,7 +1,7 @@
 import { NotFound } from "http-errors";
-import { querySkolmatenMenu } from "../../../src/providers/skolmaten/menu";
+import { querySkolmatenMenu } from "../../../../src/menus/providers/skolmaten/menu";
 
-test("skolmaten school", async () => {
+test("skolmaten menu", async () => {
 	const menu = await querySkolmatenMenu("85957002");
 
 	expect(menu.title).toMatch(/P\s?A Fogelström/i);

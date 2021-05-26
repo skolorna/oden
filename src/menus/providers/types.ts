@@ -1,5 +1,5 @@
 import { LocalDate } from "js-joda";
-import { Day } from "../types";
+import { Day } from "../../types";
 
 export interface ProviderMenu {
 	id: string;
