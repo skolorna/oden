@@ -20,7 +20,7 @@ Menu Proxy aggregates the various cafeteria menus from Swedish schools.
 
 ### API
 
-*Sorry for the poor documentation. It will be fixed.*
+_Sorry for the poor documentation. It will be fixed._
 
 - List all menus at `/menus`.
 - Query individual menus at `/menus/:menuId`.
