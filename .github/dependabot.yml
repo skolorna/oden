@@ -6,7 +6,13 @@
 version: 2
 updates:
   - package-ecosystem: npm
-    directory: "/"
+    directory: /
+    target-branch: develop
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /
     target-branch: develop
     schedule:
       interval: daily
