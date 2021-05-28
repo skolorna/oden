@@ -8,6 +8,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Node.js
         uses: actions/setup-node@v2.1.5
         with:
@@ -19,6 +20,7 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
       - run: yarn install --frozen-lockfile
+
       - run: yarn lint
 
   prettier:
@@ -26,6 +28,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Node.js
         uses: actions/setup-node@v2.1.5
         with:
@@ -37,6 +40,7 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
       - run: yarn install --frozen-lockfile
+
       - run: yarn prettier . --check
 
   test:
@@ -44,6 +48,7 @@ jobs:
 
     steps:
       - uses: actions/checkout@v2
+
       - name: Set up Node.js
         uses: actions/setup-node@v2.1.5
         with:
@@ -55,9 +60,20 @@ jobs:
           key: ${{ runner.os }}-modules-${{ hashFiles('**/yarn.lock') }}
 
       - run: yarn install --frozen-lockfile
+
       - run: yarn test --coverage
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v1
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
+
+  docker-test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v2
+
+      - run: docker-compose build
+
+      - run: docker-compose run test
