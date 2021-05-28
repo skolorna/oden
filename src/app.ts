@@ -1,6 +1,6 @@
 import fastify, { FastifyInstance, FastifyServerOptions } from "fastify";
 import { IncomingMessage, Server, ServerResponse } from "http";
-import { routes as providerRoutes } from "./providers";
+import { routes as menuRoutes } from "./menus";
 
 const build = (opts: FastifyServerOptions = {}): FastifyInstance<Server, IncomingMessage, ServerResponse> => {
 	const app: FastifyInstance = fastify({
@@ -12,8 +12,8 @@ const build = (opts: FastifyServerOptions = {}): FastifyInstance<Server, Incomin
 		return "Поехали!"; // Russian for "let's go!"
 	});
 
-	app.register(providerRoutes, {
-		prefix: "/providers",
+	app.register(menuRoutes, {
+		prefix: "/menus",
 	});
 
 	return app;

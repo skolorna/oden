@@ -8,15 +8,27 @@
   </a>
 </p>
 
-An API used to digest the various cafeteria menus from Swedish schools.
+Menu Proxy aggregates the various cafeteria menus from Swedish schools.
 
-## API reference
+## Reference
 
-The API is far from complete, and breaking changes should be expected. Therefore, we provide no documentation at the moment.
+### Terminology
+
+- A **school** is associated with one or more **menus**.
+- A **menu** consists of many **days**.
+- A day lists the meals served for a specific date on a particular menu.
+
+### API
+
+_Sorry for the poor documentation. It will be fixed._
+
+- List all menus at `/menus`.
+- Query individual menus at `/menus/:menuId`.
+- Query the days of a menu at `/menus/:menuId/days`. Use query parameters `?first` and `?last` (ISO8601 dates) to specify the range.
 
 ## Getting started
 
-The easiest way to get started is to clone this repository and then run this program with Docker:
+The easiest way to get started is to run this program with Docker:
 
 ```
 docker run -d -p 8000:80 ghcr.io/inteskolplattformen/menu-proxy:<VERSION>

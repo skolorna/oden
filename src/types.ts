@@ -1,12 +1,9 @@
 import { LocalDate } from "js-joda";
+import MenuID from "./menu-id";
 
-export type SchoolID = string;
-
-export interface School {
-	id: SchoolID;
-	name: string;
-	province?: string;
-	district?: string;
+export interface Menu {
+	id: MenuID;
+	title: string;
 }
 
 export interface Meal {
