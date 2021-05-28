@@ -20,7 +20,7 @@
 		"http-errors": "^1.8.0",
 		"js-joda": "^1.11.0",
 		"node-fetch": "^2.6.1",
-		"pino-pretty": "^5.0.0"
+		"pino-pretty": "^5.0.1"
 	},
 	"devDependencies": {
 		"@types/http-errors": "^1.8.0",
