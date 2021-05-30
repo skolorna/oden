@@ -1,6 +1,6 @@
 {
 	"name": "menu-proxy",
-	"version": "0.1.0-alpha.5",
+	"version": "0.1.0-alpha.6",
 	"main": "dist/server.js",
 	"repository": "git@github.com:inteskolplattformen/menu-proxy.git",
 	"author": "ThePicoNerd <ake.amcoff@gmail.com>",
@@ -17,6 +17,7 @@
 		"@sinclair/typebox": "^0.16.7",
 		"cheerio": "^1.0.0-rc.9",
 		"fastify": "^3.16.2",
+		"fastify-etag": "^2.1.0",
 		"http-errors": "^1.8.0",
 		"js-joda": "^1.11.0",
 		"node-fetch": "^2.6.1",

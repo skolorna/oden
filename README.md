@@ -31,7 +31,7 @@ _Sorry for the poor documentation. It will be fixed._
 The easiest way to get started is to run this program with Docker:
 
 ```
-docker run -d -p 8000:80 ghcr.io/inteskolplattformen/menu-proxy:<VERSION>
+docker run -d -p 8000:80 ghcr.io/inteskolplattformen/menu-proxy
 ```
 
 ## Customizing
