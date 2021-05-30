@@ -4212,10 +4212,10 @@ pify@^3.0.0:
   resolved "https://registry.yarnpkg.com/pify/-/pify-3.0.0.tgz#e5a4acd2c101fdf3d9a4d07f0dbc4db49dd28176"
   integrity sha1-5aSs0sEB/fPZpNB/DbxNtJ3SgXY=
 
-pino-pretty@^5.0.0:
-  version "5.0.0"
-  resolved "https://registry.yarnpkg.com/pino-pretty/-/pino-pretty-5.0.0.tgz#c25eb644db7e288dc5e4cd7b8b9d6728ef776985"
-  integrity sha512-onSCww1KYRYKk6khnAf572oaTqMOANXgLWeHNqM10CYXjnQMxL3iEZ/9GaSqP0KZhErcERn9H7GSXTNm1ulM8A==
+pino-pretty@^5.0.1:
+  version "5.0.1"
+  resolved "https://registry.yarnpkg.com/pino-pretty/-/pino-pretty-5.0.1.tgz#2cbdf1d743d97df3f0a9dd41cf440274ec770082"
+  integrity sha512-sm218/N1P6w6YWoebpME1xsT4tm+yNQWDBx3JzlH0mLYEt3uICEZqntAIw3LqYjlbX4mavo6kZV0cfGsZNO2tQ==
   dependencies:
     "@hapi/bourne" "^2.0.0"
     "@types/node" "^15.3.0"
