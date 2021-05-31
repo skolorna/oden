@@ -16,7 +16,7 @@
 	"dependencies": {
 		"@sinclair/typebox": "^0.16.7",
 		"cheerio": "^1.0.0-rc.9",
-		"fastify": "^3.16.2",
+		"fastify": "^3.17.0",
 		"fastify-etag": "^2.1.0",
 		"http-errors": "^1.8.0",
 		"js-joda": "^1.11.0",
