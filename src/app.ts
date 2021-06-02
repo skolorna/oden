@@ -1,5 +1,6 @@
 import fastify, { FastifyInstance, FastifyServerOptions } from "fastify";
 import { IncomingMessage, Server, ServerResponse } from "http";
+import Etag from "fastify-etag";
 import { routes as menuRoutes } from "./menus";
 
 const build = (opts: FastifyServerOptions = {}): FastifyInstance<Server, IncomingMessage, ServerResponse> => {
@@ -7,6 +8,8 @@ const build = (opts: FastifyServerOptions = {}): FastifyInstance<Server, Incomin
 		ignoreTrailingSlash: true,
 		...opts,
 	});
+
+	app.register(Etag);
 
 	app.get("/health", async () => {
 		return "Поехали!"; // Russian for "let's go!"
