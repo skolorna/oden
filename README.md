@@ -63,7 +63,7 @@ Get the [days](#day-object) of a specific menu.
 
 | Field | Type           | Description                        | Default                  |
 | ----- | -------------- | ---------------------------------- | ------------------------ |
-| first | ?ISO 8601 date | date of the first day (inclusive). | the current date (UTC)  |
+| first | ?ISO 8601 date | date of the first day (inclusive). | the current date (UTC)   |
 | last  | ?ISO 8601 date | date of the last day (inclusive).  | `?first` plus four weeks |
 
 ### Health check

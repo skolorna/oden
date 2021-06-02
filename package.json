@@ -16,12 +16,12 @@
 	"dependencies": {
 		"@sinclair/typebox": "^0.16.7",
 		"cheerio": "^1.0.0-rc.9",
-		"fastify": "^3.16.2",
+		"fastify": "^3.17.0",
 		"fastify-etag": "^2.1.0",
 		"http-errors": "^1.8.0",
 		"js-joda": "^1.11.0",
 		"node-fetch": "^2.6.1",
-		"pino-pretty": "^5.0.1"
+		"pino-pretty": "^5.0.2"
 	},
 	"devDependencies": {
 		"@types/http-errors": "^1.8.0",
@@ -29,12 +29,12 @@
 		"@types/node": "^15.6.1",
 		"@types/node-fetch": "^2.5.10",
 		"@typescript-eslint/eslint-plugin": "^4.26.0",
-		"@typescript-eslint/parser": "^4.25.0",
+		"@typescript-eslint/parser": "^4.26.0",
 		"eslint": "^7.27.0",
 		"eslint-config-airbnb": "^18.2.1",
 		"eslint-config-airbnb-typescript": "^12.3.1",
 		"eslint-config-prettier": "^8.3.0",
-		"eslint-plugin-import": "^2.23.3",
+		"eslint-plugin-import": "^2.23.4",
 		"eslint-plugin-jest": "^24.3.6",
 		"eslint-plugin-prettier": "^3.4.0",
 		"jest": "^26.6.3",
