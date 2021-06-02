@@ -18,10 +18,14 @@ jobs:
           username: ${{ github.repository_owner }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - id: prep
+        run: |
+          echo ::set-output name=version::${GITHUB_REF#refs/tags/v}
+
       - name: Build container image
         uses: docker/build-push-action@v2
         with:
           push: true
           tags: |
-            ghcr.io/inteskolplattformen/menu-proxy:${GITHUB_REF#refs/tags/v}
+            ghcr.io/inteskolplattformen/menu-proxy:${{ steps.prep.outputs.version }}
             ghcr.io/inteskolplattformen/menu-proxy:latest
