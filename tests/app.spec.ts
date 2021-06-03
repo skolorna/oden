@@ -22,28 +22,37 @@ describe("main application tests", () => {
 		});
 
 		expect(response.statusCode).toBe(200);
+		expect(response.headers["content-type"]).toMatch(/application\/json/);
+		expect(response.headers["cache-control"]).toBe("max-age=86400");
 		expect(response.json<Menu[]>().length).toBeGreaterThan(5000);
 	});
 
-	test("query menu", async () => {
-		const schoolResponse = await app.inject({
-			method: "GET",
-			url: "/menus/sodexo.2ae66740-672e-4183-ab2d-ac1e00b66a5f",
+	describe("single menu", () => {
+		it("should work", async () => {
+			const response = await app.inject({
+				method: "GET",
+				url: "/menus/sodexo.2ae66740-672e-4183-ab2d-ac1e00b66a5f",
+			});
+
+			expect(response.statusCode).toBe(200);
+			expect(response.headers["content-type"]).toMatch(/application\/json/);
+			expect(response.headers["cache-control"]).toBe("max-age=86400");
 		});
 
-		expect(schoolResponse.statusCode).toBe(200);
+		it("should return 404, not 500", async () => {
+			const response = await app.inject({
+				method: "GET",
+				url: "/menus/sodexo.0",
+			});
 
-		const notFoundResponse = await app.inject({
-			method: "GET",
-			url: "/menus/sodexo.0",
+			expect(response.statusCode).toBe(404);
+			expect(response.headers["cache-control"]).toBeUndefined();
 		});
-
-		expect(notFoundResponse.statusCode).toBe(404);
 	});
 
 	describe("menu days", () => {
 		it("should not accept invalid timestamps", async () => {
-			const nonISOResponse = await app.inject({
+			const response = await app.inject({
 				method: "GET",
 				url: "/menus/skolmaten.85957002/days",
 				query: {
@@ -51,9 +60,12 @@ describe("main application tests", () => {
 				},
 			});
 
-			expect(nonISOResponse.statusCode).toBe(422);
+			expect(response.statusCode).toBe(422);
+			expect(response.headers["cache-control"]).toBeUndefined();
+		});
 
-			const wrongTimesResponse = await app.inject({
+		it("should assert the timestamps are in order", async () => {
+			const response = await app.inject({
 				method: "GET",
 				url: "/menus/skolmaten.85957002/days",
 				query: {
@@ -62,7 +74,8 @@ describe("main application tests", () => {
 				},
 			});
 
-			expect(wrongTimesResponse.statusCode).toBe(400);
+			expect(response.statusCode).toBe(400);
+			expect(response.headers["cache-control"]).toBeUndefined();
 		});
 
 		it("should work without any parameters", async () => {
@@ -72,6 +85,8 @@ describe("main application tests", () => {
 			});
 
 			expect(response.statusCode).toBe(200);
+			expect(response.headers["content-type"]).toMatch(/application\/json/);
+			expect(response.headers["cache-control"]).toBe("max-age=86400");
 		});
 	});
 });

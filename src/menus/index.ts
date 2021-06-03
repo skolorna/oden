@@ -9,10 +9,10 @@ import { getProviderByID, listMenus, providers, queryMenu } from "./universal-pr
 export const providerInfo = providers.map((provider) => provider.info);
 
 export const routes: FastifyPluginCallback = async (fastify) => {
-	fastify.get("/", async () => {
+	fastify.get("/", async (_, reply) => {
 		const menus = await listMenus();
 
-		return menus;
+		return reply.header("Cache-Control", "max-age=86400").send(menus);
 	});
 
 	fastify.get<{
@@ -24,12 +24,12 @@ export const routes: FastifyPluginCallback = async (fastify) => {
 				params: QueryMenuParams,
 			},
 		},
-		async (req) => {
-			const menuId = MenuID.parse(req.params.menuId);
+		async (request, reply) => {
+			const menuId = MenuID.parse(request.params.menuId);
 
 			const menu = await queryMenu(menuId);
 
-			return menu;
+			return reply.header("Cache-Control", "max-age=86400").send(menu);
 		},
 	);
 
@@ -44,9 +44,9 @@ export const routes: FastifyPluginCallback = async (fastify) => {
 				querystring: ListDaysQuery,
 			},
 		},
-		async (req) => {
-			const menuId = MenuID.parse(req.params.menuId);
-			const { first: firstLiteral, last: lastLiteral } = req.query;
+		async (request, reply) => {
+			const menuId = MenuID.parse(request.params.menuId);
+			const { first: firstLiteral, last: lastLiteral } = request.query;
 
 			const first = firstLiteral ? parseISODate(firstLiteral) : LocalDate.now(ZoneId.UTC);
 			const last = lastLiteral ? parseISODate(lastLiteral) : first.plusWeeks(4);
@@ -63,7 +63,7 @@ export const routes: FastifyPluginCallback = async (fastify) => {
 				last,
 			});
 
-			return days;
+			return reply.header("Cache-Control", "max-age=86400").send(days);
 		},
 	);
 };
