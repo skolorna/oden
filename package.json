@@ -1,6 +1,6 @@
 {
 	"name": "menu-proxy",
-	"version": "0.1.0-alpha.6",
+	"version": "0.0.0-development",
 	"main": "dist/server.js",
 	"repository": "git@github.com:inteskolplattformen/menu-proxy.git",
 	"author": "ThePicoNerd <ake.amcoff@gmail.com>",
@@ -24,6 +24,7 @@
 		"pino-pretty": "^5.0.2"
 	},
 	"devDependencies": {
+		"@semantic-release/git": "^9.0.0",
 		"@types/http-errors": "^1.8.0",
 		"@types/jest": "^26.0.23",
 		"@types/node": "^15.6.1",
@@ -40,6 +41,7 @@
 		"jest": "^26.6.3",
 		"pkg": "^5.2.1",
 		"prettier": "^2.3.0",
+		"semantic-release": "^17.4.3",
 		"ts-jest": "^26.5.6",
 		"typescript": "^4.3.2"
 	}
