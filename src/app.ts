@@ -11,8 +11,8 @@ const build = (opts: FastifyServerOptions = {}): FastifyInstance<Server, Incomin
 
 	app.register(Etag);
 
-	app.get("/health", async () => {
-		return "Поехали!"; // Russian for "let's go!"
+	app.get("/health", async (_, reply) => {
+		return reply.header("Cache-Control", "no-cache").send("Поехали!"); // Russian for "let's go!"
 	});
 
 	app.register(menuRoutes, {
