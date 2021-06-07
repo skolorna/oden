@@ -1,10 +1,10 @@
 import cheerio, { Element } from "cheerio";
 import { LocalDate } from "js-joda";
-import fetch from "node-fetch";
 import { URL } from "url";
 import { ParseError } from "../../../errors";
 import { Day, Meal } from "../../../types";
 import { dedupMeals } from "../../../utils/dedup-meals";
+import { fetchRetry } from "../../../utils/fetch-retry";
 import { ListDays } from "../types";
 import { getRawMashieMenuQuerier } from "./menus";
 import { MashieGenerator } from "./types";
@@ -72,7 +72,7 @@ export const getMashieDayLister: MashieGenerator<ListDays> = (options) => {
 	return async ({ menu, first, last }) => {
 		const { url: path } = await queryMashieMenu(menu);
 		const url = new URL(path, options.baseUrl);
-		const html = await fetch(url).then((res) => res.text());
+		const html = await fetchRetry(url).then((res) => res.text());
 
 		const $ = cheerio.load(html);
 
