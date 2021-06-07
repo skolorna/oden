@@ -1,12 +1,12 @@
 import { NotFound } from "http-errors";
 import { URL } from "url";
-import { fetchRetry } from "../../../utils/fetch-retry";
+import { fetchWithUserAgent } from "../../fetch-with-ua";
 import { ListMenus, QueryMenu } from "../types";
 import { ListMenusResponse, MashieGenerator, QueryMashieMenu } from "./types";
 
 const getMenuLister: MashieGenerator<() => Promise<ListMenusResponse>> = ({ baseUrl }) => {
 	return async () => {
-		const data: ListMenusResponse = await fetchRetry(
+		const data: ListMenusResponse = await fetchWithUserAgent(
 			new URL("/public/app/internal/execute-query?country=se", baseUrl),
 			{
 				method: "POST",

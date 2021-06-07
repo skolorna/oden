@@ -1,4 +1,4 @@
-import { fetchRetry } from "../../../utils/fetch-retry";
+import { fetchWithUserAgent } from "../../fetch-with-ua";
 
 export interface SkolmatenRequestOptions {
 	path: string;
@@ -7,13 +7,12 @@ export interface SkolmatenRequestOptions {
 const performSkolmatenRequest = async <T>(path: string): Promise<T> => {
 	const url = `https://skolmaten.se/api/4${path}`;
 
-	const res = await fetchRetry(url, {
+	const res = await fetchWithUserAgent(url, {
 		headers: {
 			"API-Version": "4.0",
 			"Client-Token": "web",
 			"Client-Version-Token": "web",
 			Locale: "sv_SE",
-			"User-Agent": `Block me, I dare you!`,
 		},
 	});
 
