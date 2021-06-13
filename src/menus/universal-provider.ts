@@ -36,6 +36,7 @@ export async function listMenus(): Promise<Menu[]> {
 			return providerMenus.map((menu) => ({
 				id: new MenuID(provider.info.id, menu.id),
 				title: menu.title,
+				provider: provider.info,
 			}));
 		}),
 	);
@@ -51,5 +52,6 @@ export async function queryMenu(id: MenuID): Promise<Menu> {
 	return {
 		id: new MenuID(provider.info.id, menu.id),
 		title: menu.title,
+		provider: provider.info,
 	};
 }
