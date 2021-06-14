@@ -1,4 +1,4 @@
-import { ProviderInfo } from "../types";
+import { ProviderInfo } from "../../../types";
 
 export interface MashieMenu {
 	id: string;

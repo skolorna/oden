@@ -64,7 +64,7 @@ describe("mashie days", () => {
 
 	it("should work as intended", async () => {
 		const days = await provider.implementation.listDays({
-			menu: "b4639689-60f2-4a19-a2dc-abe500a08e45",
+			menu: "10910e60-20ca-4478-b864-abd8007ad970",
 			first: LocalDate.of(2000, 1, 1),
 			last: LocalDate.of(2077, 1, 1),
 		});

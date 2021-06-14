@@ -1,5 +1,5 @@
 import { LocalDate } from "js-joda";
-import { Day } from "../../types";
+import { Day, ProviderInfo } from "../../types";
 
 export interface ProviderMenu {
 	id: string;
@@ -17,11 +17,6 @@ export interface ListDaysQuery {
 }
 
 export type ListDays = (query: ListDaysQuery) => Promise<Day[]>;
-
-export interface ProviderInfo {
-	name: string;
-	id: string;
-}
 
 export interface ProviderImplementation {
 	listMenus: ListMenus;
