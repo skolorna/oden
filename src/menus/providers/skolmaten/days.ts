@@ -59,7 +59,7 @@ export const listSkolmatenDays: ListDays = async ({ menu: menuId, first, last })
 				const date = LocalDate.of(year, month, day);
 
 				if (date >= first && date <= last) {
-					const meals = dedupMeals(inputMeals);
+					const meals = dedupMeals(inputMeals).map(({ value }) => ({ value }));
 
 					acc.push({
 						date,
