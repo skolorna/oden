@@ -10,7 +10,7 @@ describe("fetch retry tests", () => {
 
 		await expect(
 			fetchRetry("https://httpbin.org/status/500", undefined, { backoff: 100 }),
-		).rejects.toThrowErrorMatchingInlineSnapshot(`"http request failed after 3 retries"`);
+		).rejects.toThrowErrorMatchingInlineSnapshot(`"http request failed after 3 attempts"`);
 	});
 
 	it("should skip 404s", async () => {
@@ -23,6 +23,18 @@ describe("fetch retry tests", () => {
 		const res = await fetchRetry("https://httpbin.org/status/200");
 
 		expect(res.status).toBe(200);
+	});
+
+	it("should handle weird arguments correctly", async () => {
+		await expect(
+			fetchRetry("https://httpbin.org/status/200", undefined, { maxAttempts: 0 }),
+		).rejects.toThrowErrorMatchingInlineSnapshot(`"http request failed after 0 attempts"`);
+
+		await expect(
+			fetchRetry("https://httpbin.org/status/200", undefined, {
+				backoff: -200, // You cannot wait for -200 milliseconds ...
+			}),
+		).rejects.toThrowErrorMatchingInlineSnapshot(`"backoff must be a non-negative number (got -200)."`);
 	});
 
 	it("should add a user-agent header", async () => {
