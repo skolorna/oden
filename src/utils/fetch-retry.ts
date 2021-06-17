@@ -37,7 +37,6 @@ export async function fetchRetry(
 	init: RequestInit = {},
 	{ maxAttempts = 3, backoff = 250, retryOn = [408, 500, 502, 503, 504, 524] }: FetchRetryOptions = {},
 ): Promise<Response> {
-	assert()
 	if (backoff < 0) {
 		throw new Error(`backoff must be a non-negative number (got ${backoff}).`);
 	}
