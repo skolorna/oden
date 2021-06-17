@@ -17,13 +17,20 @@ export interface FetchRetryOptions {
  *
  * `fetch` but it performs the request again if the result is bad (for any sensible status code; 404s are not retried by default).
  *
+ * It also sets the `User-Agent` header.
  */
 export async function fetchRetry(
 	url: RequestInfo,
 	init: RequestInit = {},
 	{ maxRetries = 3, backoff = 250, retryOn = [408, 500, 502, 503, 504, 524], retriesMade = 0 }: FetchRetryOptions = {},
 ): Promise<Response> {
-	const res = await fetch(url, init);
+	const res = await fetch(url, {
+		...init,
+		headers: {
+			"User-Agent": "Block me, I dare you",
+			...init?.headers,
+		},
+	});
 
 	if (!retryOn.includes(res.status)) {
 		return res;
