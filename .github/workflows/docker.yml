@@ -27,5 +27,5 @@ jobs:
         with:
           push: true
           tags: |
-            ghcr.io/inteskolplattformen/menu-proxy:${{ steps.prep.outputs.version }}
-            ghcr.io/inteskolplattformen/menu-proxy:latest
+            ghcr.io/skolorna/menu-proxy:${{ steps.prep.outputs.version }}
+            ghcr.io/skolorna/menu-proxy:latest
