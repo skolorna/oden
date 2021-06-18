@@ -1,7 +1,7 @@
 import { InternalServerError } from "http-errors";
 import fetch, { RequestInfo, RequestInit, Response } from "node-fetch";
 
-export const USER_AGENT = "Block me, i dare you";
+export const USER_AGENT = "Block me, I dare you";
 
 export function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
