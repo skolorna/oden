@@ -12,7 +12,7 @@ export const routes: FastifyPluginCallback = async (fastify) => {
 	fastify.get("/", async (_, reply) => {
 		const menus = await listMenus();
 
-		return reply.header("Cache-Control", "max-age=86400").send(menus);
+		return reply.header("Cache-Control", "max-age=86400, stale-while-revalidate=604800").send(menus);
 	});
 
 	fastify.get<{

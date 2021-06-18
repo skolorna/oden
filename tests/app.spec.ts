@@ -14,6 +14,33 @@ describe("main application tests", () => {
 		expect(response.headers["cache-control"]).toBe("no-cache");
 	});
 
+	test("cors", async () => {
+		/**
+		 * Expected Access-Control-Allow-Origin headers. `undefined` if the origin should not be allowed.
+		 */
+		const origins: Record<string, string | undefined> = {
+			"http://localhost:3000": "http://localhost:3000",
+			"http://localhost": "http://localhost",
+			"https://localhost": "https://localhost",
+			"https://google.com": undefined,
+			"https://localhost.org": undefined,
+		};
+
+		await Promise.all(
+			Object.entries(origins).map(async ([origin, expectedHeader]) => {
+				const response = await app.inject({
+					method: "GET",
+					url: "/health",
+					headers: {
+						origin,
+					},
+				});
+
+				expect(response.headers["access-control-allow-origin"]).toBe(expectedHeader);
+			}),
+		);
+	});
+
 	test("list menus", async () => {
 		jest.setTimeout(20000);
 
@@ -24,8 +51,7 @@ describe("main application tests", () => {
 
 		expect(response.statusCode).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/application\/json/);
-		expect(response.headers["cache-control"]).toBe("max-age=86400");
-		expect(response.headers["access-control-allow-origin"]).toBe("*");
+		expect(response.headers["cache-control"]).toBe("max-age=86400, stale-while-revalidate=604800");
 		expect(response.json<Menu[]>().length).toBeGreaterThan(5000);
 	});
 

@@ -2,8 +2,8 @@
 	"name": "menu-proxy",
 	"version": "1.1.0",
 	"main": "dist/server.js",
-	"repository": "git@github.com:inteskolplattformen/menu-proxy.git",
-	"author": "ThePicoNerd <ake.amcoff@gmail.com>",
+	"repository": "git@github.com:skolorna/menu-proxy.git",
+	"author": "ThePicoNerd <ake@amcoff.net>",
 	"license": "MIT",
 	"private": true,
 	"scripts": {

@@ -3,8 +3,8 @@
 </p>
 
 <p align="center">
-  <a href="https://codecov.io/gh/inteskolplattformen/menu-proxy">
-    <img src="https://codecov.io/gh/inteskolplattformen/menu-proxy/branch/main/graph/badge.svg?token=rUytc5q58t"/>
+  <a href="https://codecov.io/gh/skolorna/menu-proxy">
+    <img src="https://codecov.io/gh/skolorna/menu-proxy/branch/main/graph/badge.svg?token=rUytc5q58t"/>
   </a>
 </p>
 
@@ -77,7 +77,7 @@ Returns `200 OK` if the API is healthy.
 The easiest way to get started is to run this program with Docker:
 
 ```
-docker run -d -p 8000:80 ghcr.io/inteskolplattformen/menu-proxy
+docker run -d -p 8000:80 ghcr.io/skolorna/menu-proxy
 ```
 
 ## Configuring
