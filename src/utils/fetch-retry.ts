@@ -1,6 +1,8 @@
 import { InternalServerError } from "http-errors";
 import fetch, { RequestInfo, RequestInit, Response } from "node-fetch";
 
+export const USER_AGENT = "Block me, i dare you";
+
 export function sleep(ms: number): Promise<void> {
 	return new Promise((resolve) => setTimeout(resolve, ms));
 }
@@ -50,7 +52,7 @@ export async function fetchRetry(
 		const res = await fetch(url, {
 			...init,
 			headers: {
-				"User-Agent": "Block me, I dare you",
+				"User-Agent": USER_AGENT,
 				...init?.headers,
 			},
 		});
