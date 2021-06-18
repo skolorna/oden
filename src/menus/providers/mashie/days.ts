@@ -3,7 +3,7 @@ import { LocalDate } from "js-joda";
 import { URL } from "url";
 import { ParseError } from "../../../errors";
 import { Day, Meal } from "../../../types";
-import { dedupMeals } from "../../../utils/dedup-meals";
+import { polishMeals } from "../../../utils/polish-meals";
 import { fetchRetry } from "../../../utils/fetch-retry";
 import { ListDays } from "../types";
 import { getRawMashieMenuQuerier } from "./menus";
@@ -54,7 +54,7 @@ export function parseDayNode(element: Element): Day {
 
 	const dateText = $.find(".panel-heading .pull-right").text();
 
-	const meals = dedupMeals(
+	const meals = polishMeals(
 		$.find(".app-daymenu-name")
 			.toArray()
 			.map((mealNode) => parseMealNode(mealNode)),
