@@ -53,7 +53,7 @@ export async function fetchRetry(
 			...init,
 			headers: {
 				"User-Agent": USER_AGENT,
-				...init?.headers,
+				...init.headers,
 			},
 		});
 
