@@ -24,7 +24,7 @@ describe("main application tests", () => {
 
 		expect(response.statusCode).toBe(200);
 		expect(response.headers["content-type"]).toMatch(/application\/json/);
-		expect(response.headers["cache-control"]).toBe("max-age=86400");
+		expect(response.headers["cache-control"]).toBe("max-age=86400, stale-while-revalidate=604800");
 		expect(response.headers["access-control-allow-origin"]).toBe("*");
 		expect(response.json<Menu[]>().length).toBeGreaterThan(5000);
 	});
