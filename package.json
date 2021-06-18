@@ -1,6 +1,6 @@
 {
 	"name": "menu-proxy",
-	"version": "1.1.0",
+	"version": "1.1.1",
 	"main": "dist/server.js",
 	"repository": "git@github.com:skolorna/menu-proxy.git",
 	"author": "ThePicoNerd <ake@amcoff.net>",
