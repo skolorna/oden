@@ -6,7 +6,7 @@ import { getSkolmatenTimeRanges } from "./time-range";
 import { toSkolmatenID } from "./parser";
 import performSkolmatenRequest from "./request";
 import { MenuResponse, SkolmatenTimeRange } from "./types";
-import { dedupMeals } from "../../../utils/dedup-meals";
+import { polishMeals } from "../../../utils/polish-meals";
 
 export interface GetRawDaysOptions extends SkolmatenTimeRange, Record<string, number | undefined> {
 	/**
@@ -59,7 +59,7 @@ export const listSkolmatenDays: ListDays = async ({ menu: menuId, first, last })
 				const date = LocalDate.of(year, month, day);
 
 				if (date >= first && date <= last) {
-					const meals = dedupMeals(inputMeals).map(({ value }) => ({ value }));
+					const meals = polishMeals(inputMeals).map(({ value }) => ({ value }));
 
 					acc.push({
 						date,
