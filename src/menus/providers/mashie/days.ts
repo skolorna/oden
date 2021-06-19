@@ -7,7 +7,7 @@ import { polishMeals } from "../../../utils/polish-meals";
 import { fetchRetry } from "../../../utils/fetch-retry";
 import { ListDays } from "../types";
 import { getRawMashieMenuQuerier } from "./menus";
-import { MashieGenerator } from "./types";
+import { MashieFactory } from "./types";
 
 export const monthLiterals = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 
@@ -66,7 +66,7 @@ export function parseDayNode(element: Element): Day {
 	};
 }
 
-export const getMashieDayLister: MashieGenerator<ListDays> = (options) => {
+export const getMashieDayLister: MashieFactory<ListDays> = (options) => {
 	const queryMashieMenu = getRawMashieMenuQuerier(options);
 
 	return async ({ menu, first, last }) => {
