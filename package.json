@@ -15,6 +15,7 @@
 	},
 	"dependencies": {
 		"@sinclair/typebox": "^0.16.7",
+		"@types/url-join": "^4.0.0",
 		"cheerio": "^1.0.0-rc.10",
 		"fastify": "^3.17.0",
 		"fastify-compress": "^3.6.0",
@@ -23,7 +24,8 @@
 		"http-errors": "^1.8.0",
 		"js-joda": "^1.11.0",
 		"node-fetch": "^2.6.1",
-		"pino-pretty": "^5.0.2"
+		"pino-pretty": "^5.0.2",
+		"url-join": "^4.0.1"
 	},
 	"devDependencies": {
 		"@semantic-release/changelog": "^5.0.1",
