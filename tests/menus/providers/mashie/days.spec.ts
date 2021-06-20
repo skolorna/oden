@@ -37,28 +37,55 @@ describe("mashie days", () => {
 		});
 	});
 
-	test("day node parsing", () => {
-		const html = `<div class="day">
-			<h4 class="panel-heading">
-				<span class="pull-right">17 maj</span>
-			</h4>
-			<ul>
-				<li class="app-daymenu-name">Fisk Björkeby</li>
-				<li class="app-daymenu-name">Fisk Björkeby</li>
-				<li class="app-daymenu-name">Tacobuffé</li>
-			</ul>
-		</div>`;
+	describe("day node parsing", () => {
+		it("should work", () => {
+			const html = `<div class="day">
+				<h4 class="panel-heading">
+					<span class="pull-right">17 maj</span>
+				</h4>
+				<ul>
+					<li class="app-daymenu-name">Fisk Björkeby</li>
+					<li class="app-daymenu-name">Fisk Björkeby</li>
+					<li class="app-daymenu-name">Tacobuffé</li>
+				</ul>
+			</div>`;
 
-		expect(parseDayNode(cheerio.load(html)(".day")[0])).toEqual<Day>({
-			date: LocalDate.of(new Date().getFullYear(), 5, 17),
-			meals: [
-				{
-					value: "Fisk Björkeby",
-				},
-				{
-					value: "Tacobuffé",
-				},
-			],
+			expect(parseDayNode(cheerio.load(html)(".day")[0])).toEqual<Day>({
+				date: LocalDate.of(new Date().getFullYear(), 5, 17),
+				meals: [
+					{
+						value: "Fisk Björkeby",
+					},
+					{
+						value: "Tacobuffé",
+					},
+				],
+			});
+		});
+
+		it("should handle empty meal nodes gracefully", () => {
+			const html = `<div class="day">
+				<h4 class="panel-heading">
+					<span class="pull-right">17 jun</span>
+				</h4>
+				<ul>
+					<li class="app-daymenu-name">Köttbullar</li>
+					<li class="app-daymenu-name"></li>
+					<li class="app-daymenu-name">Pannkaka</li>
+				</ul>
+			</div>`;
+
+			expect(parseDayNode(cheerio.load(html)(".day")[0])).toEqual<Day>({
+				date: LocalDate.of(new Date().getFullYear(), 6, 17),
+				meals: [
+					{
+						value: "Köttbullar",
+					},
+					{
+						value: "Pannkaka",
+					},
+				],
+			});
 		});
 	});
 

@@ -57,7 +57,14 @@ export function parseDayNode(element: Element): Day {
 	const meals = polishMeals(
 		$.find(".app-daymenu-name")
 			.toArray()
-			.map((mealNode) => parseMealNode(mealNode)),
+			.reduce((acc, mealNode) => {
+				try {
+					acc.push(parseMealNode(mealNode));
+				} finally {
+					// eslint-disable-next-line no-unsafe-finally
+					return acc;
+				}
+			}, [] as Meal[]),
 	);
 
 	return {
