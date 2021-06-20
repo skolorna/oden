@@ -8,7 +8,7 @@ export interface MashieMenu {
 
 export type ListMenusResponse = MashieMenu[];
 
-export interface MashieGeneratorOptions {
+export interface MashieFactoryOptions {
 	info: ProviderInfo;
 	baseUrl: string;
 }
@@ -16,6 +16,6 @@ export interface MashieGeneratorOptions {
 /**
  * A function that generates a provider-specific implementation of something.
  */
-export type MashieGenerator<T> = (options: MashieGeneratorOptions) => T;
+export type MashieFactory<T> = (options: MashieFactoryOptions) => T;
 
 export type QueryMashieMenu = (id: string) => Promise<MashieMenu>;

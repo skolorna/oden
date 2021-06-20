@@ -1,8 +1,8 @@
-import { listSkolmatenMenus, validateMenuName } from "../../../../src/menus/providers/skolmaten/crawler";
+import { listSkolmatenMenus, menuNameIsValid } from "../../../../src/menus/providers/skolmaten/crawler";
 
 test("menu name validation", () => {
-	expect(validateMenuName("Information!")).toBeFalsy();
-	expect(validateMenuName("Södra Latin")).toBeTruthy();
+	expect(menuNameIsValid("Information!")).toBeFalsy();
+	expect(menuNameIsValid("Södra Latin")).toBeTruthy();
 });
 
 test("crawler", async () => {

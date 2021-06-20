@@ -1,34 +1,48 @@
 import { DistrictsResponse, ProvincesResponse, SkolmatenStationsResponse } from "./types";
-import performSkolmatenRequest from "./request";
+import skolmatenFetch from "./fetch";
 import { ListMenus, ProviderMenu } from "../types";
 
-export function validateMenuName(name: string): boolean {
+export function menuNameIsValid(name: string): boolean {
 	return !/info/i.test(name);
 }
 
 export const listSkolmatenMenus: ListMenus = async () => {
-	const { provinces } = await performSkolmatenRequest<ProvincesResponse>("/provinces");
+	const { provinces } = await skolmatenFetch<ProvincesResponse>("provinces");
 
 	const menus3d: ProviderMenu[][][] = await Promise.all(
 		provinces.map(async (province) => {
-			const { districts } = await performSkolmatenRequest<DistrictsResponse>(`/districts?province=${province.id}`);
+			const { districts } = await skolmatenFetch<DistrictsResponse>(
+				"districts",
+				new URLSearchParams({
+					province: province.id.toString(),
+				}),
+			);
 
 			return Promise.all(
 				districts.map(async (district) => {
-					const { stations } = await performSkolmatenRequest<SkolmatenStationsResponse>(
-						`/stations?district=${district.id}`,
+					const { stations } = await skolmatenFetch<SkolmatenStationsResponse>(
+						"stations",
+						new URLSearchParams({
+							district: district.id.toString(),
+						}),
 					);
 
-					return stations.map(({ id, name }) => ({
-						id: id.toString(),
-						title: name,
-					}));
+					return stations.reduce((acc, { id, name }) => {
+						if (menuNameIsValid(name)) {
+							acc.push({
+								id: id.toString(),
+								title: name,
+							});
+						}
+
+						return acc;
+					}, [] as ProviderMenu[]);
 				}),
 			);
 		}),
 	);
 
-	const menus = menus3d.flat(2).filter(({ title: name }) => validateMenuName(name));
+	const menus = menus3d.flat(2);
 
 	return menus;
 };

@@ -4,7 +4,7 @@ import { Day } from "../../../types";
 import { ListDays } from "../types";
 import { getSkolmatenTimeRanges } from "./time-range";
 import { toSkolmatenID } from "./parser";
-import performSkolmatenRequest from "./request";
+import skolmatenFetch from "./fetch";
 import { MenuResponse, SkolmatenTimeRange } from "./types";
 import { polishMeals } from "../../../utils/polish-meals";
 
@@ -31,7 +31,7 @@ export async function getRawDays({ station, year, weekOfYear, count }: GetRawDay
 		count: count.toString(),
 	});
 
-	const res = await performSkolmatenRequest<MenuResponse>(`/menu?${params.toString()}`);
+	const res = await skolmatenFetch<MenuResponse>(`/menu?${params.toString()}`);
 
 	return res;
 }

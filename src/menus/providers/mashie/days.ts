@@ -7,7 +7,7 @@ import { polishMeals } from "../../../utils/polish-meals";
 import { fetchRetry } from "../../../utils/fetch-retry";
 import { ListDays } from "../types";
 import { getRawMashieMenuQuerier } from "./menus";
-import { MashieGenerator } from "./types";
+import { MashieFactory } from "./types";
 
 export const monthLiterals = ["jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec"];
 
@@ -57,7 +57,14 @@ export function parseDayNode(element: Element): Day {
 	const meals = polishMeals(
 		$.find(".app-daymenu-name")
 			.toArray()
-			.map((mealNode) => parseMealNode(mealNode)),
+			.reduce((acc, mealNode) => {
+				try {
+					acc.push(parseMealNode(mealNode));
+				} finally {
+					// eslint-disable-next-line no-unsafe-finally
+					return acc;
+				}
+			}, [] as Meal[]),
 	);
 
 	return {
@@ -66,7 +73,7 @@ export function parseDayNode(element: Element): Day {
 	};
 }
 
-export const getMashieDayLister: MashieGenerator<ListDays> = (options) => {
+export const getMashieDayLister: MashieFactory<ListDays> = (options) => {
 	const queryMashieMenu = getRawMashieMenuQuerier(options);
 
 	return async ({ menu, first, last }) => {

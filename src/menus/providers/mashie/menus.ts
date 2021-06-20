@@ -2,9 +2,9 @@ import { NotFound } from "http-errors";
 import { URL } from "url";
 import { fetchRetry } from "../../../utils/fetch-retry";
 import { ListMenus, QueryMenu } from "../types";
-import { ListMenusResponse, MashieGenerator, QueryMashieMenu } from "./types";
+import { ListMenusResponse, MashieFactory, QueryMashieMenu } from "./types";
 
-const getMenuLister: MashieGenerator<() => Promise<ListMenusResponse>> = ({ baseUrl }) => {
+const getMenuLister: MashieFactory<() => Promise<ListMenusResponse>> = ({ baseUrl }) => {
 	return async () => {
 		const data: ListMenusResponse = await fetchRetry(
 			new URL("/public/app/internal/execute-query?country=se", baseUrl),
@@ -17,24 +17,24 @@ const getMenuLister: MashieGenerator<() => Promise<ListMenusResponse>> = ({ base
 	};
 };
 
-export const getMashieSchoolLister: MashieGenerator<ListMenus> = (options) => {
-	const listSchools = getMenuLister(options);
+export const getMashieMenuLister: MashieFactory<ListMenus> = (options) => {
+	const listMenus = getMenuLister(options);
 
 	return async () => {
-		const schools = await listSchools();
+		const menus = await listMenus();
 
-		return schools.map(({ id, title }) => ({
+		return menus.map(({ id, title }) => ({
 			id,
 			title,
 		}));
 	};
 };
 
-export const getRawMashieMenuQuerier: MashieGenerator<QueryMashieMenu> = (baseUrl) => {
-	const listSchools = getMenuLister(baseUrl);
+export const getRawMashieMenuQuerier: MashieFactory<QueryMashieMenu> = (baseUrl) => {
+	const listMenus = getMenuLister(baseUrl);
 
 	return async (id) => {
-		const menus = await listSchools();
+		const menus = await listMenus();
 
 		const menu = menus.find(({ id: menuID }) => menuID === id);
 
@@ -46,7 +46,7 @@ export const getRawMashieMenuQuerier: MashieGenerator<QueryMashieMenu> = (baseUr
 	};
 };
 
-export const getMashieMenuQuerier: MashieGenerator<QueryMenu> = (options) => {
+export const getMashieMenuQuerier: MashieFactory<QueryMenu> = (options) => {
 	const queryMenu = getRawMashieMenuQuerier(options);
 
 	return async (queryId) => {
