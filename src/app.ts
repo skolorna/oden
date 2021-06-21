@@ -4,7 +4,7 @@ import Etag from "fastify-etag";
 import fastifyCors from "fastify-cors";
 import fastifyCompress from "fastify-compress";
 import { routes as menuRoutes } from "./menus";
-import { LOCALHOST_HTTP_REGEX } from "./utils/regex";
+import { LOCALHOST_HTTP_REGEX, SKOLORNA_HTTP_REGEX } from "./utils/regex";
 
 const build = (opts: FastifyServerOptions = {}): FastifyInstance<Server, IncomingMessage, ServerResponse> => {
 	const app: FastifyInstance = fastify({
@@ -13,7 +13,7 @@ const build = (opts: FastifyServerOptions = {}): FastifyInstance<Server, Incomin
 	});
 
 	app.register(fastifyCors, {
-		origin: [LOCALHOST_HTTP_REGEX],
+		origin: [LOCALHOST_HTTP_REGEX, SKOLORNA_HTTP_REGEX],
 	});
 
 	app.register(Etag);

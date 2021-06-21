@@ -24,6 +24,9 @@ describe("main application tests", () => {
 			"https://localhost": "https://localhost",
 			"https://google.com": undefined,
 			"https://localhost.org": undefined,
+			"https://skolorna.com": "https://skolorna.com",
+			"http://dev.skolorna.com": "http://dev.skolorna.com",
+			"http://fakeskolorna.com": undefined,
 		};
 
 		await Promise.all(
