@@ -24,7 +24,7 @@
 		"http-errors": "^1.8.0",
 		"js-joda": "^1.11.0",
 		"node-fetch": "^2.6.1",
-		"pino-pretty": "^5.0.2",
+		"pino-pretty": "^5.1.0",
 		"url-join": "^4.0.1"
 	},
 	"devDependencies": {
