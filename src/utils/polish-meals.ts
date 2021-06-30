@@ -1,16 +1,5 @@
 import { Meal } from "../types";
-
-/**
- * Polish a meal by trimming the value.
- *
- * @param {Meal} meal Meal.
- * @returns {Meal} Polished meal.
- */
-export function polishMealValue(value: string): string {
-	// Trim same characters as String.trim(), as well as punctuation.
-	// https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/String/Trim#polyfill
-	return value.replace(/^[\s\uFEFF\xA0.]+|[\s\uFEFF\xA0.]+$/g, "");
-}
+import { trimTitle } from "./trim-title";
 
 /**
  * Deduplicate and trim meals.
@@ -25,7 +14,7 @@ export function polishMeals(meals: Meal[]): Meal[] {
 	for (let i = 0; i < meals.length; i += 1) {
 		const meal = meals[i];
 
-		const polishedValue = polishMealValue(meal.value);
+		const polishedValue = trimTitle(meal.value);
 
 		const comp = polishedValue.toLocaleLowerCase();
 

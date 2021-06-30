@@ -1,6 +1,7 @@
 import { NotFound } from "http-errors";
 import MenuID from "../menu-id";
 import { Menu } from "../types";
+import { trimTitle } from "../utils/trim-title";
 import mpi from "./providers/mpi";
 import skolmaten from "./providers/skolmaten";
 import sodexo from "./providers/sodexo";
@@ -35,13 +36,13 @@ export async function listMenus(): Promise<Menu[]> {
 
 			return providerMenus.map((menu) => ({
 				id: new MenuID(provider.info.id, menu.id),
-				title: menu.title,
+				title: trimTitle(menu.title),
 				provider: provider.info,
 			}));
 		}),
 	);
 
-	return menus2d.flat();
+	return menus2d.flat().sort((a, b) => a.title.localeCompare(b.title));
 }
 
 export async function queryMenu(id: MenuID): Promise<Menu> {
