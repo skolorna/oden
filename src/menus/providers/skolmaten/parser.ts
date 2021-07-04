@@ -9,3 +9,7 @@ export function toSkolmatenID(input: string): number {
 
 	return parsed;
 }
+
+export function menuTitle(stationName: string, districtName: string): string {
+	return `${stationName}, ${districtName}`;
+}

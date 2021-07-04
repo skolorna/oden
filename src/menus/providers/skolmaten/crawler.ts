@@ -1,6 +1,7 @@
 import { DistrictsResponse, ProvincesResponse, SkolmatenStationsResponse } from "./types";
 import skolmatenFetch from "./fetch";
 import { ListMenus, ProviderMenu } from "../types";
+import { menuTitle } from "./parser";
 
 export function menuNameIsValid(name: string): boolean {
 	return !/info/i.test(name);
@@ -31,7 +32,7 @@ export const listSkolmatenMenus: ListMenus = async () => {
 						if (menuNameIsValid(name)) {
 							acc.push({
 								id: id.toString(),
-								title: name,
+								title: menuTitle(name, district.name),
 							});
 						}
 

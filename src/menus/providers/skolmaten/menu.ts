@@ -2,7 +2,7 @@ import { NotFound } from "http-errors";
 import { LocalDate } from "js-joda";
 import { QueryMenu } from "../types";
 import { getRawDays } from "./days";
-import { toSkolmatenID } from "./parser";
+import { menuTitle, toSkolmatenID } from "./parser";
 import { getSkolmatenTimeRanges } from "./time-range";
 
 export const querySkolmatenMenu: QueryMenu = async (id) => {
@@ -21,6 +21,6 @@ export const querySkolmatenMenu: QueryMenu = async (id) => {
 
 	return {
 		id: station.id.toString(),
-		title: station.name,
+		title: menuTitle(station.name, station.district.name),
 	};
 };
