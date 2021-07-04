@@ -1,3 +1,12 @@
+## [1.1.4](https://github.com/skolorna/menu-proxy/compare/v1.1.3...v1.1.4) (2021-07-04)
+
+
+### Bug Fixes
+
+* **cors:** Allow *.skolorna.com ([17f9229](https://github.com/skolorna/menu-proxy/commit/17f92298f682f6e1692e6a89e688a6a9ffe0328e))
+* **proxy:** Add district name to Skolmaten menus ([55fa397](https://github.com/skolorna/menu-proxy/commit/55fa39764b3f15a930795b404c3c036566edfebd))
+* **proxy:** Trim school names ([a1295cd](https://github.com/skolorna/menu-proxy/commit/a1295cd71872e7a5292f9773d9ea098581158054))
+
 ## [1.1.3](https://github.com/skolorna/menu-proxy/compare/v1.1.2...v1.1.3) (2021-06-20)
 
 
