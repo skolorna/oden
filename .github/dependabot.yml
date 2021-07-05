@@ -5,7 +5,7 @@
 
 version: 2
 updates:
-  - package-ecosystem: npm
+  - package-ecosystem: cargo
     directory: /
     target-branch: develop
     schedule:
