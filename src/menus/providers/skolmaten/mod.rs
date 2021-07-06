@@ -8,9 +8,12 @@ use futures::stream::{self, StreamExt};
 use reqwest::Client;
 use serde::Deserialize;
 
-use crate::menus::{LocalDay, LocalMenu, Provider};
+use crate::{
+    errors::{BadInputError, Error, NotFoundError, Result},
+    menus::{providers::skolmaten::days::query_station, LocalDay, LocalMenu, Provider},
+};
 
-use self::{days::list_days, fetch::fetch_json};
+use self::{days::list_days, fetch::fetch};
 
 /// Maximum number of concurrent HTTP requests when crawling. For comparison,
 /// Firefox allows 7 concurrent requests. There is virtually no improvement for
@@ -28,7 +31,7 @@ struct ProvincesResponse {
     provinces: Vec<Province>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 struct District {
     id: u64,
     name: String,
@@ -39,7 +42,7 @@ struct DistrictsResponse {
     districts: Vec<District>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 struct Station {
     id: u64,
     name: String,
@@ -65,30 +68,36 @@ impl Station {
 
 pub struct Skolmaten {}
 
-async fn list_provinces(client: &Client) -> reqwest::Result<Vec<Province>> {
-    let res = fetch_json::<ProvincesResponse>(&client, "provinces")
-        .await
-        .unwrap();
+impl Skolmaten {
+    fn parse_menu_id(menu_id: &str) -> Result<u64> {
+        menu_id
+            .parse::<u64>()
+            .map_err(|e| Error::BadInputError(BadInputError::ParseIntError(e)))
+    }
+}
+
+async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
+    let res = fetch(&client, "provinces")
+        .await?
+        .json::<ProvincesResponse>()
+        .await?;
 
     Ok(res.provinces)
 }
 
-async fn list_districts_in_province(
-    client: &Client,
-    province_id: u64,
-) -> reqwest::Result<Vec<District>> {
-    let res =
-        fetch_json::<DistrictsResponse>(client, &format!("districts?province={}", province_id))
-            .await?;
+async fn list_districts_in_province(client: &Client, province_id: u64) -> Result<Vec<District>> {
+    let res = fetch(client, &format!("districts?province={}", province_id))
+        .await?
+        .json::<DistrictsResponse>()
+        .await?;
 
     Ok(res.districts)
 }
 
-async fn list_stations_in_district(
-    client: &Client,
-    district_id: u64,
-) -> reqwest::Result<Vec<Station>> {
-    let res = fetch_json::<StationsResponse>(client, &format!("stations?district={}", district_id))
+async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<Vec<Station>> {
+    let res = fetch(client, &format!("stations?district={}", district_id))
+        .await?
+        .json::<StationsResponse>()
         .await?;
 
     Ok(res.stations)
@@ -104,12 +113,12 @@ impl Provider for Skolmaten {
         "Skolmaten".to_owned()
     }
 
-    async fn list_menus() -> Vec<LocalMenu> {
+    async fn list_menus() -> Result<Vec<LocalMenu>> {
         let before_crawl = Instant::now();
 
         let client = Client::new();
 
-        let provinces = list_provinces(&client).await.unwrap();
+        let provinces = list_provinces(&client).await?;
 
         let districts: Vec<District> = stream::iter(provinces)
             .map(|province| {
@@ -151,21 +160,28 @@ impl Provider for Skolmaten {
 
         println!("{}ms", before_crawl.elapsed().as_millis());
 
-        menus
+        Ok(menus)
     }
 
-    async fn query_menu(menu_id: String) -> Option<LocalMenu> {
-        todo!()
-    }
-
-    async fn list_days(menu_id: String) -> Vec<LocalDay> {
+    async fn query_menu(menu_id: &str) -> Result<LocalMenu> {
         let client = Client::new();
+        let station_id = Skolmaten::parse_menu_id(menu_id)?;
 
-        let station_id = menu_id.parse::<u64>().unwrap();
+        let station = query_station(&client, station_id).await?;
+        let menu = station
+            .to_local_menu()
+            .ok_or(NotFoundError::MenuNotFoundError)?;
 
-        let days = list_days(&client, station_id).await.unwrap();
+        Ok(menu)
+    }
 
-        days
+    async fn list_days(menu_id: &str) -> Result<Vec<LocalDay>> {
+        let client = Client::new();
+        let station_id = Skolmaten::parse_menu_id(menu_id)?;
+
+        let days = list_days(&client, station_id).await?;
+
+        Ok(days)
     }
 }
 
@@ -175,12 +191,19 @@ mod tests {
 
     #[actix_rt::test]
     async fn list_menus() {
-        let menus = Skolmaten::list_menus().await;
-        
+        let menus = Skolmaten::list_menus().await.unwrap();
+
         assert!(menus.len() > 5000);
 
         for menu in menus {
             assert!(!menu.title.to_lowercase().contains("info"));
         }
+    }
+
+    #[actix_rt::test]
+    async fn list_days() {
+        let days = Skolmaten::list_days("85957002").await.unwrap();
+
+        assert!(days.len() > 0);
     }
 }
