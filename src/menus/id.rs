@@ -2,7 +2,7 @@ use std::str::FromStr;
 
 use serde::{de, Deserialize, Deserializer, Serialize};
 
-use super::providers::{ParseProviderError, Provider};
+use super::provider::{ParseProviderError, Provider};
 
 #[derive(PartialEq, Debug)]
 pub struct MenuID {
