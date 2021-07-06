@@ -9,14 +9,10 @@ use serde::Deserialize;
 
 use crate::{
     errors::{BadInputError, Error, NotFoundError, Result},
-    menus::{
-        id::MenuID,
-        providers::{skolmaten::days::query_station, Provider},
-        Day, Menu,
-    },
+    menus::{id::MenuID, provider::Provider, Day, Menu},
 };
 
-use self::fetch::fetch;
+use self::{days::query_station, fetch::fetch};
 
 /// Maximum number of concurrent HTTP requests when crawling. For comparison,
 /// Firefox allows 7 concurrent requests. There is virtually no improvement for

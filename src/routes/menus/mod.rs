@@ -6,10 +6,7 @@ use actix_web::{
 
 use crate::{
     errors::Result,
-    menus::{
-        id::MenuID,
-        providers::{list_days, list_menus, query_menu},
-    },
+    menus::{id::MenuID, list_days, list_menus, query_menu},
 };
 
 /// Route for listing menus.

@@ -2,12 +2,6 @@ use std::str::FromStr;
 
 use serde::{Deserialize, Serialize};
 
-use crate::errors::Result;
-
-use super::{id::MenuID, Day, Menu};
-
-pub mod skolmaten;
-
 #[derive(Serialize, Deserialize, PartialEq, Debug)]
 pub enum Provider {
     Skolmaten,
@@ -36,23 +30,5 @@ impl ToString for Provider {
             Provider::Skolmaten => "skolmaten",
         }
         .to_owned()
-    }
-}
-
-pub async fn list_menus() -> Result<Vec<Menu>> {
-    let menus = skolmaten::list_menus().await?;
-
-    Ok(menus)
-}
-
-pub async fn query_menu(menu_id: &MenuID) -> Result<Menu> {
-    match menu_id.provider {
-        Provider::Skolmaten => skolmaten::query_menu(&menu_id.local_id).await,
-    }
-}
-
-pub async fn list_days(menu_id: &MenuID) -> Result<Vec<Day>> {
-    match menu_id.provider {
-        Provider::Skolmaten => skolmaten::list_days(&menu_id.local_id).await,
     }
 }
