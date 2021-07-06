@@ -4,6 +4,8 @@ use async_trait::async_trait;
 use chrono::NaiveDate;
 use serde::Serialize;
 
+use crate::errors::Result;
+
 #[derive(Serialize)]
 pub struct LocalMenu {
     id: String,
@@ -28,9 +30,9 @@ pub trait Provider {
 
     fn name() -> String;
 
-    async fn list_menus() -> Vec<LocalMenu>;
+    async fn list_menus() -> Result<Vec<LocalMenu>>;
 
-    async fn query_menu(menu_id: String) -> Option<LocalMenu>;
+    async fn query_menu(menu_id: &str) -> Result<LocalMenu>;
 
-    async fn list_days(menu_id: String) -> Vec<LocalDay>;
+    async fn list_days(menu_id: &str) -> Result<Vec<LocalDay>>;
 }
