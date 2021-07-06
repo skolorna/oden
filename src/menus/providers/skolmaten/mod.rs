@@ -202,7 +202,7 @@ mod tests {
 
     #[actix_rt::test]
     async fn list_days() {
-        let days = Skolmaten::list_days("85957002").await.unwrap();
+        let days = Skolmaten::list_days("4791333780717568").await.unwrap();
 
         assert!(days.len() > 0);
     }
