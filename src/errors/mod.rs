@@ -4,6 +4,8 @@ use actix_web::ResponseError;
 use reqwest::StatusCode;
 use thiserror::Error;
 
+use crate::menus::ParseMenuIDError;
+
 #[derive(Error, Debug)]
 pub enum InternalError {
     #[error("http request failed")]
@@ -14,6 +16,9 @@ pub enum InternalError {
 pub enum BadInputError {
     #[error("{0}")]
     ParseIntError(#[from] ParseIntError),
+
+    #[error("{0}")]
+    ParseMenuIDError(#[from] ParseMenuIDError),
 }
 
 #[derive(Error, Debug)]

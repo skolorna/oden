@@ -10,7 +10,7 @@ use serde::Deserialize;
 
 use crate::{
     errors::{BadInputError, Error, NotFoundError, Result},
-    menus::{providers::skolmaten::days::query_station, LocalDay, LocalMenu, Provider},
+    menus::{providers::skolmaten::days::query_station, LocalDay, LocalMenu, Provider, ProviderID},
 };
 
 use self::{days::list_days, fetch::fetch};
@@ -105,7 +105,7 @@ async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<
 
 #[async_trait]
 impl Provider for Skolmaten {
-    fn id() -> String {
+    fn id() -> ProviderID {
         "skolmaten".to_owned()
     }
 
