@@ -1,5 +1,6 @@
 use actix_web::{
     get,
+    http::header::{CacheControl, CacheDirective},
     web::{self, ServiceConfig},
     HttpResponse,
 };
@@ -11,11 +12,12 @@ use crate::{
 
 /// Route for listing menus.
 async fn list_menus_route() -> Result<HttpResponse> {
-    // let menus = vec!["a", "b", "c", "d"];
-
     let menus = list_menus().await?;
+    let res = HttpResponse::Ok()
+        .set(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
+        .json(menus);
 
-    Ok(HttpResponse::Ok().json(menus))
+    Ok(res)
 }
 
 #[get("{menu_id}")]
