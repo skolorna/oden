@@ -3,8 +3,8 @@ use reqwest::Client;
 use serde::Deserialize;
 
 use crate::{
-    errors::{Error, NotFoundError, Result},
-    menus::{LocalDay, LocalMeal, LocalMenu},
+    errors::{NotFoundError, Result},
+    menus::{Day, Meal, Menu},
 };
 
 use super::{fetch::fetch, District, Station};
@@ -17,56 +17,35 @@ pub(super) struct DetailedStation {
 }
 
 impl DetailedStation {
-    pub fn to_local_menu(&self) -> Option<LocalMenu> {
-        self.station.to_local_menu(&self.district.name)
+    pub fn to_menu(&self) -> Option<Menu> {
+        self.station.to_menu(&self.district.name)
     }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub(super) struct Meal {
-    value: String,
-    attributes: Vec<u32>,
-}
-
-impl Meal {
-    fn new(value: String, attributes: Vec<u32>) -> Self {
-        Self { value, attributes }
-    }
-}
-
-impl Into<LocalMeal> for Meal {
-    fn into(self) -> LocalMeal {
-        LocalMeal { value: self.value }
-    }
+pub struct SkolmatenMeal {
+    pub value: String,
+    pub attributes: Vec<u32>,
 }
 
 #[derive(Deserialize, Debug)]
-pub(super) struct Day {
+pub(super) struct SkolmatenDay {
     year: i32,
     month: u32,
     day: u32,
-    meals: Option<Vec<Meal>>,
+    meals: Option<Vec<SkolmatenMeal>>,
 }
 
-impl Day {
-    fn new(meals: Vec<Meal>, year: i32, month: u32, day: u32) -> Self {
-        Self {
-            year,
-            month,
-            day,
-            meals: Some(meals),
-        }
-    }
-
-    /// Maps `NaiveDate::from_ymd_opt` and creates a LocalDay; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
-    fn into_local_day(self) -> Option<LocalDay> {
+impl SkolmatenDay {
+    /// Maps `NaiveDate::from_ymd_opt` and creates a Day; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
+    fn into_day(self) -> Option<Day> {
         let date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)?;
-        let meals: Vec<LocalMeal> = self.meals?.into_iter().map(|meal| meal.into()).collect();
+        let meals: Vec<Meal> = self.meals?.into_iter().map(|meal| meal.into()).collect();
 
         if meals.is_empty() {
             None
         } else {
-            Some(LocalDay { date, meals })
+            Some(Day { date, meals })
         }
     }
 }
@@ -76,7 +55,7 @@ impl Day {
 pub(super) struct Week {
     year: i32,
     week_of_year: u32,
-    days: Vec<Day>,
+    days: Vec<SkolmatenDay>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -86,7 +65,7 @@ pub(super) struct Bulletin {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct Menu {
+pub(super) struct SkolmatenMenu {
     is_feedback_allowed: bool,
     weeks: Vec<Week>,
     station: DetailedStation,
@@ -95,8 +74,8 @@ pub(super) struct Menu {
 }
 
 #[derive(Deserialize, Debug)]
-pub(super) struct MenuResponse {
-    menu: Menu,
+pub(super) struct SkolmatenMenuResponse {
+    menu: SkolmatenMenu,
 }
 
 async fn raw_fetch_menu(
@@ -105,7 +84,7 @@ async fn raw_fetch_menu(
     year: i32,
     week_of_year: u32,
     count: u8,
-) -> Result<MenuResponse> {
+) -> Result<SkolmatenMenuResponse> {
     let path = format!(
         "menu?station={}&year={}&weekOfYear={}&count={}",
         station_id, year, week_of_year, count
@@ -116,20 +95,20 @@ async fn raw_fetch_menu(
     if res.status() == 404 {
         Err(NotFoundError::MenuNotFoundError.into())
     } else {
-        let res = res.json::<MenuResponse>().await?;
+        let res = res.json::<SkolmatenMenuResponse>().await?;
         Ok(res)
     }
 }
 
-pub(super) async fn list_days(client: &Client, station_id: u64) -> Result<Vec<LocalDay>> {
+pub(super) async fn list_days(client: &Client, station_id: u64) -> Result<Vec<Day>> {
     let res = raw_fetch_menu(client, station_id, 2021, 27, 2).await?;
 
-    let days: Vec<LocalDay> = res
+    let days: Vec<Day> = res
         .menu
         .weeks
         .into_iter()
         .flat_map(|week| week.days)
-        .filter_map(|day| day.into_local_day())
+        .filter_map(|day| day.into_day())
         .collect();
 
     Ok(days)
@@ -149,17 +128,32 @@ mod tests {
 
     #[test]
     fn convert_day() {
-        let meals: Vec<Meal> = vec![Meal::new("Fisk Björkeby".to_owned(), vec![1, 2, 3, 5, 8])];
+        let meals: Vec<SkolmatenMeal> = vec![SkolmatenMeal {
+            value: "Fisk Björkeby".to_owned(),
+            attributes: vec![1, 2, 3, 5, 8],
+        }];
 
         assert_eq!(
-            Day::new(meals.clone(), 2020, 1, 1)
-                .into_local_day()
-                .unwrap()
-                .meals
-                .len(),
+            SkolmatenDay {
+                meals: Some(meals.clone()),
+                year: 2020,
+                month: 1,
+                day: 1,
+            }
+            .into_day()
+            .unwrap()
+            .meals
+            .len(),
             1
         );
-        assert!(Day::new(meals, 2021, 2, 29).into_local_day().is_none());
+        assert!(SkolmatenDay {
+            meals: Some(meals),
+            year: 2021,
+            month: 2,
+            day: 29
+        }
+        .into_day()
+        .is_none());
     }
 
     #[actix_rt::test]
@@ -168,6 +162,6 @@ mod tests {
         let station = query_station(&client, 6362776414978048).await.unwrap();
 
         assert_eq!(station.station.name, "Information - Sandvikens kommun");
-        assert!(station.to_local_menu().is_none());
+        assert!(station.to_menu().is_none());
     }
 }

@@ -1091,7 +1091,6 @@ dependencies = [
  "actix-cors",
  "actix-rt",
  "actix-web",
- "async-trait",
  "chrono",
  "failure",
  "futures",
