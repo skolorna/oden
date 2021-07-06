@@ -4,7 +4,7 @@ use actix_web::ResponseError;
 use reqwest::StatusCode;
 use thiserror::Error;
 
-use crate::menus::ParseMenuIDError;
+use crate::menus::id::ParseMenuIDError;
 
 #[derive(Error, Debug)]
 pub enum InternalError {
