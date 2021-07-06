@@ -1,23 +1,25 @@
 pub mod providers;
 
 use async_trait::async_trait;
-use serde::{Deserialize, Serialize};
+use chrono::NaiveDate;
+use serde::Serialize;
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct LocalMenu {
     id: String,
     title: String,
 }
 
-#[derive(Serialize, Deserialize)]
-pub struct Meal {
+#[derive(Serialize)]
+pub struct LocalMeal {
     value: String,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize)]
 pub struct LocalDay {
-    meals: Vec<Meal>,
-    date: String,
+    meals: Vec<LocalMeal>,
+    /// Time zones aren't really relevant here.
+    date: NaiveDate,
 }
 
 #[async_trait]
