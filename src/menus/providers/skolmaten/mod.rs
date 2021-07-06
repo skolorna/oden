@@ -1,11 +1,16 @@
+mod days;
+mod fetch;
+
 use std::time::Instant;
 
 use async_trait::async_trait;
 use futures::stream::{self, StreamExt};
 use reqwest::Client;
-use serde::{de::DeserializeOwned, Deserialize};
+use serde::Deserialize;
 
 use crate::menus::{LocalDay, LocalMenu, Provider};
+
+use self::{days::list_days, fetch::fetch_json};
 
 /// Maximum number of concurrent HTTP requests when crawling. For comparison,
 /// Firefox allows 7 concurrent requests. There is virtually no improvement for
@@ -35,45 +40,30 @@ struct DistrictsResponse {
 }
 
 #[derive(Deserialize, Debug)]
-pub struct Station {
+struct Station {
     id: u64,
     name: String,
 }
 
+#[derive(Deserialize, Debug)]
+struct StationsResponse {
+    stations: Vec<Station>,
+}
+
 impl Station {
-    fn to_local_menu(&self, district_name: &str) -> LocalMenu {
-        LocalMenu {
-            title: format!("{}, {}", self.name, district_name),
-            id: self.id.to_string(),
+    fn to_local_menu(&self, district_name: &str) -> Option<LocalMenu> {
+        if self.name.to_lowercase().contains("info") {
+            None
+        } else {
+            Some(LocalMenu {
+                title: format!("{}, {}", self.name, district_name),
+                id: self.id.to_string(),
+            })
         }
     }
 }
 
-#[derive(Deserialize, Debug)]
-pub struct StationsResponse {
-    stations: Vec<Station>,
-}
-
 pub struct Skolmaten {}
-
-async fn fetch_json<T: DeserializeOwned>(client: &Client, path: &str) -> reqwest::Result<T> {
-    let url = format!("https://skolmaten.se/api/4/{}", path);
-
-    // let body = reqwest::get(url).await?.json().await?;
-
-    let res = client
-        .get(&url)
-        .header("API-Version", "4.0")
-        .header("Client-Token", "web")
-        .header("Client-Version-Token", "web")
-        .header("Locale", "sv_SE")
-        .send()
-        .await?;
-
-    let body = res.json::<T>().await?;
-
-    Ok(body)
-}
 
 async fn list_provinces(client: &Client) -> reqwest::Result<Vec<Province>> {
     let res = fetch_json::<ProvincesResponse>(&client, "provinces")
@@ -139,8 +129,6 @@ impl Provider for Skolmaten {
             .flatten()
             .collect();
 
-        println!("fetched {} districts", districts.len());
-
         let menus: Vec<LocalMenu> = stream::iter(districts)
             .map(|district| {
                 let client = &client;
@@ -158,6 +146,7 @@ impl Provider for Skolmaten {
             .await
             .into_iter()
             .flatten()
+            .flatten()
             .collect();
 
         println!("{}ms", before_crawl.elapsed().as_millis());
@@ -170,6 +159,28 @@ impl Provider for Skolmaten {
     }
 
     async fn list_days(menu_id: String) -> Vec<LocalDay> {
-        todo!()
+        let client = Client::new();
+
+        let station_id = menu_id.parse::<u64>().unwrap();
+
+        let days = list_days(&client, station_id).await.unwrap();
+
+        days
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[actix_rt::test]
+    async fn list_menus() {
+        let menus = Skolmaten::list_menus().await;
+        
+        assert!(menus.len() > 5000);
+
+        for menu in menus {
+            assert!(!menu.title.to_lowercase().contains("info"));
+        }
     }
 }
