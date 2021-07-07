@@ -3,6 +3,7 @@ pub mod fetch;
 
 use std::time::Instant;
 
+use chrono::NaiveDate;
 use futures::stream::{self, StreamExt};
 use reqwest::Client;
 use serde::Deserialize;
@@ -60,6 +61,7 @@ impl Station {
             Some(Menu {
                 title: format!("{}, {}", self.name, district_name),
                 id: MenuID::new(Provider::Skolmaten, self.id.to_string()),
+                provider: Provider::Skolmaten.info(),
             })
         }
     }
@@ -143,7 +145,7 @@ pub(super) async fn list_menus() -> Result<Vec<Menu>> {
         .flatten()
         .collect();
 
-    println!("{}ms", before_crawl.elapsed().as_millis());
+    println!("{}ms crawl", before_crawl.elapsed().as_millis());
 
     Ok(menus)
 }
@@ -158,7 +160,11 @@ pub(super) async fn query_menu(menu_id: &str) -> Result<Menu> {
     Ok(menu)
 }
 
-pub(super) async fn list_days(menu_id: &str) -> Result<Vec<Day>> {
+pub(super) async fn list_days(
+    menu_id: &str,
+    first: NaiveDate,
+    last: NaiveDate,
+) -> Result<Vec<Day>> {
     let client = Client::new();
     let station_id = parse_menu_id(menu_id)?;
 
@@ -169,6 +175,8 @@ pub(super) async fn list_days(menu_id: &str) -> Result<Vec<Day>> {
 
 #[cfg(test)]
 mod tests {
+    use chrono::Duration;
+
     use super::*;
 
     #[actix_rt::test]
@@ -184,7 +192,12 @@ mod tests {
 
     #[actix_rt::test]
     async fn list_days_test() {
-        let days = list_days("4791333780717568").await.unwrap();
+        let first_day = chrono::offset::Local::now().date().naive_local();
+        let last_day = first_day + Duration::weeks(2);
+
+        let days = list_days("4791333780717568", first_day, last_day)
+            .await
+            .unwrap();
 
         assert!(days.len() > 0);
     }

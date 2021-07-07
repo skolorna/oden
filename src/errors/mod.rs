@@ -13,12 +13,21 @@ pub enum InternalError {
 }
 
 #[derive(Error, Debug)]
+pub enum RangeError {
+    #[error("dates out of range")]
+    DatesOutOfRange,
+}
+
+#[derive(Error, Debug)]
 pub enum BadInputError {
     #[error("{0}")]
     ParseIntError(#[from] ParseIntError),
 
     #[error("{0}")]
     ParseMenuIDError(#[from] ParseMenuIDError),
+
+    #[error("{0}")]
+    RangeError(#[from] RangeError),
 }
 
 #[derive(Error, Debug)]

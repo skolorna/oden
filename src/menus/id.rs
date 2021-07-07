@@ -4,7 +4,7 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 
 use super::provider::{ParseProviderError, Provider};
 
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone)]
 pub struct MenuID {
     pub provider: Provider,
     pub local_id: String,
