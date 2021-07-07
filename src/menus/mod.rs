@@ -46,16 +46,22 @@ impl ListDaysQuery {
         let last = last.unwrap_or_else(|| first + Duration::weeks(2));
 
         if first > last {
-            Err(Error::BadInputError(BadInputError::RangeError(
+            return Err(Error::BadInputError(BadInputError::RangeError(
                 RangeError::DatesOutOfRange,
-            )))
-        } else {
-            Ok(Self {
-                menu_id,
-                first,
-                last,
-            })
+            )));
         }
+
+        if last - first > Duration::days(3650) {
+            return Err(Error::BadInputError(BadInputError::RangeError(
+                RangeError::DateSpanTooLong,
+            )));
+        }
+
+        Ok(Self {
+            menu_id,
+            first,
+            last,
+        })
     }
 }
 
@@ -112,19 +118,30 @@ mod tests {
             Some(NaiveDate::from_ymd(2020, 1, 1))
         )
         .is_err());
+
         assert!(ListDaysQuery::new(
             menu_id.clone(),
             None,
             Some(NaiveDate::from_ymd(1789, 7, 14))
         )
         .is_err());
+
+        assert!(ListDaysQuery::new(
+            menu_id.clone(),
+            Some(NaiveDate::from_ymd(1789, 7, 14)),
+            Some(NaiveDate::from_ymd(2000, 1, 1))
+        )
+        .is_err());
+
         assert!(ListDaysQuery::new(menu_id.clone(), None, None).is_ok());
+
         assert!(ListDaysQuery::new(
             menu_id.clone(),
             Some(NaiveDate::from_ymd(2020, 1, 1)),
             Some(NaiveDate::from_ymd(2020, 1, 1))
         )
         .is_ok());
+
         assert!(ListDaysQuery::new(menu_id, Some(NaiveDate::from_ymd(1789, 7, 14)), None).is_ok());
     }
 }
