@@ -16,6 +16,9 @@ pub enum InternalError {
 pub enum RangeError {
     #[error("dates out of range")]
     DatesOutOfRange,
+
+    #[error("dates are too far apart")]
+    DateSpanTooLong,
 }
 
 #[derive(Error, Debug)]
