@@ -1,4 +1,4 @@
-name: coverage
+name: Rust CI
 
 on: [push]
 jobs:
@@ -11,6 +11,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
+
+      - name: Cache
+        uses: Swatinem/rust-cache@v1.3.0
 
       - name: Generate code coverage
         run: |
