@@ -15,7 +15,6 @@ use self::{
 };
 use crate::{
     errors::{self, BadInputError, Error, RangeError, Result},
-    menus::day::dedup_dates,
 };
 
 pub struct ListDaysQuery {
@@ -87,13 +86,9 @@ pub async fn query_menu(menu_id: &MenuID) -> Result<Menu> {
 pub async fn list_days(query: &ListDaysQuery) -> Result<Vec<Day>> {
     use Provider::*;
 
-    let mut days = match query.menu_id.provider {
-        Skolmaten => skolmaten::list_days(&query.menu_id.local_id, query.first, query.last).await?,
-    };
-
-    dedup_dates(&mut days);
-
-    Ok(days)
+    match query.menu_id.provider {
+        Skolmaten => skolmaten::list_days(&query.menu_id.local_id, query.first, query.last).await,
+    }
 }
 
 #[cfg(test)]
@@ -135,5 +130,24 @@ mod tests {
         .is_ok());
 
         assert!(ListDaysQuery::new(menu_id, Some(NaiveDate::from_ymd(1789, 7, 14)), None).is_ok());
+    }
+
+    #[actix_rt::test]
+    async fn listing_days() {
+        let menu_id = MenuID::new(Provider::Skolmaten, "4791333780717568".to_owned());
+        let first = NaiveDate::from_ymd(2017, 12, 1);
+        let last = NaiveDate::from_ymd(2018, 1, 31);
+        let query = ListDaysQuery::new(menu_id, Some(first), Some(last)).unwrap();
+        let days = list_days(&query).await.unwrap();
+
+        assert_eq!(days.len(), 41);
+
+        let first_day = days.get(0).unwrap();
+        assert_eq!(first_day.date, NaiveDate::from_ymd(2017, 12, 1));
+
+        for day in days.iter() {
+            assert!(day.date >= first);
+            assert!(day.date <= last);
+        }
     }
 }
