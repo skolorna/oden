@@ -49,3 +49,42 @@ pub fn dedup_dates(days: &mut Vec<Day>) {
     let mut seen_dates = HashSet::<NaiveDate>::new();
     days.retain(|day| seen_dates.insert(day.date));
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn dedup() {
+        let mut days = vec![
+            Day {
+                date: NaiveDate::from_ymd(1789, 7, 14),
+                meals: vec![Meal::from_value("Tacos").unwrap()],
+            },
+            Day {
+                date: NaiveDate::from_ymd(1789, 7, 14),
+                meals: vec![Meal::from_value("Sushi").unwrap()],
+            },
+            Day {
+                date: NaiveDate::from_ymd(1790, 7, 14),
+                meals: vec![Meal::from_value("Pizza").unwrap()],
+            },
+        ];
+
+        dedup_dates(&mut days);
+
+        assert_eq!(
+            days,
+            vec![
+                Day {
+                    date: NaiveDate::from_ymd(1789, 7, 14),
+                    meals: vec![Meal::from_value("Tacos").unwrap()],
+                },
+                Day {
+                    date: NaiveDate::from_ymd(1790, 7, 14),
+                    meals: vec![Meal::from_value("Pizza").unwrap()],
+                },
+            ]
+        )
+    }
+}
