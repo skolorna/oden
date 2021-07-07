@@ -6,6 +6,7 @@ use serde::Deserialize;
 use crate::{
     errors::{BadInputError, Error, NotFoundError, RangeError, Result},
     menus::{Day, Meal, Menu},
+    util::assert_unique,
 };
 
 use super::{fetch::fetch, District, Station};
@@ -29,6 +30,12 @@ pub struct SkolmatenMeal {
     pub attributes: Vec<u32>,
 }
 
+impl SkolmatenMeal {
+    pub fn into_meal(self) -> Option<Meal> {
+        Meal::from_value(&self.value)
+    }
+}
+
 #[derive(Deserialize, Debug)]
 pub(super) struct SkolmatenDay {
     year: i32,
@@ -41,11 +48,17 @@ impl SkolmatenDay {
     /// Maps `NaiveDate::from_ymd_opt` and creates a Day; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
     fn into_day(self) -> Option<Day> {
         let date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)?;
-        let meals: Vec<Meal> = self.meals?.into_iter().map(|meal| meal.into()).collect();
+        let mut meals: Vec<Meal> = self
+            .meals?
+            .into_iter()
+            .filter_map(|meal| meal.into_meal())
+            .collect();
 
         if meals.is_empty() {
             None
         } else {
+            assert_unique(&mut meals);
+
             Some(Day { date, meals })
         }
     }

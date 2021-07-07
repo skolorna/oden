@@ -1,6 +1,7 @@
 pub mod errors;
 pub mod menus;
 pub mod routes;
+pub mod util;
 
 #[macro_export]
 macro_rules! create_app {

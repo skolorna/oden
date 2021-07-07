@@ -1,34 +1,22 @@
+pub mod day;
 pub mod id;
+pub mod meal;
 pub mod provider;
 pub mod skolmaten;
 
 use chrono::{Duration, Local, NaiveDate};
 use serde::Serialize;
-use skolmaten::days::SkolmatenMeal;
 
 use self::{
+    day::Day,
     id::MenuID,
+    meal::Meal,
     provider::{Provider, ProviderInfo},
 };
-use crate::errors::{self, BadInputError, Error, RangeError, Result};
-
-#[derive(Serialize, Debug)]
-pub struct Meal {
-    value: String,
-}
-
-impl From<SkolmatenMeal> for Meal {
-    fn from(meal: SkolmatenMeal) -> Self {
-        Self { value: meal.value }
-    }
-}
-
-#[derive(Serialize, Debug)]
-pub struct Day {
-    /// Time zones aren't really relevant here.
-    pub date: NaiveDate,
-    pub meals: Vec<Meal>,
-}
+use crate::{
+    errors::{self, BadInputError, Error, RangeError, Result},
+    menus::day::dedup_dates,
+};
 
 pub struct ListDaysQuery {
     menu_id: MenuID,
@@ -99,9 +87,13 @@ pub async fn query_menu(menu_id: &MenuID) -> Result<Menu> {
 pub async fn list_days(query: &ListDaysQuery) -> Result<Vec<Day>> {
     use Provider::*;
 
-    match query.menu_id.provider {
-        Skolmaten => skolmaten::list_days(&query.menu_id.local_id, query.first, query.last).await,
-    }
+    let mut days = match query.menu_id.provider {
+        Skolmaten => skolmaten::list_days(&query.menu_id.local_id, query.first, query.last).await?,
+    };
+
+    dedup_dates(&mut days);
+
+    Ok(days)
 }
 
 #[cfg(test)]
