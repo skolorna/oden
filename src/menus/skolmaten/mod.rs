@@ -168,7 +168,7 @@ pub(super) async fn list_days(
     let client = Client::new();
     let station_id = parse_menu_id(menu_id)?;
 
-    let days = days::list_days(&client, station_id).await?;
+    let days = days::list_days(&client, station_id, first, last).await?;
 
     Ok(days)
 }

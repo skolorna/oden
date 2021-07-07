@@ -26,8 +26,8 @@ impl From<SkolmatenMeal> for Meal {
 #[derive(Serialize, Debug)]
 pub struct Day {
     /// Time zones aren't really relevant here.
-    date: NaiveDate,
-    meals: Vec<Meal>,
+    pub date: NaiveDate,
+    pub meals: Vec<Meal>,
 }
 
 pub struct ListDaysQuery {
