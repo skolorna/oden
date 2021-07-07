@@ -14,7 +14,7 @@
 		"package": "yarn pkg --compress GZip --output menu-proxy dist/server.js"
 	},
 	"dependencies": {
-		"@sinclair/typebox": "^0.16.7",
+		"@sinclair/typebox": "^0.17.7",
 		"@types/url-join": "^4.0.0",
 		"cheerio": "^1.0.0-rc.10",
 		"fastify": "^3.18.0",
