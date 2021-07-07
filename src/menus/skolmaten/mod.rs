@@ -187,6 +187,20 @@ mod tests {
         }
     }
 
+    #[test]
+    fn parse_station_id_test() {
+        assert_eq!(parse_menu_id("1234").unwrap(), 1234);
+        assert!(parse_menu_id("aaf705").is_err());
+    }
+
+    #[actix_rt::test]
+    async fn query_menu_test() {
+        let menu = query_menu("4791333780717568").await.unwrap();
+        assert_eq!(menu.title, "Stråtjära förskola, Söderhamns kommun");
+        assert!(query_menu("0").await.is_err());
+        assert!(query_menu("5236876508135424").await.is_err()); // Invalid station name
+    }
+
     #[actix_rt::test]
     async fn list_days_test() {
         let first_day = chrono::offset::Local::now().date().naive_local();
