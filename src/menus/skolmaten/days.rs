@@ -3,7 +3,11 @@ use futures::stream::{self, StreamExt};
 use reqwest::Client;
 use serde::Deserialize;
 
-use crate::{errors::{BadInputError, Error, NotFoundError, RangeError, Result}, menus::{Day, Meal, Menu, day::dedup_dates}, util::assert_unique};
+use crate::{
+    errors::{BadInputError, Error, NotFoundError, RangeError, Result},
+    menus::{day::dedup_dates, Day, Meal, Menu},
+    util::assert_unique,
+};
 
 use super::{fetch::fetch, District, Station};
 
@@ -247,7 +251,7 @@ pub async fn list_days(
         .flatten()
         .filter(|day| day.date >= first && day.date <= last)
         .collect::<Vec<_>>();
-    
+
     days.sort();
     dedup_dates(&mut days);
 

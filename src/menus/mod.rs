@@ -13,9 +13,7 @@ use self::{
     meal::Meal,
     provider::{Provider, ProviderInfo},
 };
-use crate::{
-    errors::{self, BadInputError, Error, RangeError, Result},
-};
+use crate::errors::{self, BadInputError, Error, RangeError, Result};
 
 pub struct ListDaysQuery {
     menu_id: MenuID,
