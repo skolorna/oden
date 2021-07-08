@@ -5,7 +5,7 @@ pub mod provider;
 pub mod skolmaten;
 
 use chrono::{Duration, Local, NaiveDate};
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use self::{
     day::Day,
@@ -50,7 +50,7 @@ impl ListDaysQuery {
     }
 }
 
-#[derive(Serialize)]
+#[derive(Serialize, Deserialize)]
 pub struct Menu {
     id: MenuID,
     title: String,
@@ -64,6 +64,10 @@ impl Menu {
             title: title.to_owned(),
             provider: provider.info(),
         }
+    }
+
+    pub fn provider_id(&self) -> &str {
+        &self.provider.id
     }
 }
 

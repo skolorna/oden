@@ -22,9 +22,7 @@ impl Meal {
         if trimmed.is_empty() || trimmed.to_lowercase().contains("lov") {
             None
         } else {
-            Some(Self {
-                value: trimmed.to_owned(),
-            })
+            Some(Self { value: trimmed })
         }
     }
 }

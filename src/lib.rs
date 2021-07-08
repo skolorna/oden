@@ -8,7 +8,7 @@ macro_rules! create_app {
     () => {{
         use actix_cors::Cors;
         use actix_web::middleware::{self, normalize};
-        use actix_web::{App, HttpServer};
+        use actix_web::App;
         use menu_proxy::routes;
 
         App::new()
