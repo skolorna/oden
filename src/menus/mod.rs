@@ -66,8 +66,8 @@ impl Menu {
         }
     }
 
-    pub fn provider_id(&self) -> &str {
-        &self.provider.id
+    pub fn provider(&self) -> &ProviderInfo {
+        &self.provider
     }
 }
 

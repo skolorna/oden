@@ -27,7 +27,10 @@ async fn list_menus() {
     let menus: Vec<Menu> = test::read_body_json(resp).await;
     assert!(menus.len() > 5000);
 
+		// Sanity check
+		assert!(Provider::from_str("invalid provider id").is_err());
+
     for menu in menus {
-        assert!(Provider::from_str(menu.provider_id()).is_ok());
+        assert!(Provider::from_str(&menu.provider().id).is_ok());
     }
 }
