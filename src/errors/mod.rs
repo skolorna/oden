@@ -1,7 +1,6 @@
 use std::num::ParseIntError;
 
-use actix_web::ResponseError;
-use reqwest::StatusCode;
+use actix_web::{ResponseError, http::StatusCode};
 use thiserror::Error;
 
 use crate::menus::id::ParseMenuIDError;
