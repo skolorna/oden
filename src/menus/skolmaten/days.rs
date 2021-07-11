@@ -6,7 +6,6 @@ use serde::Deserialize;
 use crate::{
     errors::{BadInputError, Error, NotFoundError, RangeError, Result},
     menus::{day::dedup_dates, Day, Meal, Menu},
-    util::assert_unique,
 };
 
 use super::{fetch::fetch, District, Station};
@@ -54,13 +53,7 @@ impl SkolmatenDay {
             .filter_map(|meal| meal.into_meal())
             .collect();
 
-        if meals.is_empty() {
-            None
-        } else {
-            assert_unique(&mut meals);
-
-            Some(Day { date, meals })
-        }
+        Day::new_opt(date, &mut meals)
     }
 }
 

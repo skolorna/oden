@@ -6,6 +6,7 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 #[derive(PartialEq, Debug, Clone, Copy)]
 pub enum Provider {
     Skolmaten,
+    Sodexo,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -18,6 +19,7 @@ impl Provider {
     pub fn id(&self) -> String {
         match *self {
             Provider::Skolmaten => "skolmaten",
+            Provider::Sodexo => "sodexo",
         }
         .to_owned()
     }
@@ -25,6 +27,7 @@ impl Provider {
     pub fn name(&self) -> String {
         match *self {
             Provider::Skolmaten => "Skolmaten",
+            Provider::Sodexo => "Sodexo",
         }
         .to_owned()
     }
@@ -49,6 +52,7 @@ impl FromStr for Provider {
     fn from_str(s: &str) -> core::result::Result<Self, Self::Err> {
         match s {
             "skolmaten" => Ok(Provider::Skolmaten),
+            "sodexo" => Ok(Provider::Sodexo),
             _ => Err(ParseProviderError::InvalidLiteral),
         }
     }
