@@ -1,8 +1,10 @@
 pub mod day;
 pub mod id;
+pub mod mashie;
 pub mod meal;
 pub mod provider;
 pub mod skolmaten;
+pub mod sodexo;
 
 use chrono::{Duration, Local, NaiveDate};
 use serde::{Deserialize, Serialize};
@@ -58,17 +60,23 @@ pub struct Menu {
 }
 
 impl Menu {
-    pub fn new(id: MenuID, title: &str, provider: Provider) -> Self {
+    pub fn new(id: MenuID, title: String, provider: Provider) -> Self {
         Self {
             id,
-            title: title.to_owned(),
+            title,
             provider: provider.info(),
         }
     }
 }
 
 pub async fn list_menus() -> Result<Vec<Menu>> {
-    let menus = skolmaten::list_menus().await?;
+    let mut menus = vec![];
+
+    let mut skolmaten_menus = skolmaten::list_menus().await?;
+    let mut sodexo_menus = sodexo::list_menus().await?;
+
+    menus.append(&mut skolmaten_menus);
+    menus.append(&mut sodexo_menus);
 
     Ok(menus)
 }
@@ -78,6 +86,7 @@ pub async fn query_menu(menu_id: &MenuID) -> Result<Menu> {
 
     match menu_id.provider {
         Skolmaten => skolmaten::query_menu(&menu_id.local_id).await,
+        Sodexo => sodexo::query_menu(&menu_id.local_id).await,
     }
 }
 
@@ -86,6 +95,7 @@ pub async fn list_days(query: &ListDaysQuery) -> Result<Vec<Day>> {
 
     match query.menu_id.provider {
         Skolmaten => skolmaten::list_days(&query.menu_id.local_id, query.first, query.last).await,
+        Sodexo => sodexo::list_days(&query.menu_id.local_id, query.first, query.last).await,
     }
 }
 

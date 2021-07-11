@@ -3,6 +3,8 @@ use std::collections::HashSet;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
+use crate::util::assert_unique;
+
 use super::meal::Meal;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
@@ -10,6 +12,21 @@ pub struct Day {
     /// Time zones aren't really relevant here.
     pub date: NaiveDate,
     pub meals: Vec<Meal>,
+}
+
+impl Day {
+    pub fn new_opt(date: NaiveDate, meals: &mut Vec<Meal>) -> Option<Self> {
+        if meals.is_empty() {
+            None
+        } else {
+            assert_unique(meals);
+
+            Some(Self {
+                date,
+                meals: meals.to_vec(),
+            })
+        }
+    }
 }
 
 /// Remove duplicate dates from a vector.
