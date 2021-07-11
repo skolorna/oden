@@ -50,11 +50,11 @@ impl ListDaysQuery {
     }
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Menu {
-    id: MenuID,
-    title: String,
-    provider: ProviderInfo,
+    pub id: MenuID,
+    pub title: String,
+    pub provider: ProviderInfo,
 }
 
 impl Menu {
@@ -64,10 +64,6 @@ impl Menu {
             title: title.to_owned(),
             provider: provider.info(),
         }
-    }
-
-    pub fn provider(&self) -> &ProviderInfo {
-        &self.provider
     }
 }
 
@@ -95,6 +91,8 @@ pub async fn list_days(query: &ListDaysQuery) -> Result<Vec<Day>> {
 
 #[cfg(test)]
 mod tests {
+    use crate::util::is_sorted;
+
     use super::*;
 
     #[test]
@@ -143,6 +141,7 @@ mod tests {
         let days = list_days(&query).await.unwrap();
 
         assert_eq!(days.len(), 41);
+        assert!(is_sorted(&days));
 
         let first_day = days.get(0).unwrap();
         assert_eq!(first_day.date, NaiveDate::from_ymd(2017, 12, 1));
