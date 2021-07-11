@@ -8,7 +8,7 @@ pub enum Provider {
     Skolmaten,
 }
 
-#[derive(Serialize, Deserialize)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct ProviderInfo {
     pub id: String,
     pub name: String,

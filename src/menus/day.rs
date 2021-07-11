@@ -1,11 +1,11 @@
 use std::collections::HashSet;
 
 use chrono::NaiveDate;
-use serde::Serialize;
+use serde::{Deserialize, Serialize};
 
 use super::meal::Meal;
 
-#[derive(Serialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
+#[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Day {
     /// Time zones aren't really relevant here.
     pub date: NaiveDate,
