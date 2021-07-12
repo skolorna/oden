@@ -7,6 +7,7 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 pub enum Provider {
     Skolmaten,
     Sodexo,
+    MPI,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -20,6 +21,7 @@ impl Provider {
         match *self {
             Provider::Skolmaten => "skolmaten",
             Provider::Sodexo => "sodexo",
+            Provider::MPI => "mpi",
         }
         .to_owned()
     }
@@ -28,6 +30,7 @@ impl Provider {
         match *self {
             Provider::Skolmaten => "Skolmaten",
             Provider::Sodexo => "Sodexo",
+            Provider::MPI => "MPI",
         }
         .to_owned()
     }
@@ -53,6 +56,7 @@ impl FromStr for Provider {
         match s {
             "skolmaten" => Ok(Provider::Skolmaten),
             "sodexo" => Ok(Provider::Sodexo),
+            "mpi" => Ok(Provider::MPI),
             _ => Err(ParseProviderError::InvalidLiteral),
         }
     }
