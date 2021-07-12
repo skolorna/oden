@@ -26,7 +26,7 @@ impl DetailedStation {
 #[derive(Deserialize, Debug, Clone)]
 pub struct SkolmatenMeal {
     pub value: String,
-    pub attributes: Vec<u32>,
+    pub attributes: Vec<u64>,
 }
 
 impl SkolmatenMeal {
