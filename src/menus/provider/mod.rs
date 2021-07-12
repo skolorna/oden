@@ -1,3 +1,4 @@
+mod kleins;
 mod mpi;
 mod skolmaten;
 mod sodexo;
@@ -17,6 +18,7 @@ pub enum Provider {
     Skolmaten,
     Sodexo,
     MPI,
+    Kleins,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -31,6 +33,7 @@ impl Provider {
             Provider::Skolmaten => "skolmaten",
             Provider::Sodexo => "sodexo",
             Provider::MPI => "mpi",
+            Provider::Kleins => "kleins",
         }
         .to_owned()
     }
@@ -40,6 +43,7 @@ impl Provider {
             Provider::Skolmaten => "Skolmaten",
             Provider::Sodexo => "Sodexo",
             Provider::MPI => "MPI",
+            Provider::Kleins => "Klein's Kitchen",
         }
         .to_owned()
     }
@@ -58,6 +62,7 @@ impl Provider {
             Skolmaten => skolmaten::list_menus().await,
             Sodexo => sodexo::list_menus().await,
             MPI => mpi::list_menus().await,
+            Kleins => kleins::list_menus().await,
         }
     }
 
@@ -69,10 +74,12 @@ impl Provider {
         let mut skolmaten_menus = Skolmaten.list_menus().await?;
         let mut sodexo_menus = Sodexo.list_menus().await?;
         let mut mpi_menus = MPI.list_menus().await?;
+        let mut kleins_menus = Kleins.list_menus().await?;
 
         menus.append(&mut skolmaten_menus);
         menus.append(&mut sodexo_menus);
         menus.append(&mut mpi_menus);
+        menus.append(&mut kleins_menus);
 
         Ok(menus)
     }
@@ -84,6 +91,7 @@ impl Provider {
             Skolmaten => skolmaten::query_menu(menu_id).await,
             Sodexo => sodexo::query_menu(menu_id).await,
             MPI => mpi::query_menu(menu_id).await,
+            Kleins => kleins::query_menu(menu_id).await,
         }
     }
 
@@ -99,6 +107,7 @@ impl Provider {
             Skolmaten => skolmaten::list_days(menu_id, first, last).await,
             Sodexo => sodexo::list_days(menu_id, first, last).await,
             MPI => mpi::list_days(menu_id, first, last).await,
+            Kleins => kleins::list_days(menu_id, first, last).await,
         }
     }
 }
@@ -117,6 +126,7 @@ impl FromStr for Provider {
             "skolmaten" => Ok(Provider::Skolmaten),
             "sodexo" => Ok(Provider::Sodexo),
             "mpi" => Ok(Provider::MPI),
+            "kleins" => Ok(Provider::Kleins),
             _ => Err(ParseProviderError::InvalidLiteral),
         }
     }
