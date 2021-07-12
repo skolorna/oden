@@ -21,7 +21,6 @@ macro_rules! create_app {
                     .send_wildcard()
                     .allow_any_origin()
                     .allow_any_method()
-                    .max_age(86_400), // 24h
             )
             .wrap(middleware::Logger::new("%r (%Ts)"))
             .wrap(middleware::Compress::default())
