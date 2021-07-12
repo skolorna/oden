@@ -124,31 +124,6 @@ async fn raw_fetch_menu(
 }
 
 /// Generate a series of queries because the Skolmaten API cannot handle more than one year per request.
-/// ```
-/// use chrono::NaiveDate;
-/// use menu_proxy::menus::skolmaten::days::{generate_week_spans, SkolmatenWeekSpan};
-///
-/// let week_53 = generate_week_spans(
-///     NaiveDate::from_ymd(2020, 8, 1),
-///     NaiveDate::from_ymd(2021, 3, 1),
-/// )
-/// .unwrap();
-/// assert_eq!(
-///     week_53,
-///     [
-///         SkolmatenWeekSpan {
-///             year: 2020,
-///             week_of_year: 31,
-///             count: 22,
-///         },
-///         SkolmatenWeekSpan {
-///             year: 2021,
-///             week_of_year: 1, // Skolmaten.se doesn't care that 53 is the correct week number.
-///             count: 9,
-///         }
-///     ]
-/// )
-/// ```
 pub fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Result<Vec<SkolmatenWeekSpan>> {
     if first > last {
         return Err(Error::BadInputError(BadInputError::RangeError(
@@ -193,29 +168,6 @@ pub fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Result<Vec<Skol
 }
 
 /// List days of a particular Skolmaten menu.
-/// ```
-/// #[actix_web::main]
-/// async fn main() {
-///     use chrono::NaiveDate;
-///     use menu_proxy::menus::skolmaten::days::list_days;
-///     use reqwest::Client;
-///
-///     let client = Client::new();
-///     let days = list_days(
-///         &client,
-///         4791333780717568,
-///         NaiveDate::from_ymd(2020, 1, 1),
-///         NaiveDate::from_ymd(2020, 1, 31),
-///     )
-///     .await
-///     .unwrap();
-///
-///     let first = days.get(0).unwrap();
-///
-///     assert_eq!(first.date, NaiveDate::from_ymd(2020, 1, 2));
-///     assert!(first.meals.len() > 0);
-/// }
-/// ```
 pub async fn list_days(
     client: &Client,
     station_id: u64,
@@ -268,6 +220,30 @@ pub(super) async fn query_station(client: &Client, station_id: u64) -> Result<De
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn week_spans() {
+        let week_53 = generate_week_spans(
+            NaiveDate::from_ymd(2020, 8, 1),
+            NaiveDate::from_ymd(2021, 3, 1),
+        )
+        .unwrap();
+        assert_eq!(
+            week_53,
+            [
+                SkolmatenWeekSpan {
+                    year: 2020,
+                    week_of_year: 31,
+                    count: 22,
+                },
+                SkolmatenWeekSpan {
+                    year: 2021,
+                    week_of_year: 1, // Skolmaten.se doesn't care that 53 is the correct week number.
+                    count: 9,
+                }
+            ]
+        )
+    }
 
     #[test]
     fn convert_day() {
