@@ -60,11 +60,11 @@ pub struct Menu {
 }
 
 impl Menu {
-    pub fn new(id: MenuID, title: String, provider: Provider) -> Self {
+    pub fn new(id: MenuID, title: String) -> Self {
         Self {
+            provider: id.provider.info(),
             id,
             title,
-            provider: provider.info(),
         }
     }
 }

@@ -23,7 +23,7 @@ pub struct MashieMenu {
 impl MashieMenu {
     pub fn into_menu(self, provider: Provider) -> Menu {
         let id = MenuID::new(provider, self.id);
-        Menu::new(id, self.title, provider)
+        Menu::new(id, self.title)
     }
 }
 

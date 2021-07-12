@@ -58,11 +58,10 @@ impl Station {
         if self.name.to_lowercase().contains("info") {
             None
         } else {
-            Some(Menu {
-                title: format!("{}, {}", self.name, district_name),
-                id: MenuID::new(Provider::Skolmaten, self.id.to_string()),
-                provider: Provider::Skolmaten.info(),
-            })
+            Some(Menu::new(
+                MenuID::new(Provider::Skolmaten, self.id.to_string()),
+                format!("{}, {}", self.name, district_name),
+            ))
         }
     }
 }
