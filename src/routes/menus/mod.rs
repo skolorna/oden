@@ -1,5 +1,3 @@
-use std::time::Instant;
-
 use actix_web::{
     get,
     http::header::{CacheControl, CacheDirective},
@@ -16,14 +14,10 @@ use crate::{
 
 /// Route for listing menus.
 async fn list_menus_route() -> Result<HttpResponse> {
-    let before_list = Instant::now();
-
     let menus = list_menus().await?;
     let res = HttpResponse::Ok()
         .set(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
         .json(menus);
-
-    println!("{}ms list", before_list.elapsed().as_millis());
 
     Ok(res)
 }
@@ -31,8 +25,11 @@ async fn list_menus_route() -> Result<HttpResponse> {
 #[get("{menu_id}")]
 async fn query_menu_route(web::Path(menu_id): web::Path<MenuID>) -> Result<HttpResponse> {
     let menu = query_menu(&menu_id).await?;
+    let res = HttpResponse::Ok()
+        .set(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
+        .json(menu);
 
-    Ok(HttpResponse::Ok().json(menu))
+    Ok(res)
 }
 
 #[derive(Deserialize)]
@@ -48,10 +45,12 @@ async fn list_days_route(
     query: web::Query<ListDaysRouteQuery>,
 ) -> Result<HttpResponse> {
     let query = ListDaysQuery::new(menu_id, query.first, query.last)?;
-
     let days = list_days(&query).await?;
+    let res = HttpResponse::Ok()
+        .set(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
+        .json(days);
 
-    Ok(HttpResponse::Ok().json(days))
+    Ok(res)
 }
 
 /// Configure menu routes.
