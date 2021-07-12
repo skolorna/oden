@@ -179,4 +179,17 @@ mod tests {
         );
         assert!(serde_json::from_str::<Provider>("\"bruh\"").is_err());
     }
+
+    #[actix_rt::test]
+    async fn sodexo_query_menu() {
+        assert_eq!(
+            Provider::Sodexo
+                .query_menu("10910e60-20ca-4478-b864-abd8007ad970")
+                .await
+                .unwrap()
+                .title,
+            "Södermalmsskolan"
+        );
+        assert!(Provider::Sodexo.query_menu("bruh").await.is_err());
+    }
 }

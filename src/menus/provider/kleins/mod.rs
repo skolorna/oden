@@ -82,7 +82,10 @@ fn extract_menu_url(iframe_elem: ElementRef) -> Option<String> {
 
 async fn raw_query_school(school_slug: &str) -> Result<QuerySchoolResponse> {
     let client = Client::new();
-    let url = format!("https://www.kleinskitchen.se/skolor/{}", urlencoding::encode(school_slug));
+    let url = format!(
+        "https://www.kleinskitchen.se/skolor/{}",
+        urlencoding::encode(school_slug)
+    );
     let html = fetch(&client, &url).await?.text().await?;
     let doc = Html::parse_document(&html);
 
@@ -153,7 +156,7 @@ mod tests {
                 .await
                 .is_err()
         );
-				assert!(raw_query_school("nonexistent").await.is_err());
+        assert!(raw_query_school("nonexistent").await.is_err());
     }
 
     #[actix_rt::test]

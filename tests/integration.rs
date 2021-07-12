@@ -11,7 +11,6 @@ use menu_proxy::{
 };
 
 /// Perform a GET request.
-#[macro_export]
 macro_rules! get {
     ($app:expr, $uri:expr) => {{
         let req = TestRequest::with_uri($uri).to_request();
@@ -67,6 +66,16 @@ async fn query_menu() {
     {
         let resp = get!(app, "/menus/skolmaten.123");
         assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    }
+
+    {
+        let resp = get!(app, "/menus/mpi.c3c75403-6811-400a-96f8-a0e400c020ba");
+        assert_eq!(resp.status(), StatusCode::OK);
+        let menu: Menu = read_body_json(resp).await;
+        assert_eq!(
+            menu.title,
+            "Södra Latins Gymnasium, Stockholm, Fraiche Catering"
+        );
     }
 }
 
