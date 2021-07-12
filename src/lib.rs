@@ -20,7 +20,7 @@ macro_rules! create_app {
                 Cors::default()
                     .send_wildcard()
                     .allow_any_origin()
-                    .allow_any_method()
+                    .allow_any_method(),
             )
             .wrap(middleware::Logger::new("%r (%Ts)"))
             .wrap(middleware::Compress::default())

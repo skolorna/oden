@@ -59,10 +59,7 @@ impl ResponseError for Error {
             Error::NotFoundError(_) => StatusCode::NOT_FOUND,
             Error::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             Error::BadInputError(_) => StatusCode::BAD_REQUEST,
-            Error::ReqwestError(ref e) => {
-                eprintln!("{}", e);
-                StatusCode::BAD_GATEWAY
-            },
+            Error::ReqwestError(_) => StatusCode::INTERNAL_SERVER_ERROR,
         }
     }
 }

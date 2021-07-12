@@ -26,7 +26,6 @@ impl DetailedStation {
 #[derive(Deserialize, Debug, Clone)]
 pub struct SkolmatenMeal {
     pub value: String,
-    pub attributes: Vec<u64>,
 }
 
 impl SkolmatenMeal {
@@ -249,7 +248,6 @@ mod tests {
     fn convert_day() {
         let meals: Vec<SkolmatenMeal> = vec![SkolmatenMeal {
             value: "Fisk Björkeby".to_owned(),
-            attributes: vec![1, 2, 3, 5, 8],
         }];
 
         assert_eq!(
