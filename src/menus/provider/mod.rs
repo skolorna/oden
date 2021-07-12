@@ -81,6 +81,8 @@ impl Provider {
         menus.append(&mut mpi_menus);
         menus.append(&mut kleins_menus);
 
+        menus.sort_by(|a, b| a.title.cmp(&b.title));
+
         Ok(menus)
     }
 
