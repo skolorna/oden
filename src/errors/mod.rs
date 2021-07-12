@@ -60,7 +60,7 @@ impl ResponseError for Error {
             Error::InternalError => StatusCode::INTERNAL_SERVER_ERROR,
             Error::BadInputError(_) => StatusCode::BAD_REQUEST,
             Error::ReqwestError(ref e) => {
-                log::error!("{}", e);
+                eprintln!("{}", e);
                 StatusCode::BAD_GATEWAY
             },
         }
