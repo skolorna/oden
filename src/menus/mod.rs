@@ -4,10 +4,7 @@ pub mod id;
 #[macro_use]
 pub mod mashie;
 pub mod meal;
-pub mod mpi;
 pub mod provider;
-pub mod skolmaten;
-pub mod sodexo;
 
 use chrono::{Duration, Local, NaiveDate};
 use serde::{Deserialize, Serialize};
@@ -73,37 +70,19 @@ impl Menu {
 }
 
 pub async fn list_menus() -> Result<Vec<Menu>> {
-    let mut menus = vec![];
-
-    let mut skolmaten_menus = skolmaten::list_menus().await?;
-    let mut sodexo_menus = sodexo::list_menus().await?;
-    let mut mpi_menus = mpi::list_menus().await?;
-
-    menus.append(&mut skolmaten_menus);
-    menus.append(&mut sodexo_menus);
-    menus.append(&mut mpi_menus);
-
-    Ok(menus)
+    Provider::list_all_menus().await
 }
 
 pub async fn query_menu(menu_id: &MenuID) -> Result<Menu> {
-    use Provider::*;
-
-    match menu_id.provider {
-        Skolmaten => skolmaten::query_menu(&menu_id.local_id).await,
-        Sodexo => sodexo::query_menu(&menu_id.local_id).await,
-        MPI => mpi::query_menu(&menu_id.local_id).await,
-    }
+    menu_id.provider.query_menu(&menu_id.local_id).await
 }
 
 pub async fn list_days(query: &ListDaysQuery) -> Result<Vec<Day>> {
-    use Provider::*;
-
-    match query.menu_id.provider {
-        Skolmaten => skolmaten::list_days(&query.menu_id.local_id, query.first, query.last).await,
-        Sodexo => sodexo::list_days(&query.menu_id.local_id, query.first, query.last).await,
-        MPI => mpi::list_days(&query.menu_id.local_id, query.first, query.last).await,
-    }
+    query
+        .menu_id
+        .provider
+        .list_days(&query.menu_id.local_id, query.first, query.last)
+        .await
 }
 
 #[cfg(test)]
