@@ -71,6 +71,42 @@ pub async fn list_days(
     Ok(days)
 }
 
+macro_rules! mashie_impl {
+    ($host:literal, $provider:expr) => {
+        use crate::errors::Result;
+        use crate::menus::{day::Day, mashie, Menu};
+        use chrono::NaiveDate;
+
+        const HOST: &str = $host;
+
+        pub async fn list_menus() -> Result<Vec<Menu>> {
+            let menus = mashie::list_menus(HOST)
+                .await?
+                .into_iter()
+                .map(|m| m.into_menu($provider))
+                .collect();
+
+            Ok(menus)
+        }
+
+        pub async fn query_menu(menu_id: &str) -> Result<Menu> {
+            let menu = mashie::query_menu(HOST, menu_id)
+                .await?
+                .into_menu($provider);
+
+            Ok(menu)
+        }
+
+        pub async fn list_days(
+            menu_id: &str,
+            first: NaiveDate,
+            last: NaiveDate,
+        ) -> Result<Vec<Day>> {
+            mashie::list_days(HOST, menu_id, first, last).await
+        }
+    };
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,7 +1,10 @@
 pub mod day;
 pub mod id;
+
+#[macro_use]
 pub mod mashie;
 pub mod meal;
+pub mod mpi;
 pub mod provider;
 pub mod skolmaten;
 pub mod sodexo;
@@ -74,9 +77,11 @@ pub async fn list_menus() -> Result<Vec<Menu>> {
 
     let mut skolmaten_menus = skolmaten::list_menus().await?;
     let mut sodexo_menus = sodexo::list_menus().await?;
+    let mut mpi_menus = mpi::list_menus().await?;
 
     menus.append(&mut skolmaten_menus);
     menus.append(&mut sodexo_menus);
+    menus.append(&mut mpi_menus);
 
     Ok(menus)
 }
@@ -87,6 +92,7 @@ pub async fn query_menu(menu_id: &MenuID) -> Result<Menu> {
     match menu_id.provider {
         Skolmaten => skolmaten::query_menu(&menu_id.local_id).await,
         Sodexo => sodexo::query_menu(&menu_id.local_id).await,
+        MPI => mpi::query_menu(&menu_id.local_id).await,
     }
 }
 
@@ -96,6 +102,7 @@ pub async fn list_days(query: &ListDaysQuery) -> Result<Vec<Day>> {
     match query.menu_id.provider {
         Skolmaten => skolmaten::list_days(&query.menu_id.local_id, query.first, query.last).await,
         Sodexo => sodexo::list_days(&query.menu_id.local_id, query.first, query.last).await,
+        MPI => mpi::list_days(&query.menu_id.local_id, query.first, query.last).await,
     }
 }
 
