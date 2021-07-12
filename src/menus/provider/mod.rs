@@ -1,6 +1,15 @@
+mod mpi;
+mod skolmaten;
+mod sodexo;
+
 use std::str::FromStr;
 
+use chrono::NaiveDate;
 use serde::{de, Deserialize, Deserializer, Serialize};
+
+use super::{day::Day, Menu};
+
+use crate::errors::Result;
 
 /// A provider of menus.
 #[derive(PartialEq, Debug, Clone, Copy)]
@@ -41,6 +50,57 @@ impl Provider {
             id: self.id(),
         }
     }
+
+    pub async fn list_menus(&self) -> Result<Vec<Menu>> {
+        use Provider::*;
+
+        match *self {
+            Skolmaten => skolmaten::list_menus().await,
+            Sodexo => sodexo::list_menus().await,
+            MPI => mpi::list_menus().await,
+        }
+    }
+
+    pub async fn list_all_menus() -> Result<Vec<Menu>> {
+        use Provider::*;
+
+        let mut menus = vec![];
+
+        let mut skolmaten_menus = Skolmaten.list_menus().await?;
+        let mut sodexo_menus = Sodexo.list_menus().await?;
+        let mut mpi_menus = MPI.list_menus().await?;
+
+        menus.append(&mut skolmaten_menus);
+        menus.append(&mut sodexo_menus);
+        menus.append(&mut mpi_menus);
+
+        Ok(menus)
+    }
+
+    pub async fn query_menu(&self, menu_id: &str) -> Result<Menu> {
+        use Provider::*;
+
+        match *self {
+            Skolmaten => skolmaten::query_menu(menu_id).await,
+            Sodexo => sodexo::query_menu(menu_id).await,
+            MPI => mpi::query_menu(menu_id).await,
+        }
+    }
+
+    pub async fn list_days(
+        &self,
+        menu_id: &str,
+        first: NaiveDate,
+        last: NaiveDate,
+    ) -> Result<Vec<Day>> {
+        use Provider::*;
+
+        match *self {
+            Skolmaten => skolmaten::list_days(menu_id, first, last).await,
+            Sodexo => sodexo::list_days(menu_id, first, last).await,
+            MPI => mpi::list_days(menu_id, first, last).await,
+        }
+    }
 }
 
 #[derive(thiserror::Error, Debug)]
@@ -69,7 +129,7 @@ impl ToString for Provider {
 }
 
 impl Serialize for Provider {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    fn serialize<S>(&self, serializer: S) -> core::result::Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
     {
@@ -78,7 +138,7 @@ impl Serialize for Provider {
 }
 
 impl<'de> Deserialize<'de> for Provider {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
+    fn deserialize<D>(deserializer: D) -> core::result::Result<Self, D::Error>
     where
         D: Deserializer<'de>,
     {
