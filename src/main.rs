@@ -5,6 +5,9 @@ use menu_proxy::create_app;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
+    std::env::set_var("RUST_LOG", "actix_web=info");
+    env_logger::init();
+
     let ascii_art = r#" __  __                    ____                      
 |  \/  | ___ _ __  _   _  |  _ \ _ __ _____  ___   _ 
 | |\/| |/ _ \ '_ \| | | | | |_) | '__/ _ \ \/ / | | |

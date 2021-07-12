@@ -23,6 +23,7 @@ macro_rules! create_app {
                     .allow_any_method()
                     .max_age(86_400), // 24h
             )
+            .wrap(middleware::Logger::new("%r (%Ts)"))
             .wrap(middleware::Compress::default())
     }};
 }
