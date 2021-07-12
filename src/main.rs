@@ -8,12 +8,15 @@ async fn main() -> std::io::Result<()> {
     std::env::set_var("RUST_LOG", "actix_web=info");
     env_logger::init();
 
-    let ascii_art = r#" __  __                    ____                      
+    let ascii_art = r#"
+ __  __                    ____                      
 |  \/  | ___ _ __  _   _  |  _ \ _ __ _____  ___   _ 
 | |\/| |/ _ \ '_ \| | | | | |_) | '__/ _ \ \/ / | | |
 | |  | |  __/ | | | |_| | |  __/| | | (_) >  <| |_| |
 |_|  |_|\___|_| |_|\__,_| |_|   |_|  \___/_/\_\\__, |
-                                               |___/ "#;
+                                               |___/ 
+"#;
+
     eprintln!("{}", ascii_art);
 
     let addr = SocketAddr::V4(SocketAddrV4::new(Ipv4Addr::new(0, 0, 0, 0), 8000));
