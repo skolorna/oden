@@ -884,10 +884,10 @@
     lodash "^4.17.4"
     read-pkg-up "^7.0.0"
 
-"@sinclair/typebox@^0.16.7":
-  version "0.16.7"
-  resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.16.7.tgz#3187369b2ff237f57477ef155be4c992e592fa7c"
-  integrity sha512-d12AkLZJXD30hXBhJSgf33RqGO0NMHIDzsQPYfp6WGoaSuMnSGIUanII2OUbeZFnD/j3Nbl2zifgO2+5tPClCQ==
+"@sinclair/typebox@^0.17.8":
+  version "0.17.8"
+  resolved "https://registry.yarnpkg.com/@sinclair/typebox/-/typebox-0.17.8.tgz#9cef4c284d2437368d90fc36a002549681e7263b"
+  integrity sha512-enm8ET5E31RYbzGYPB9p+CvRzURrNEUCS2EvUxYQCdnDJw6wBpn6N+TK7iIumCc6fTRKgoOX1InJO2cQYZA4mg==
 
 "@sinonjs/commons@^1.7.0":
   version "1.8.3"
