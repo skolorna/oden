@@ -2,10 +2,7 @@ use chrono::{Datelike, Local, NaiveDate};
 use lazy_static::lazy_static;
 use scraper::{ElementRef, Html, Selector};
 
-use crate::{
-    errors::{Error, Result},
-    menus::{day::Day, meal::Meal},
-};
+use crate::menus::{day::Day, meal::Meal};
 
 lazy_static! {
     static ref S_DAY: Selector = Selector::parse(".panel-group > .panel").unwrap();
@@ -45,7 +42,8 @@ fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
 }
 
 fn parse_meal_elem(elem: ElementRef) -> Option<Meal> {
-    elem.text().next().map(Meal::from_value).flatten()
+    let text = elem.text().next()?;
+    Meal::from_value(text)
 }
 
 fn parse_day_elem(elem: ElementRef) -> Option<Day> {
@@ -64,14 +62,9 @@ fn parse_day_elem(elem: ElementRef) -> Option<Day> {
     Day::new_opt(date, &mut meals)
 }
 
-pub fn scrape_mashie_days(doc: &Html) -> Result<Vec<Day>> {
+pub fn scrape_mashie_days(doc: &Html) -> Vec<Day> {
     let day_elems = doc.select(&S_DAY);
-    let days = day_elems
-        .map(parse_day_elem)
-        .collect::<Option<Vec<Day>>>()
-        .ok_or(Error::InternalError)?;
-
-    Ok(days)
+    day_elems.filter_map(parse_day_elem).collect::<Vec<_>>()
 }
 
 #[cfg(test)]
@@ -116,7 +109,7 @@ mod tests {
         let url = format!("{}/{}", host, menu.path);
         let html = reqwest::get(&url).await.unwrap().text().await.unwrap();
         let doc = Html::parse_document(&html);
-        let days = scrape_mashie_days(&doc).unwrap();
+        let days = scrape_mashie_days(&doc);
 
         assert!(!days.is_empty());
         assert!(is_sorted(&days));
@@ -124,5 +117,7 @@ mod tests {
         for day in days {
             assert!(!day.meals.is_empty())
         }
+
+        assert!(scrape_mashie_days(&Html::parse_fragment("<h1>no days</h1>")).is_empty());
     }
 }

@@ -123,7 +123,7 @@ pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> Resu
     };
     let html = reqwest::get(&menu_url).await?.text().await?;
     let doc = Html::parse_document(&html);
-    let days = scrape_mashie_days(&doc)?
+    let days = scrape_mashie_days(&doc)
         .into_iter()
         .filter(|day| day.date >= first && day.date <= last)
         .collect();

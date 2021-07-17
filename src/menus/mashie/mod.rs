@@ -63,7 +63,7 @@ pub async fn list_days(
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
     let doc = Html::parse_document(&html);
-    let days = scrape_mashie_days(&doc)?
+    let days = scrape_mashie_days(&doc)
         .into_iter()
         .filter(|day| day.date >= first && day.date <= last)
         .collect();
