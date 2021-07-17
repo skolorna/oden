@@ -10,13 +10,17 @@ use serde::Deserialize;
 use crate::{
     errors::Result,
     menus::{id::MenuID, list_days, list_menus, query_menu, ListDaysQuery},
+    routes::swr,
 };
 
 /// Route for listing menus.
 async fn list_menus_route() -> Result<HttpResponse> {
     let menus = list_menus().await?;
     let res = HttpResponse::Ok()
-        .set(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
+        .set(CacheControl(vec![
+            CacheDirective::MaxAge(86_400),
+            swr(604_800), // 7 days
+        ]))
         .json(menus);
 
     Ok(res)
@@ -26,7 +30,10 @@ async fn list_menus_route() -> Result<HttpResponse> {
 async fn query_menu_route(web::Path(menu_id): web::Path<MenuID>) -> Result<HttpResponse> {
     let menu = query_menu(&menu_id).await?;
     let res = HttpResponse::Ok()
-        .set(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
+        .set(CacheControl(vec![
+            CacheDirective::MaxAge(604_800), // 7 days
+            swr(2_419_200),                  // 28 days
+        ]))
         .json(menu);
 
     Ok(res)
