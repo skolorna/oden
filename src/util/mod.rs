@@ -21,6 +21,7 @@ pub fn assert_unique<T: Eq + Hash + Clone>(v: &mut Vec<T>) {
 /// assert!(is_sorted(&[1, 2, 2, 4, 5]));
 /// assert!(!is_sorted(&[1, 0, 1, 2, 5]));
 /// ```
+#[issue::track(url = "https://github.com/rust-lang/rust/issues/53485")]
 pub fn is_sorted<T: Ord>(data: &[T]) -> bool {
     data.windows(2).all(|w| w[0] <= w[1])
 }
