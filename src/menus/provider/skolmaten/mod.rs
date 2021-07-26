@@ -60,7 +60,7 @@ impl Station {
         } else {
             Some(Menu::new(
                 MenuID::new(Provider::Skolmaten, self.id.to_string()),
-                format!("{}, {}", self.name, district_name),
+                format!("{}, {}", self.name.trim(), district_name),
             ))
         }
     }
