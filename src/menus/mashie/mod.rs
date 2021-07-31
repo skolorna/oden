@@ -175,7 +175,7 @@ mod tests {
                 assert!(day.date <= last);
             }
 
-            assert!(is_sorted(days));
+            assert!(is_sorted(&days));
         }
     }
 }
