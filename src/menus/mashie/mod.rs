@@ -109,6 +109,8 @@ macro_rules! mashie_impl {
 
 #[cfg(test)]
 mod tests {
+    use chrono::{offset, Duration};
+
     use super::*;
 
     #[actix_rt::test]
@@ -133,5 +135,47 @@ mod tests {
         assert!(query_menu("https://sodexo.mashie.com", "invalid")
             .await
             .is_err());
+    }
+
+    mod impl_test {
+        use crate::util::is_sorted;
+
+        use super::*;
+
+        mashie_impl!("https://sodexo.mashie.com", Provider::Sodexo);
+
+        const MENU_ID: &str = "312dd0ae-3ebd-49d9-870e-abeb008c0e4b";
+
+        #[actix_rt::test]
+        async fn list_menus_test() {
+            let menus = list_menus().await.unwrap();
+            assert!(menus.len() > 100);
+        }
+
+        #[actix_rt::test]
+        async fn query_menu_test() {
+            let menu = query_menu(MENU_ID).await.unwrap();
+            assert_eq!(menu.title, "Loket, Pysslingen");
+            assert_eq!(menu.id.local_id, MENU_ID);
+
+            assert!(query_menu("unexisting").await.is_err());
+        }
+
+        #[actix_rt::test]
+        async fn list_days_test() {
+            let first = offset::Utc::today().naive_utc();
+            let last = first + Duration::days(365);
+
+            let days = list_days(MENU_ID, first, last).await.unwrap();
+
+            assert!(days.len() > 10);
+
+            for day in days {
+                assert!(day.date >= first);
+                assert!(day.date <= last);
+            }
+
+            assert!(is_sorted(days));
+        }
     }
 }

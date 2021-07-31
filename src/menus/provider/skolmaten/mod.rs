@@ -73,7 +73,7 @@ fn parse_menu_id(menu_id: &str) -> Result<u64> {
 }
 
 async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
-    let res = fetch(&client, "provinces")
+    let res = fetch(client, "provinces")
         .await?
         .json::<ProvincesResponse>()
         .await?;
@@ -110,7 +110,7 @@ pub(super) async fn list_menus() -> Result<Vec<Menu>> {
         .map(|province| {
             let client = &client;
             async move {
-                let districts = list_districts_in_province(&client, province.id)
+                let districts = list_districts_in_province(client, province.id)
                     .await
                     .unwrap();
 
@@ -128,7 +128,7 @@ pub(super) async fn list_menus() -> Result<Vec<Menu>> {
         .map(|district| {
             let client = &client;
             async move {
-                list_stations_in_district(&client, district.id)
+                list_stations_in_district(client, district.id)
                     .await
                     .unwrap()
                     .into_iter()

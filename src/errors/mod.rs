@@ -65,3 +65,29 @@ impl ResponseError for Error {
 }
 
 pub type Result<T> = core::result::Result<T, Error>;
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn response_error_impl() {
+        assert_eq!(
+            Error::InternalError.status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+    }
+
+    #[test]
+    fn reqwest_error() {
+        let e = reqwest::Client::new()
+            .get("invalidurl")
+            .build()
+            .unwrap_err();
+
+        assert_eq!(
+            Error::from(e).status_code(),
+            StatusCode::INTERNAL_SERVER_ERROR
+        );
+    }
+}
