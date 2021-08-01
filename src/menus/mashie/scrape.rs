@@ -94,13 +94,7 @@ mod tests {
 
         for (i, month) in months.into_iter().enumerate() {
             let n = i as u32 + 1;
-            assert_eq!(
-                parse_month(month),
-                Some(n),
-                "`{}` is month number {}",
-                month,
-                n
-            );
+            assert_eq!(parse_month(month), Some(n));
         }
 
         assert!(parse_month("jAN").is_none());
