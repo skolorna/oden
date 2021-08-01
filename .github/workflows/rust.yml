@@ -13,7 +13,7 @@ jobs:
           toolchain: nightly
           override: true
       - uses: Swatinem/rust-cache@v1.3.0
-      - run: cargo install grcov
+      - run: curl -L https://github.com/mozilla/grcov/releases/latest/download/grcov-linux-x86_64.tar.bz2 | tar jxf -
       - run: rustup component add llvm-tools-preview
       - uses: actions-rs/cargo@v1
         with:
@@ -21,13 +21,12 @@ jobs:
         env:
           RUSTFLAGS: "-Z instrument-coverage"
           RUSTDOCFLAGS: "-Z instrument-coverage"
-          LLVM_PROFILE_FILE: "menu_proxy-%p-%m.profraw"
-      - run: grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./lcov
+          LLVM_PROFILE_FILE: "coverage/menu_proxy-%p-%m.profraw"
+      - run: ./grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing --ignore "target/debug/build/*" -o ./coverage/lcov.info
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./lcov
           fail_ci_if_error: true
 
   check:
