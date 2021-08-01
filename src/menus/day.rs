@@ -15,16 +15,13 @@ pub struct Day {
 }
 
 impl Day {
-    pub fn new_opt(date: NaiveDate, meals: &mut Vec<Meal>) -> Option<Self> {
+    pub fn new_opt(date: NaiveDate, mut meals: Vec<Meal>) -> Option<Self> {
         if meals.is_empty() {
             None
         } else {
-            assert_unique(meals);
+            assert_unique(&mut meals);
 
-            Some(Self {
-                date,
-                meals: meals.to_vec(),
-            })
+            Some(Self { date, meals })
         }
     }
 }
@@ -70,6 +67,14 @@ pub fn dedup_dates(days: &mut Vec<Day>) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn construct_day() {
+        let date = NaiveDate::from_ymd(1789, 7, 14);
+
+        assert!(Day::new_opt(date, vec![]).is_none());
+        assert!(Day::new_opt(date, vec![Meal::from_value("Fisk Björkeby").unwrap()]).is_some());
+    }
 
     #[test]
     fn dedup() {

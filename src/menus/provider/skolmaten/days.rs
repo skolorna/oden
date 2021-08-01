@@ -46,13 +46,13 @@ impl SkolmatenDay {
     /// Maps `NaiveDate::from_ymd_opt` and creates a Day; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
     fn into_day(self) -> Option<Day> {
         let date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)?;
-        let mut meals: Vec<Meal> = self
+        let meals: Vec<Meal> = self
             .meals?
             .into_iter()
             .filter_map(|meal| meal.into_meal())
             .collect();
 
-        Day::new_opt(date, &mut meals)
+        Day::new_opt(date, meals)
     }
 }
 

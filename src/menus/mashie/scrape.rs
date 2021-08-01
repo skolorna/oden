@@ -54,12 +54,12 @@ fn parse_day_elem(elem: ElementRef) -> Option<Day> {
         .flatten()?;
     let date = parse_date_literal(date_literal)?;
 
-    let mut meals = elem
+    let meals = elem
         .select(&S_MEAL)
         .filter_map(parse_meal_elem)
         .collect::<Vec<Meal>>();
 
-    Day::new_opt(date, &mut meals)
+    Day::new_opt(date, meals)
 }
 
 pub fn scrape_mashie_days(doc: &Html) -> Vec<Day> {
