@@ -77,14 +77,5 @@ Returns `200 OK` if the API is healthy.
 The easiest way to get started is to run this program with Docker:
 
 ```
-docker run -d -p 8000:80 ghcr.io/skolorna/menu-proxy
+docker run -d -p 8000:8000 ghcr.io/skolorna/menu-proxy
 ```
-
-## Configuring
-
-Use environment variables to configure Menu Proxy.
-
-| Environment variable | Description              | Default   |
-| -------------------- | ------------------------ | --------- |
-| `PORT`               | What port to listen to.  | `8000`    |
-| `ADDRESS`            | What address to bind to. | `0.0.0.0` |
