@@ -17,7 +17,7 @@ jobs:
           override: true
       - id: prep
         run: |
-          echo ::set-output name=version::${cargo pkgid | cut -d "#" -f2 -}
+          echo ::set-output name=version::$(cargo pkgid | cut -d "#" -f2 -)
       - run: cargo build --release
       - uses: ncipollo/release-action@v1
         with:
@@ -43,7 +43,7 @@ jobs:
           override: true
       - id: prep
         run: |
-          echo ::set-output name=version::${cargo pkgid | cut -d "#" -f2 -}
+          echo ::set-output name=version::$(cargo pkgid | cut -d "#" -f2 -)
       - uses: docker/build-push-action@v2
         with:
           push: true
