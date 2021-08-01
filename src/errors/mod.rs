@@ -6,12 +6,6 @@ use thiserror::Error;
 use crate::menus::id::ParseMenuIDError;
 
 #[derive(Error, Debug)]
-pub enum InternalError {
-    #[error("http request failed")]
-    ReqwestError(#[from] reqwest::Error),
-}
-
-#[derive(Error, Debug)]
 pub enum RangeError {
     #[error("dates out of range")]
     DatesOutOfRange,

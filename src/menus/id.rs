@@ -83,8 +83,8 @@ mod tests {
 
         assert!(MenuID::from_str("invalid").is_err());
         assert!(MenuID::from_str(".").is_err());
-        assert!(MenuID::from_str("a.").is_err());
-        assert!(MenuID::from_str(".a").is_err());
+        assert!(MenuID::from_str("skolmaten.").is_err());
+        assert!(MenuID::from_str(".abc").is_err());
     }
 
     #[test]
