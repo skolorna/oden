@@ -22,13 +22,12 @@ jobs:
           RUSTFLAGS: "-Z instrument-coverage"
           RUSTDOCFLAGS: "-Z instrument-coverage"
           LLVM_PROFILE_FILE: "menu_proxy-%p-%m.profraw"
-      - run: grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./coverage/
-      - run: ls ./coverage
+      - run: grcov . -s . --binary-path ./target/debug/ -t lcov --branch --ignore-not-existing -o ./lcov
       - name: Upload to codecov.io
         uses: codecov/codecov-action@v2
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
-          files: ./coverage/
+          files: ./lcov
           fail_ci_if_error: true
 
   check:
