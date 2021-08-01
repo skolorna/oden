@@ -169,13 +169,12 @@ mod tests {
             let days = list_days(MENU_ID, first, last).await.unwrap();
 
             assert!(days.len() > 10);
+            assert!(is_sorted(&days));
 
             for day in days {
                 assert!(day.date >= first);
                 assert!(day.date <= last);
             }
-
-            assert!(is_sorted(&days));
         }
     }
 }
