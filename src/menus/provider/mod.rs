@@ -194,4 +194,14 @@ mod tests {
         );
         assert!(Provider::Sodexo.query_menu("bruh").await.is_err());
     }
+
+    #[actix_rt::test]
+    async fn kleins_query_menu() {
+        let menu = Provider::Kleins
+            .query_menu("viktor-rydberg-grundskola-jarlaplan")
+            .await
+            .unwrap();
+        assert_eq!(menu.title, "Viktor Rydberg Gymnasium Jarlaplan");
+        assert!(Provider::Kleins.query_menu("nonexistent").await.is_err());
+    }
 }

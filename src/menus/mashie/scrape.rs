@@ -10,12 +10,16 @@ lazy_static! {
     static ref S_MEAL: Selector = Selector::parse(".app-daymenu-name").unwrap();
 }
 
-fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
-    let mut segments = literal.split_whitespace();
-
-    let d = segments.next()?.parse::<u32>().ok()?;
-
-    let m = match segments.next()? {
+/// Parse a month literal in Swedish. Returns the month, starting from 1 with January.
+/// ```
+/// use menu_proxy::menus::mashie::scrape::parse_month;
+///
+/// assert_eq!(parse_month("jun"), Some(6));
+/// assert!(parse_month("may").is_none()); // maj is correct
+/// assert!(parse_month("Jan").is_none()); // case sensitive
+/// ```
+pub fn parse_month(m: &str) -> Option<u32> {
+    match m {
         "jan" => Some(1),
         "feb" => Some(2),
         "mar" => Some(3),
@@ -29,7 +33,14 @@ fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
         "nov" => Some(11),
         "dec" => Some(12),
         _ => None,
-    }?;
+    }
+}
+
+fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
+    let mut segments = literal.split_whitespace();
+
+    let d = segments.next()?.parse::<u32>().ok()?;
+    let m = parse_month(segments.next()?)?;
 
     // Accept None as year, but not Some(&str) that doesn't parse to i32.
     let y = segments
@@ -74,6 +85,27 @@ mod tests {
     use crate::{menus::mashie::query_menu, util::is_sorted};
 
     use super::*;
+
+    #[test]
+    fn parsing_months() {
+        let months = vec![
+            "jan", "feb", "mar", "apr", "maj", "jun", "jul", "aug", "sep", "okt", "nov", "dec",
+        ];
+
+        for (i, month) in months.into_iter().enumerate() {
+            let n = i as u32 + 1;
+            assert_eq!(
+                parse_month(month),
+                Some(n),
+                "`{}` is month number {}",
+                month,
+                n
+            );
+        }
+
+        assert!(parse_month("jAN").is_none());
+        assert!(parse_month("juni").is_none());
+    }
 
     #[test]
     fn parse_dates_test() {
