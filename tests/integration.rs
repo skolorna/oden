@@ -26,6 +26,19 @@ async fn health_ok() {
 }
 
 #[actix_rt::test]
+async fn server_header() {
+    let mut app = init_service(create_app!()).await;
+    let resp = get!(app, "/thisshoulddefinitelyreturn404");
+    let header = resp.headers().get("server").unwrap();
+
+    assert_eq!(resp.status(), StatusCode::NOT_FOUND);
+    assert_eq!(
+        header.to_str().unwrap(),
+        format!("menu-proxy/{}", env!("CARGO_PKG_VERSION"))
+    );
+}
+
+#[actix_rt::test]
 async fn list_menus() {
     let mut app = init_service(create_app!()).await;
     let resp = get!(app, "/menus");
