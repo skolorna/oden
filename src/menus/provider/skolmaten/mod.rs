@@ -1,8 +1,6 @@
 pub mod days;
 pub mod fetch;
 
-use std::time::Instant;
-
 use chrono::NaiveDate;
 use futures::stream::{self, StreamExt};
 use reqwest::Client;
@@ -100,8 +98,6 @@ async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<
 }
 
 pub(super) async fn list_menus() -> Result<Vec<Menu>> {
-    let before_crawl = Instant::now();
-
     let client = Client::new();
 
     let provinces = list_provinces(&client).await?;
@@ -143,8 +139,6 @@ pub(super) async fn list_menus() -> Result<Vec<Menu>> {
         .flatten()
         .flatten()
         .collect();
-
-    println!("{}ms crawl", before_crawl.elapsed().as_millis());
 
     Ok(menus)
 }
