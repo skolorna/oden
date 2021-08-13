@@ -3,13 +3,14 @@
 pub mod menus;
 
 use actix_web::{
-    http::header::{CacheControl, CacheDirective},
+    http::header::{CacheControl, CacheDirective, CONTENT_TYPE},
     web, HttpResponse, Responder,
 };
 
 pub async fn get_health() -> impl Responder {
     HttpResponse::Ok()
         .set(CacheControl(vec![CacheDirective::NoCache]))
+        .header(CONTENT_TYPE, "text/plain; charset=utf-8")
         .body("\u{41f}\u{43e}\u{435}\u{445}\u{430}\u{43b}\u{438}!") // "Поехали!", russian for "Let's go!"
 }
 
