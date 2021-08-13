@@ -5,10 +5,7 @@ use reqwest::{header::CONTENT_LENGTH, Client};
 use scraper::Html;
 use serde::Deserialize;
 
-use crate::{
-    errors::{NotFoundError, Result},
-    menus::mashie::scrape::scrape_mashie_days,
-};
+use crate::{errors::{NotFoundError, Result}, menus::mashie::scrape::scrape_mashie_days, util::is_sorted};
 
 use super::{day::Day, id::MenuID, provider::Provider, Menu};
 
@@ -63,10 +60,12 @@ pub async fn list_days(
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
     let doc = Html::parse_document(&html);
-    let days = scrape_mashie_days(&doc)
+    let days: Vec<Day> = scrape_mashie_days(&doc)
         .into_iter()
         .filter(|day| day.date >= first && day.date <= last)
         .collect();
+    
+    debug_assert!(is_sorted(&days));
 
     Ok(days)
 }
@@ -168,7 +167,7 @@ mod tests {
 
             let days = list_days(MENU_ID, first, last).await.unwrap();
 
-            assert!(days.len() > 10);
+            assert!(days.len() > 5);
             assert!(is_sorted(&days));
 
             for day in days {
