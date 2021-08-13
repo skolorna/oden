@@ -1,28 +1,44 @@
+use std::str::FromStr;
+
 use serde::{Deserialize, Serialize};
+
+#[derive(thiserror::Error, Debug)]
+pub enum ParseMealValueError {
+    #[error("invalid meal value")]
+    InvalidMealValue,
+}
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct Meal {
-    pub value: String,
+    value: String,
 }
 
 impl Meal {
+    pub fn value(&self) -> &str {
+        &self.value
+    }
+}
+
+impl FromStr for Meal {
+    type Err = ParseMealValueError;
+
     /// Construct a `Meal` with a specific value. The value will be normalized.
     /// Some meal values are considered invalid and will result in `None` being
     /// returned.
     /// ```
     /// use menu_proxy::menus::meal::Meal;
+    /// use std::str::FromStr;
     ///
-    /// assert_eq!(Meal::from_value("\t  Fisk Björkeby   \n").unwrap().value, "Fisk Björkeby");
-    ///
-    /// assert!(Meal::from_value("\n\n\n").is_none());
+    /// assert_eq!(Meal::from_str("\t  Fisk Björkeby   \n").unwrap().value(), "Fisk Björkeby");
+    /// assert!(Meal::from_str("\n\n\n").is_err());
     /// ```
-    pub fn from_value(value: &str) -> Option<Self> {
+    fn from_str(value: &str) -> Result<Self, Self::Err> {
         let trimmed = value.split_whitespace().collect::<Vec<&str>>().join(" ");
 
         if trimmed.is_empty() || trimmed.to_lowercase().contains("lov") {
-            None
+            Err(ParseMealValueError::InvalidMealValue)
         } else {
-            Some(Self { value: trimmed })
+            Ok(Self { value: trimmed })
         }
     }
 }
@@ -33,19 +49,19 @@ mod tests {
 
     #[test]
     fn meal() {
-        assert!(Meal::from_value("      \t\n    ").is_none());
+        assert!(Meal::from_str("      \t\n    ").is_err());
         assert_eq!(
-            Meal::from_value("              Fisk Björkeby ")
+            Meal::from_str("              Fisk Björkeby ")
                 .unwrap()
                 .value,
             "Fisk Björkeby"
         );
         assert_eq!(
-            Meal::from_value("Fisk\t\t          Björkeby med ris     \n")
+            Meal::from_str("Fisk\t\t          Björkeby med ris     \n")
                 .unwrap()
                 .value,
             "Fisk Björkeby med ris"
         );
-        assert!(Meal::from_value("\t\n  dET ÄR SommarLOV!!!!!\n\n").is_none());
+        assert!(Meal::from_str("\t\n  dET ÄR SommarLOV!!!!!\n\n").is_err());
     }
 }

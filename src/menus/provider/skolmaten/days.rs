@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::{Datelike, NaiveDate};
 use futures::stream::{self, StreamExt};
 use reqwest::Client;
@@ -30,7 +32,7 @@ pub struct SkolmatenMeal {
 
 impl SkolmatenMeal {
     pub fn into_meal(self) -> Option<Meal> {
-        Meal::from_value(&self.value)
+        Meal::from_str(&self.value).ok()
     }
 }
 
@@ -193,7 +195,7 @@ pub async fn list_days(
     let mut days = days_2d
         .into_iter()
         .flatten()
-        .filter(|day| day.date >= first && day.date <= last)
+        .filter(|day| day.is_between(first, last))
         .collect::<Vec<_>>();
 
     days.sort();
@@ -259,7 +261,7 @@ mod tests {
             }
             .into_day()
             .unwrap()
-            .meals
+            .meals()
             .len(),
             1
         );

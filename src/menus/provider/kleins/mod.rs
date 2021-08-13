@@ -125,7 +125,7 @@ pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> Resu
     let doc = Html::parse_document(&html);
     let days = scrape_mashie_days(&doc)
         .into_iter()
-        .filter(|day| day.date >= first && day.date <= last)
+        .filter(|day| day.is_between(first, last))
         .collect();
 
     Ok(days)

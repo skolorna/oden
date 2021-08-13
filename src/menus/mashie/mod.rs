@@ -66,7 +66,7 @@ pub async fn list_days(
     let doc = Html::parse_document(&html);
     let days: Vec<Day> = scrape_mashie_days(&doc)
         .into_iter()
-        .filter(|day| day.date >= first && day.date <= last)
+        .filter(|day| day.is_between(first, last))
         .collect();
 
     debug_assert!(is_sorted(&days));
@@ -175,8 +175,8 @@ mod tests {
             assert!(is_sorted(&days));
 
             for day in days {
-                assert!(day.date >= first);
-                assert!(day.date <= last);
+                assert!(*day.date() >= first);
+                assert!(*day.date() <= last);
             }
         }
     }
