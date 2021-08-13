@@ -5,7 +5,11 @@ use reqwest::{header::CONTENT_LENGTH, Client};
 use scraper::Html;
 use serde::Deserialize;
 
-use crate::{errors::{NotFoundError, Result}, menus::mashie::scrape::scrape_mashie_days, util::is_sorted};
+use crate::{
+    errors::{NotFoundError, Result},
+    menus::mashie::scrape::scrape_mashie_days,
+    util::is_sorted,
+};
 
 use super::{day::Day, id::MenuID, provider::Provider, Menu};
 
@@ -64,7 +68,7 @@ pub async fn list_days(
         .into_iter()
         .filter(|day| day.date >= first && day.date <= last)
         .collect();
-    
+
     debug_assert!(is_sorted(&days));
 
     Ok(days)
