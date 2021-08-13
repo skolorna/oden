@@ -140,11 +140,11 @@ mod tests {
         assert!(is_sorted(&days));
 
         let first_day = days.get(0).unwrap();
-        assert_eq!(first_day.date, NaiveDate::from_ymd(2017, 12, 1));
+        assert_eq!(*first_day.date(), NaiveDate::from_ymd(2017, 12, 1));
 
         for day in days.iter() {
-            assert!(day.date >= first);
-            assert!(day.date <= last);
+            assert!(*day.date() >= first);
+            assert!(*day.date() <= last);
         }
     }
 }

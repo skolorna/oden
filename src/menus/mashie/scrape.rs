@@ -1,3 +1,5 @@
+use std::str::FromStr;
+
 use chrono::{Datelike, Local, NaiveDate};
 use lazy_static::lazy_static;
 use scraper::{ElementRef, Html, Selector};
@@ -54,7 +56,7 @@ fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
 
 fn parse_meal_elem(elem: ElementRef) -> Option<Meal> {
     let text = elem.text().next()?;
-    Meal::from_value(text)
+    Meal::from_str(text).ok()
 }
 
 fn parse_day_elem(elem: ElementRef) -> Option<Day> {
@@ -141,7 +143,7 @@ mod tests {
         assert!(is_sorted(&days));
 
         for day in days {
-            assert!(!day.meals.is_empty())
+            assert!(!day.meals().is_empty())
         }
 
         assert!(scrape_mashie_days(&Html::parse_fragment("<h1>no days</h1>")).is_empty());
