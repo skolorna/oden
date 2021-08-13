@@ -2,10 +2,15 @@
 
 pub mod menus;
 
-use actix_web::{http::header::CacheDirective, web, Responder};
+use actix_web::{
+    http::header::{CacheControl, CacheDirective},
+    web, HttpResponse, Responder,
+};
 
 pub async fn get_health() -> impl Responder {
-    "\u{41f}\u{43e}\u{435}\u{445}\u{430}\u{43b}\u{438}!" // "Поехали!", russian for "Let's go!"
+    HttpResponse::Ok()
+        .set(CacheControl(vec![CacheDirective::NoCache]))
+        .body("\u{41f}\u{43e}\u{435}\u{445}\u{430}\u{43b}\u{438}!") // "Поехали!", russian for "Let's go!"
 }
 
 /// Configure all the  routes.
@@ -36,6 +41,12 @@ mod tests {
         let resp = test::call_service(&mut app, req).await;
 
         assert_eq!(resp.status(), StatusCode::OK);
+        assert_eq!(
+            resp.headers()
+                .get("cache-control")
+                .map(|h| h.to_str().unwrap()),
+            Some("no-cache")
+        );
     }
 
     #[test]
