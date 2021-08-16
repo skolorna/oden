@@ -11,7 +11,7 @@ actix-cors = "0.5.4"
 actix-rt = "1.1.1"
 actix-web = "3.3.2"
 chrono = { version = "0.4.19", features = ["serde"] }
-const_format = "0.2.15"
+const_format = "0.2.18"
 env_logger = "0.9.0"
 futures = "0.3.16"
 lazy_static = "1.4.0"
