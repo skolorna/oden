@@ -27,7 +27,10 @@ macro_rules! create_app {
                     res.map(|mut res| {
                         let headers = res.headers_mut();
                         headers.insert(header::SERVER, HeaderValue::from_str(SERVER_NAME).unwrap());
-                        headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_str("*").unwrap());
+                        headers.insert(
+                            header::ACCESS_CONTROL_ALLOW_ORIGIN,
+                            HeaderValue::from_str("*").unwrap(),
+                        );
                         res
                     })
                 })
