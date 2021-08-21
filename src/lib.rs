@@ -6,7 +6,6 @@ pub mod util;
 #[macro_export]
 macro_rules! create_app {
     () => {{
-        use actix_cors::Cors;
         use actix_web::dev::Service;
         use actix_web::http::header::{self, HeaderValue};
         use actix_web::middleware::{self, normalize};
@@ -23,17 +22,12 @@ macro_rules! create_app {
                 normalize::TrailingSlash::Trim,
             ))
             .configure(routes::configure)
-            .wrap(
-                Cors::default()
-                    .send_wildcard()
-                    .allow_any_origin()
-                    .allow_any_method(),
-            )
             .wrap_fn(|req, srv| {
                 srv.call(req).map(|res| {
                     res.map(|mut res| {
                         let headers = res.headers_mut();
                         headers.insert(header::SERVER, HeaderValue::from_str(SERVER_NAME).unwrap());
+                        headers.insert(header::ACCESS_CONTROL_ALLOW_ORIGIN, HeaderValue::from_str("*").unwrap());
                         res
                     })
                 })
