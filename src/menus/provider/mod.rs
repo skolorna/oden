@@ -1,5 +1,6 @@
 mod kleins;
 mod mpi;
+mod sabis;
 mod skolmaten;
 mod sodexo;
 
@@ -7,18 +8,21 @@ use std::str::FromStr;
 
 use chrono::NaiveDate;
 use serde::{de, Deserialize, Deserializer, Serialize};
+use strum::{EnumIter, EnumString, IntoEnumIterator};
 
 use super::{day::Day, Menu};
 
 use crate::errors::Result;
 
 /// A provider of menus.
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, EnumString, strum::ToString, EnumIter)]
+#[strum(serialize_all = "lowercase")]
 pub enum Provider {
     Skolmaten,
     Sodexo,
     MPI,
     Kleins,
+    Sabis,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -29,13 +33,7 @@ pub struct ProviderInfo {
 
 impl Provider {
     pub fn id(&self) -> String {
-        match *self {
-            Provider::Skolmaten => "skolmaten",
-            Provider::Sodexo => "sodexo",
-            Provider::MPI => "mpi",
-            Provider::Kleins => "kleins",
-        }
-        .to_owned()
+        self.to_string()
     }
 
     pub fn name(&self) -> String {
@@ -44,6 +42,7 @@ impl Provider {
             Provider::Sodexo => "Sodexo",
             Provider::MPI => "MPI",
             Provider::Kleins => "Klein's Kitchen",
+            Provider::Sabis => "Sabis",
         }
         .to_owned()
     }
@@ -63,23 +62,16 @@ impl Provider {
             Sodexo => sodexo::list_menus().await,
             MPI => mpi::list_menus().await,
             Kleins => kleins::list_menus().await,
+            Sabis => sabis::list_menus().await,
         }
     }
 
     pub async fn list_all_menus() -> Result<Vec<Menu>> {
-        use Provider::*;
-
         let mut menus = vec![];
 
-        let mut skolmaten_menus = Skolmaten.list_menus().await?;
-        let mut sodexo_menus = Sodexo.list_menus().await?;
-        let mut mpi_menus = MPI.list_menus().await?;
-        let mut kleins_menus = Kleins.list_menus().await?;
-
-        menus.append(&mut skolmaten_menus);
-        menus.append(&mut sodexo_menus);
-        menus.append(&mut mpi_menus);
-        menus.append(&mut kleins_menus);
+        for p in Self::iter() {
+            menus.append(&mut p.list_menus().await?);
+        }
 
         menus.sort_by(|a, b| a.title.cmp(&b.title));
 
@@ -94,6 +86,7 @@ impl Provider {
             Sodexo => sodexo::query_menu(menu_id).await,
             MPI => mpi::query_menu(menu_id).await,
             Kleins => kleins::query_menu(menu_id).await,
+            Sabis => todo!(),
         }
     }
 
@@ -110,33 +103,8 @@ impl Provider {
             Sodexo => sodexo::list_days(menu_id, first, last).await,
             MPI => mpi::list_days(menu_id, first, last).await,
             Kleins => kleins::list_days(menu_id, first, last).await,
+            Sabis => todo!(),
         }
-    }
-}
-
-#[derive(thiserror::Error, Debug)]
-pub enum ParseProviderError {
-    #[error("invalid provider literal")]
-    InvalidLiteral,
-}
-
-impl FromStr for Provider {
-    type Err = ParseProviderError;
-
-    fn from_str(s: &str) -> core::result::Result<Self, Self::Err> {
-        match s {
-            "skolmaten" => Ok(Provider::Skolmaten),
-            "sodexo" => Ok(Provider::Sodexo),
-            "mpi" => Ok(Provider::MPI),
-            "kleins" => Ok(Provider::Kleins),
-            _ => Err(ParseProviderError::InvalidLiteral),
-        }
-    }
-}
-
-impl ToString for Provider {
-    fn to_string(&self) -> String {
-        self.id()
     }
 }
 
