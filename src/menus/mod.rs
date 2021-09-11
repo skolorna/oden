@@ -7,7 +7,9 @@ pub mod meal;
 pub mod provider;
 
 use chrono::{Duration, Local, NaiveDate};
+use futures::{stream, StreamExt};
 use serde::{Deserialize, Serialize};
+use strum::IntoEnumIterator;
 
 use self::{
     day::Day,
@@ -81,8 +83,22 @@ impl Menu {
     }
 }
 
-pub async fn list_menus() -> Result<Vec<Menu>> {
-    Provider::list_all_menus().await
+/// List all the menus everywhere (from all providers).
+pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
+    let mut menus = stream::iter(Provider::iter())
+        .map(|p| async move { p.list_menus().await })
+        .buffer_unordered(concurrent)
+        .collect::<Vec<_>>()
+        .await
+        .into_iter()
+        .collect::<Result<Vec<_>>>()?
+        .into_iter()
+        .flatten()
+        .collect::<Vec<Menu>>();
+
+    menus.sort_by(|a, b| a.title.cmp(&b.title));
+
+    Ok(menus)
 }
 
 pub async fn query_menu(menu_id: &MenuID) -> Result<Menu> {

@@ -8,7 +8,7 @@ use std::str::FromStr;
 
 use chrono::NaiveDate;
 use serde::{de, Deserialize, Deserializer, Serialize};
-use strum::{EnumIter, EnumString, IntoEnumIterator};
+use strum::{EnumIter, EnumString};
 
 use super::{day::Day, Menu};
 
@@ -64,18 +64,6 @@ impl Provider {
             Kleins => kleins::list_menus().await,
             Sabis => sabis::list_menus().await,
         }
-    }
-
-    pub async fn list_all_menus() -> Result<Vec<Menu>> {
-        let mut menus = vec![];
-
-        for p in Self::iter() {
-            menus.append(&mut p.list_menus().await?);
-        }
-
-        menus.sort_by(|a, b| a.title.cmp(&b.title));
-
-        Ok(menus)
     }
 
     pub async fn query_menu(&self, menu_id: &str) -> Result<Menu> {
