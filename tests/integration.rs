@@ -51,7 +51,7 @@ async fn list_menus() {
     assert!(Provider::from_str("invalid provider id").is_err());
 
     for menu in menus {
-        assert!(Provider::from_str(&menu.provider.id).is_ok());
+        assert!(Provider::from_str(&menu.provider().id).is_ok());
     }
 }
 
@@ -65,13 +65,13 @@ async fn query_menu() {
 
         let menu: Menu = read_body_json(resp).await;
 
-        assert_eq!(menu.title, "P A Fogelströms gymnasium, Stockholms stad");
+        assert_eq!(menu.title(), "P A Fogelströms gymnasium, Stockholms stad");
         assert_eq!(
-            Provider::from_str(&menu.provider.id).unwrap(),
+            Provider::from_str(&menu.provider().id).unwrap(),
             Provider::Skolmaten
         );
         assert_eq!(
-            menu.id,
+            menu.id().clone(),
             MenuID::new(Provider::Skolmaten, "85957002".to_owned())
         );
     }
@@ -86,7 +86,7 @@ async fn query_menu() {
         assert_eq!(resp.status(), StatusCode::OK);
         let menu: Menu = read_body_json(resp).await;
         assert_eq!(
-            menu.title,
+            menu.title(),
             "Södra Latins Gymnasium, Stockholm, Fraiche Catering"
         );
     }

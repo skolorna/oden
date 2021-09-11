@@ -1,8 +1,8 @@
-use std::str::FromStr;
+use std::{fmt::Display, str::FromStr};
 
 use serde::{de, Deserialize, Deserializer, Serialize};
 
-use super::provider::{ParseProviderError, Provider};
+use super::provider::Provider;
 
 #[derive(PartialEq, Debug, Clone)]
 pub struct MenuID {
@@ -24,8 +24,8 @@ pub enum ParseMenuIDError {
     #[error("fields missing")]
     FieldsMissing,
 
-    #[error("{0}")]
-    ParseProviderError(#[from] ParseProviderError),
+    #[error("failed to parse provider")]
+    ParseProviderError(#[from] strum::ParseError),
 }
 
 impl FromStr for MenuID {
@@ -45,9 +45,9 @@ impl FromStr for MenuID {
     }
 }
 
-impl ToString for MenuID {
-    fn to_string(&self) -> String {
-        format!("{}.{}", self.provider.to_string(), self.local_id)
+impl Display for MenuID {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}.{}", self.provider.to_string(), self.local_id)
     }
 }
 

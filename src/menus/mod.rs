@@ -54,9 +54,9 @@ impl ListDaysQuery {
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Menu {
-    pub id: MenuID,
-    pub title: String,
-    pub provider: ProviderInfo,
+    id: MenuID,
+    title: String,
+    provider: ProviderInfo,
 }
 
 impl Menu {
@@ -66,6 +66,18 @@ impl Menu {
             id,
             title,
         }
+    }
+
+    pub fn id(&self) -> &MenuID {
+        &self.id
+    }
+
+    pub fn title(&self) -> &str {
+        &self.title
+    }
+
+    pub fn provider(&self) -> &ProviderInfo {
+        &self.provider
     }
 }
 

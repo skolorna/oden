@@ -9,6 +9,7 @@ use url::Url;
 use crate::{
     errors::{Error, Result},
     menus::{day::Day, id::MenuID, mashie::scrape::scrape_mashie_days, provider::Provider, Menu},
+    util::last_path_segment,
 };
 use fetch::fetch;
 
@@ -30,12 +31,6 @@ impl KleinsSchool {
 
         Menu::new(id, self.title)
     }
-}
-
-fn last_path_segment(url: &Url) -> Option<&str> {
-    url.path_segments()?
-        .filter(|s| !s.is_empty()) // If the url contains a trailing slash, the last segment will be "".
-        .last()
 }
 
 async fn raw_list_schools() -> Result<Vec<KleinsSchool>> {
