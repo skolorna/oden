@@ -6,7 +6,11 @@ use reqwest::Client;
 use scraper::{ElementRef, Html, Selector};
 use url::Url;
 
-use crate::{errors::{Error, Result}, menus::{day::Day, id::MenuID, mashie::scrape::scrape_mashie_days, provider::Provider, Menu}, util::last_path_segment};
+use crate::{
+    errors::{Error, Result},
+    menus::{day::Day, id::MenuID, mashie::scrape::scrape_mashie_days, provider::Provider, Menu},
+    util::last_path_segment,
+};
 use fetch::fetch;
 
 lazy_static! {

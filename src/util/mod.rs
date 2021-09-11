@@ -31,3 +31,20 @@ pub fn last_path_segment(url: &Url) -> Option<&str> {
         .filter(|s| !s.is_empty()) // If the url contains a trailing slash, the last segment will be "".
         .last()
 }
+
+/// Extract digits from a character iterator.
+/// ```
+/// use menu_proxy::util::extract_digits;
+///
+/// assert_eq!(extract_digits("woah12there34".chars(), 10), 1234);
+/// assert_eq!(extract_digits("abcdef".chars(), 16), 11259375);
+/// ```
+pub fn extract_digits<I>(chars: I, radix: u32) -> u32
+where
+    I: Iterator<Item = char>,
+{
+    let digits = chars
+        .filter(|c| c.is_digit(radix)).collect::<String>();
+    
+    u32::from_str_radix(&digits, radix).unwrap()
+}

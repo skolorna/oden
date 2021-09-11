@@ -86,7 +86,7 @@ impl Provider {
             Sodexo => sodexo::query_menu(menu_id).await,
             MPI => mpi::query_menu(menu_id).await,
             Kleins => kleins::query_menu(menu_id).await,
-            Sabis => todo!(),
+            Sabis => sabis::query_menu(menu_id).await,
         }
     }
 
@@ -103,7 +103,7 @@ impl Provider {
             Sodexo => sodexo::list_days(menu_id, first, last).await,
             MPI => mpi::list_days(menu_id, first, last).await,
             Kleins => kleins::list_days(menu_id, first, last).await,
-            Sabis => todo!(),
+            Sabis => sabis::list_days(menu_id, first, last).await,
         }
     }
 }
