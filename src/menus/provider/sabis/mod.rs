@@ -19,9 +19,9 @@ lazy_static! {
     static ref S_RESTAURANT_ANCHOR: Selector =
         Selector::parse("li.restaurant-list-item a").unwrap();
     static ref S_ENTRY_TITLE: Selector = Selector::parse(".entry-title").unwrap();
-		static ref S_DAY_CONTAINER: Selector = Selector::parse(".lunch-day-container").unwrap();
-		static ref S_LUNCH_DAY: Selector = Selector::parse(".lunch-day").unwrap();
-		static ref S_LUNCH_DISH: Selector = Selector::parse(".lunch-dish").unwrap();
+    static ref S_DAY_CONTAINER: Selector = Selector::parse(".lunch-day-container").unwrap();
+    static ref S_LUNCH_DAY: Selector = Selector::parse(".lunch-day").unwrap();
+    static ref S_LUNCH_DISH: Selector = Selector::parse(".lunch-dish").unwrap();
 }
 
 pub async fn list_menus() -> Result<Vec<Menu>> {
@@ -60,17 +60,30 @@ pub async fn query_menu(menu_id: &str) -> Result<Menu> {
         .ok_or(Error::NotFoundError(NotFoundError::MenuNotFoundError))
 }
 
+pub fn parse_weekday(literal: &str) -> Option<Weekday> {
+    match literal {
+        "Måndag" => Some(Weekday::Mon),
+        "Tisdag" => Some(Weekday::Tue),
+        "Onsdag" => Some(Weekday::Wed),
+        "Torsdag" => Some(Weekday::Thu),
+        "Fredag" => Some(Weekday::Fri),
+        "Lördag" => Some(Weekday::Sat),
+        "Söndag" => Some(Weekday::Sun),
+        _ => None,
+    }
+}
+
 pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_id)
     );
-		let client = Client::builder().redirect(Policy::none()).build()?;
+    let client = Client::builder().redirect(Policy::none()).build()?;
     let res = client.get(&url).send().await?;
-		if res.status() == StatusCode::NOT_FOUND {
-			return Err(Error::NotFoundError(NotFoundError::MenuNotFoundError));
-		}
-		let html = res.text().await?;
+    if res.status() == StatusCode::NOT_FOUND {
+        return Err(Error::NotFoundError(NotFoundError::MenuNotFoundError));
+    }
+    let html = res.text().await?;
     let doc = Html::parse_document(&html);
 
     let chars = doc
@@ -79,34 +92,32 @@ pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> Resu
         .ok_or(Error::InternalError)?
         .text()
         .flat_map(|s| s.chars());
-		let week_num = extract_digits(chars, 10);
+    let week_num = extract_digits(chars, 10);
 
-		let year = Utc::now().year();
+    let year = Utc::now().year();
 
-		let days = doc.select(&S_DAY_CONTAINER).filter_map(|e| {
-			let weekday_literal = e.select(&S_LUNCH_DAY).next()?.text().collect::<String>();
-			let weekday = match weekday_literal.as_str() {
-				"Måndag" => Some(Weekday::Mon),
-				"Tisdag" => Some(Weekday::Tue),
-				"Onsdag" => Some(Weekday::Wed),
-				"Torsdag" => Some(Weekday::Thu),
-				"Fredag" => Some(Weekday::Fri),
-				"Lördag" => Some(Weekday::Sat),
-				"Söndag" => Some(Weekday::Sun),
-				_ => None,
-			}?;
-			let date = NaiveDate::from_isoywd_opt(year, week_num, weekday)?;
+    let days = doc
+        .select(&S_DAY_CONTAINER)
+        .filter_map(|e| {
+            let weekday_literal = e.select(&S_LUNCH_DAY).next()?.text().collect::<String>();
+            let weekday = parse_weekday(weekday_literal.as_str())?;
+            let date = NaiveDate::from_isoywd_opt(year, week_num, weekday)?;
 
-			if date < first || date > last {
-				return None;
-			}
+            if date < first || date > last {
+                return None;
+            }
 
-			let meals = e.select(&S_LUNCH_DISH).map(|e| e.text().collect::<String>()).filter_map(|v| Meal::from_str(&v).ok()).collect::<Vec<_>>();
+            let meals = e
+                .select(&S_LUNCH_DISH)
+                .map(|e| e.text().collect::<String>())
+                .filter_map(|v| Meal::from_str(&v).ok())
+                .collect::<Vec<_>>();
 
-			Day::new_opt(date, meals)
-		}).collect::<Vec<_>>();
+            Day::new_opt(date, meals)
+        })
+        .collect::<Vec<_>>();
 
-		Ok(days)
+    Ok(days)
 }
 
 #[cfg(test)]
@@ -132,10 +143,37 @@ mod tests {
 
     #[actix_rt::test]
     async fn test_list_days() {
-        let days = list_days("rosenbad", NaiveDate::from_ymd(2000, 1, 1), NaiveDate::from_ymd(2077, 1, 1)).await.unwrap();
+        let days = list_days(
+            "rosenbad",
+            NaiveDate::from_ymd(2000, 1, 1),
+            NaiveDate::from_ymd(2077, 1, 1),
+        )
+        .await
+        .unwrap();
 
-				assert!(days.len() > 3);
-				assert!(list_days("rosenbad", NaiveDate::from_ymd(2005, 1, 1), NaiveDate::from_ymd(2005, 12, 31)).await.unwrap().is_empty());
-        assert!(list_days("om-oss", NaiveDate::from_ymd(2020, 1, 1), NaiveDate::from_ymd(2020, 1, 1)).await.is_err());
+        assert!(days.len() > 3);
+        assert!(list_days(
+            "rosenbad",
+            NaiveDate::from_ymd(2005, 1, 1),
+            NaiveDate::from_ymd(2005, 12, 31)
+        )
+        .await
+        .unwrap()
+        .is_empty());
+        assert!(list_days(
+            "om-oss",
+            NaiveDate::from_ymd(2020, 1, 1),
+            NaiveDate::from_ymd(2020, 1, 1)
+        )
+        .await
+        .is_err());
+    }
+
+    #[test]
+    fn weekday_parsing() {
+        assert_eq!(parse_weekday("Mån"), Some(Weekday::Mon));
+        assert_eq!(parse_weekday("Lör"), Some(Weekday::Sat));
+        assert_eq!(parse_weekday("Sön"), Some(Weekday::Sun));
+        assert_eq!(parse_weekday("sön"), None);
     }
 }

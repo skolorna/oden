@@ -43,8 +43,7 @@ pub fn extract_digits<I>(chars: I, radix: u32) -> u32
 where
     I: Iterator<Item = char>,
 {
-    let digits = chars
-        .filter(|c| c.is_digit(radix)).collect::<String>();
-    
+    let digits = chars.filter(|c| c.is_digit(radix)).collect::<String>();
+
     u32::from_str_radix(&digits, radix).unwrap()
 }
