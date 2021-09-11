@@ -154,7 +154,7 @@ mod tests {
     async fn sodexo_query_menu() {
         assert_eq!(
             Provider::Sodexo
-                .query_menu("10910e60-20ca-4478-b864-abd8007ad970")
+                .query_menu("7086f5e4-083d-42a4-93cc-ad8200d82417")
                 .await
                 .unwrap()
                 .title,
