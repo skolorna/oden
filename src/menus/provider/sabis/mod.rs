@@ -171,9 +171,9 @@ mod tests {
 
     #[test]
     fn weekday_parsing() {
-        assert_eq!(parse_weekday("Mån"), Some(Weekday::Mon));
-        assert_eq!(parse_weekday("Lör"), Some(Weekday::Sat));
-        assert_eq!(parse_weekday("Sön"), Some(Weekday::Sun));
-        assert_eq!(parse_weekday("sön"), None);
+        assert_eq!(parse_weekday("Måndag"), Some(Weekday::Mon));
+        assert_eq!(parse_weekday("Lördag"), Some(Weekday::Sat));
+        assert_eq!(parse_weekday("Söndag"), Some(Weekday::Sun));
+        assert_eq!(parse_weekday("söndag"), None);
     }
 }
