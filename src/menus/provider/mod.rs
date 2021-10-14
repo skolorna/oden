@@ -8,14 +8,14 @@ use std::str::FromStr;
 
 use chrono::NaiveDate;
 use serde::{de, Deserialize, Deserializer, Serialize};
-use strum::{EnumIter, EnumString, IntoEnumIterator};
+use strum::{EnumIter, EnumString};
 
 use super::{day::Day, Menu};
 
 use crate::errors::Result;
 
 /// A provider of menus.
-#[derive(PartialEq, Debug, Clone, Copy, EnumString, strum::ToString, EnumIter)]
+#[derive(PartialEq, Debug, Clone, Copy, EnumString, strum::Display, EnumIter)]
 #[strum(serialize_all = "lowercase")]
 pub enum Provider {
     Skolmaten,
@@ -64,18 +64,6 @@ impl Provider {
             Kleins => kleins::list_menus().await,
             Sabis => sabis::list_menus().await,
         }
-    }
-
-    pub async fn list_all_menus() -> Result<Vec<Menu>> {
-        let mut menus = vec![];
-
-        for p in Self::iter() {
-            menus.append(&mut p.list_menus().await?);
-        }
-
-        menus.sort_by(|a, b| a.title.cmp(&b.title));
-
-        Ok(menus)
     }
 
     pub async fn query_menu(&self, menu_id: &str) -> Result<Menu> {
@@ -154,11 +142,11 @@ mod tests {
     async fn sodexo_query_menu() {
         assert_eq!(
             Provider::Sodexo
-                .query_menu("7086f5e4-083d-42a4-93cc-ad8200d82417")
+                .query_menu("e8851c61-013b-4617-93d9-adab00820bcd")
                 .await
                 .unwrap()
                 .title,
-            "Södermalmsskolan"
+            "Södermalmsskolan, Södermalmsskolan"
         );
         assert!(Provider::Sodexo.query_menu("bruh").await.is_err());
     }

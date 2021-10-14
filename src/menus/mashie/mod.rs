@@ -127,13 +127,13 @@ mod tests {
     async fn query_menu_test() {
         let menu = query_menu(
             "https://sodexo.mashie.com",
-            "7086f5e4-083d-42a4-93cc-ad8200d82417",
+            "e8851c61-013b-4617-93d9-adab00820bcd",
         )
         .await
         .unwrap();
 
-        assert_eq!(menu.title, "Södermalmsskolan");
-        assert_eq!(menu.id, "7086f5e4-083d-42a4-93cc-ad8200d82417");
+        assert_eq!(menu.title, "Södermalmsskolan, Södermalmsskolan");
+        assert_eq!(menu.id, "e8851c61-013b-4617-93d9-adab00820bcd");
 
         assert!(query_menu("https://sodexo.mashie.com", "invalid")
             .await

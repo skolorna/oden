@@ -15,11 +15,11 @@ use crate::{
 
 /// Route for listing menus.
 async fn list_menus_route() -> Result<HttpResponse> {
-    let menus = list_menus().await?;
+    let menus = list_menus(10).await?;
     let res = HttpResponse::Ok()
         .set(CacheControl(vec![
-            CacheDirective::MaxAge(86_400),
-            swr(604_800), // 7 days
+            CacheDirective::MaxAge(604_800), // 7 days
+            swr(2_419_200),                  // 28 days
         ]))
         .json(menus);
 
