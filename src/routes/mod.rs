@@ -20,7 +20,7 @@ pub fn configure(cfg: &mut web::ServiceConfig) {
         .service(web::scope("/menus").configure(menus::configure));
 }
 
-/// `stale-while-revalidate` as a `CacheDirective`.
+/// `stale-while-revalidate` as a [CacheDirective].
 pub fn swr(seconds: u32) -> CacheDirective {
     CacheDirective::Extension(
         "stale-while-revalidate".to_owned(),
