@@ -142,11 +142,11 @@ mod tests {
     async fn sodexo_query_menu() {
         assert_eq!(
             Provider::Sodexo
-                .query_menu("7086f5e4-083d-42a4-93cc-ad8200d82417")
+                .query_menu("e8851c61-013b-4617-93d9-adab00820bcd")
                 .await
                 .unwrap()
                 .title,
-            "Södermalmsskolan"
+            "Södermalmsskolan, Södermalmsskolan"
         );
         assert!(Provider::Sodexo.query_menu("bruh").await.is_err());
     }
