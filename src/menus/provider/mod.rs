@@ -15,7 +15,7 @@ use super::{day::Day, Menu};
 use crate::errors::Result;
 
 /// A provider of menus.
-#[derive(PartialEq, Debug, Clone, Copy, EnumString, strum::ToString, EnumIter)]
+#[derive(PartialEq, Debug, Clone, Copy, EnumString, strum::Display, EnumIter)]
 #[strum(serialize_all = "lowercase")]
 pub enum Provider {
     Skolmaten,
