@@ -19,7 +19,7 @@ reqwest = { version =  "0.10.10", features = ["json"] }
 scraper = "0.12.0"
 serde = { version = "1.0.130", features = ["derive"] }
 strum = { version = "0.22.0", features = ["derive"] }
-thiserror = "1.0.26"
+thiserror = "1.0.30"
 url = "2.2.2"
 urlencoding = "2.1.0"
 
