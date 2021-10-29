@@ -4,11 +4,11 @@ use actix_web::{
     http::StatusCode,
     test::{call_service, init_service, read_body_json, TestRequest},
 };
+use butler_http::create_app;
 use butler_lib::{
     menus::{day::Day, id::MenuId, supplier::Supplier, Menu},
     util::is_sorted,
 };
-use butler_http::create_app;
 
 /// Perform a GET request.
 macro_rules! get {
