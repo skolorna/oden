@@ -26,7 +26,7 @@ impl FromStr for Meal {
     /// Some meal values are considered invalid and will result in `None` being
     /// returned.
     /// ```
-    /// use butler::menus::meal::Meal;
+    /// use butler_lib::menus::meal::Meal;
     /// use std::str::FromStr;
     ///
     /// assert_eq!(Meal::from_str("\t  Fisk Björkeby   \n").unwrap().value(), "Fisk Björkeby");

@@ -4,7 +4,7 @@ use actix_web::{
     http::StatusCode,
     test::{call_service, init_service, read_body_json, TestRequest},
 };
-use butler::{
+use butler_lib::{
     menus::{day::Day, id::MenuId, supplier::Supplier, Menu},
     util::is_sorted,
 };

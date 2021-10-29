@@ -3,7 +3,7 @@ use url::Url;
 
 /// Remove *all* duplicates from a vector, regardless of position.
 /// ```
-/// use butler::util::retain_unique;
+/// use butler_lib::util::retain_unique;
 ///
 /// let mut v = vec![1, 2, 3, 4, 5, 1];
 /// retain_unique(&mut v);
@@ -16,7 +16,7 @@ pub fn retain_unique<T: Eq + Hash + Clone>(v: &mut Vec<T>) {
 
 /// Check if a slice is sorted. **Deprecate when `slice::is_sorted` hits stable.**
 /// ```
-/// use butler::util::is_sorted;
+/// use butler_lib::util::is_sorted;
 ///
 /// assert!(is_sorted(&[] as &[i32]));
 /// assert!(is_sorted(&[1, 2, 2, 4, 5]));
@@ -34,7 +34,7 @@ pub fn last_path_segment(url: &Url) -> Option<&str> {
 
 /// Extract digits from a character iterator.
 /// ```
-/// use butler::util::extract_digits;
+/// use butler_lib::util::extract_digits;
 ///
 /// assert_eq!(extract_digits("woah12there34".chars(), 10), 1234);
 /// assert_eq!(extract_digits("abcdef".chars(), 16), 11259375);

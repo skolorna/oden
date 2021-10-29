@@ -37,7 +37,7 @@ impl Day {
     /// ```
     /// use chrono::NaiveDate;
     /// use std::str::FromStr;
-    /// use butler::menus::{day::Day, meal::Meal};
+    /// use butler_lib::menus::{day::Day, meal::Meal};
     ///
     /// let meals = vec![Meal::from_str("Sushi").unwrap()];
     /// let day = Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), meals).unwrap();
@@ -58,8 +58,8 @@ impl Day {
 /// ```
 /// use chrono::NaiveDate;
 /// use std::str::FromStr;
-/// use butler::menus::day::{Day, dedup_dates};
-/// use butler::menus::meal::Meal;
+/// use butler_lib::menus::day::{Day, dedup_dates};
+/// use butler_lib::menus::meal::Meal;
 ///
 /// let mut days = vec![
 ///     Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), vec![Meal::from_str("Tacos").unwrap()]).unwrap(),

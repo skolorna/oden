@@ -1,7 +1,7 @@
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 
 use actix_web::HttpServer;
-use butler::create_app;
+use butler_http::create_app;
 
 #[actix_web::main]
 async fn main() -> std::io::Result<()> {
