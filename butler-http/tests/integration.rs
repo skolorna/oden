@@ -34,7 +34,7 @@ async fn server_header() {
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     assert_eq!(
         header.to_str().unwrap(),
-        format!("menu-proxy/{}", env!("CARGO_PKG_VERSION"))
+        format!("butler-http/{}", env!("CARGO_PKG_VERSION"))
     );
 }
 
