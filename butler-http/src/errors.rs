@@ -1,5 +1,5 @@
 use actix_web::{http::StatusCode, ResponseError};
-use butler::errors::ButlerError;
+use butler_lib::errors::ButlerError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]

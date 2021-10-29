@@ -15,13 +15,14 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
+      - uses: Swatinem/rust-cache@v1.3.0
       - id: prep
         run: |
           echo ::set-output name=version::$(cargo pkgid | cut -d "#" -f2 -)
       - run: cargo build --release
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: target/release/menu-proxy
+          artifacts: target/release/butler_http
           tag: v${{ steps.prep.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
@@ -49,5 +50,5 @@ jobs:
         with:
           push: true
           tags: |
-            ghcr.io/skolorna/menu-proxy:${{ steps.prep.outputs.version }}
-            ghcr.io/skolorna/menu-proxy:latest
+            ghcr.io/skolorna/butler:${{ steps.prep.outputs.version }}
+            ghcr.io/skolorna/butler:latest

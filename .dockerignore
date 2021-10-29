@@ -1,4 +1,5 @@
 *
-!/src
+!/butler-http
+!/butler-lib
 !Cargo.toml
 !Cargo.lock

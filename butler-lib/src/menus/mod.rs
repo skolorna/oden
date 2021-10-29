@@ -10,7 +10,6 @@ use chrono::NaiveDate;
 use futures::{stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
-use tracing::info;
 
 use crate::errors::ButlerResult;
 
@@ -69,8 +68,6 @@ pub async fn list_menus(concurrent: usize) -> ButlerResult<Vec<Menu>> {
 }
 
 pub async fn query_menu(menu_id: &MenuId) -> ButlerResult<Menu> {
-    info!("Querying menu {}", menu_id);
-
     menu_id.supplier.query_menu(&menu_id.local_id).await
 }
 

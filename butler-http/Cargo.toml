@@ -1,14 +1,14 @@
 [package]
 name = "butler-http"
 version = "0.1.0"
-edition = "2021"
+edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
 actix-rt = "2.3.0"
 actix-web = "4.0.0-beta.10"
-butler = { path = "../butler" }
+butler-lib = { path = "../butler-lib" }
 chrono = "0.4.19"
 chrono-tz = "0.6.0"
 const_format = "0.2.22"

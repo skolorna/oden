@@ -4,12 +4,10 @@ use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
-use butler::menus::{id::MenuId, list_days, query_menu};
+use butler_lib::menus::{id::MenuId, list_days, list_menus, query_menu};
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use chrono_tz::Europe::Stockholm;
 use serde::Deserialize;
-
-use butler::menus::list_menus;
 
 use crate::{
     errors::{AppError, AppResult},

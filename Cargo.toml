@@ -1,2 +1,2 @@
 [workspace]
-members = ["butler", "butler-http"]
+members = ["butler-lib", "butler-http"]
