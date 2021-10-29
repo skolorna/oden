@@ -10,7 +10,7 @@ use url::Url;
 
 use crate::errors::{ButlerError, ButlerResult};
 use crate::menus::day::Day;
-use crate::menus::id::MenuID;
+use crate::menus::id::MenuId;
 use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
 use crate::menus::Menu;
@@ -43,7 +43,7 @@ pub async fn list_menus() -> ButlerResult<Vec<Menu>> {
             debug_assert!(local_id.is_some());
 
             Some(Menu::new(
-                MenuID::new(Supplier::Sabis, local_id?.into()),
+                MenuId::new(Supplier::Sabis, local_id?.into()),
                 title,
             ))
         })

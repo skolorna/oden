@@ -34,7 +34,6 @@ impl Day {
     }
 
     /// Check if a day is *between* two `NaiveDate`s (inclusive).
-    /// Panics if `lower > upper` in debug mode.
     /// ```
     /// use chrono::NaiveDate;
     /// use std::str::FromStr;
@@ -46,6 +45,8 @@ impl Day {
     /// assert!(day.is_between(NaiveDate::from_ymd(1789, 7, 10), NaiveDate::from_ymd(1789, 7, 14)));
     /// assert!(!day.is_between(NaiveDate::from_ymd(2020, 5, 4), NaiveDate::from_ymd(2020, 7, 14)));
     /// ```
+    /// # Panics
+    /// Panics if `lower > upper` in debug mode.
     pub fn is_between(&self, lower: NaiveDate, upper: NaiveDate) -> bool {
         debug_assert!(lower <= upper);
 

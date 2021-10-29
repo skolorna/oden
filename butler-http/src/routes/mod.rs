@@ -9,8 +9,8 @@ use actix_web::{
 
 pub async fn get_health() -> impl Responder {
     HttpResponse::Ok()
-        .set(CacheControl(vec![CacheDirective::NoCache]))
-        .header(CONTENT_TYPE, "text/plain; charset=utf-8")
+        .insert_header(CacheControl(vec![CacheDirective::NoStore]))
+        .insert_header((CONTENT_TYPE, "text/plain; charset=utf-8"))
         .body("\u{41f}\u{43e}\u{435}\u{445}\u{430}\u{43b}\u{438}!") // "Поехали!", russian for "Let's go!"
 }
 
@@ -31,10 +31,11 @@ pub fn swr(seconds: u32) -> CacheDirective {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use actix_web::{http::StatusCode, test, web, App};
 
     #[actix_rt::test]
     async fn health_ok() {
+        use actix_web::{http::StatusCode, test, web, App};
+
         let mut app =
             test::init_service(App::new().service(web::resource("/health").to(get_health))).await;
 
@@ -46,7 +47,7 @@ mod tests {
             resp.headers()
                 .get("cache-control")
                 .map(|h| h.to_str().unwrap()),
-            Some("no-cache")
+            Some("no-store")
         );
     }
 

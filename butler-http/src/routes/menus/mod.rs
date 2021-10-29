@@ -4,22 +4,23 @@ use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
-use butler::menus::id::MenuID;
-use chrono::NaiveDate;
+use butler::menus::{id::MenuId, list_days, query_menu};
+use chrono::{Duration, NaiveDate, TimeZone, Utc};
+use chrono_tz::Europe::Stockholm;
 use serde::Deserialize;
 
-use butler::{
-    errors::ButlerResult,
-    menus::list_menus,
-};
+use butler::menus::list_menus;
 
-use crate::{errors::AppResult, routes::swr};
+use crate::{
+    errors::{AppError, AppResult},
+    routes::swr,
+};
 
 /// Route for listing menus.
 async fn list_menus_route() -> AppResult<HttpResponse> {
     let menus = list_menus(10).await?;
     let res = HttpResponse::Ok()
-        .set(CacheControl(vec![
+        .insert_header(CacheControl(vec![
             CacheDirective::MaxAge(604_800), // 7 days
             swr(2_419_200),                  // 28 days
         ]))
@@ -29,10 +30,10 @@ async fn list_menus_route() -> AppResult<HttpResponse> {
 }
 
 #[get("{menu_id}")]
-async fn query_menu_route(web::Path(menu_id): web::Path<MenuID>) -> AppResult<HttpResponse> {
+async fn query_menu_route(menu_id: web::Path<MenuId>) -> AppResult<HttpResponse> {
     let menu = query_menu(&menu_id).await?;
     let res = HttpResponse::Ok()
-        .set(CacheControl(vec![
+        .insert_header(CacheControl(vec![
             CacheDirective::MaxAge(604_800), // 7 days
             swr(2_419_200),                  // 28 days
         ]))
@@ -50,13 +51,35 @@ struct ListDaysRouteQuery {
 /// Route for listing days.
 #[get("{menu_id}/days")]
 async fn list_days_route(
-    web::Path(menu_id): web::Path<MenuID>,
+    menu_id: web::Path<MenuId>,
     query: web::Query<ListDaysRouteQuery>,
 ) -> AppResult<HttpResponse> {
-    let query = ListDaysQuery::new(menu_id, query.first, query.last)?;
-    let days = list_days(&query).await?;
+    let first = query.first.unwrap_or_else(|| {
+        let naive_now = Utc::now().naive_utc();
+
+        Stockholm.from_utc_datetime(&naive_now).date().naive_local()
+    });
+    let last = query.last.unwrap_or_else(|| first + Duration::weeks(2));
+
+    if first > last {
+        return Err(AppError::BadRequest(format!(
+            "first ({}) must not come after last ({})",
+            first, last
+        )));
+    }
+
+    let span = last - first;
+
+    if span > Duration::days(3650) {
+        return Err(AppError::BadRequest(format!(
+            "date span too long ({})",
+            span
+        )));
+    }
+
+    let days = list_days(&menu_id, first, last).await?;
     let res = HttpResponse::Ok()
-        .set(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
+        .insert_header(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
         .json(days);
 
     Ok(res)

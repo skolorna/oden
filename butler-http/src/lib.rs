@@ -6,18 +6,17 @@ macro_rules! create_app {
     () => {{
         use actix_web::dev::Service;
         use actix_web::http::header::{self, HeaderValue};
-        use actix_web::middleware::{self, normalize};
+        use actix_web::middleware::{self, NormalizePath};
         use actix_web::App;
         use const_format::concatcp;
+        use futures::FutureExt;
 
         use butler_http::routes;
 
         const SERVER_NAME: &str = concatcp!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION"));
 
         App::new()
-            .wrap(normalize::NormalizePath::new(
-                normalize::TrailingSlash::Trim,
-            ))
+            .wrap(NormalizePath::trim())
             .configure(routes::configure)
             .wrap_fn(|req, srv| {
                 srv.call(req).map(|res| {

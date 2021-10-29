@@ -4,11 +4,11 @@ use actix_web::{
     http::StatusCode,
     test::{call_service, init_service, read_body_json, TestRequest},
 };
-use butler_http::create_app;
 use butler::{
-    menus::{day::Day, id::MenuID, supplier::Supplier, Menu},
+    menus::{day::Day, id::MenuId, supplier::Supplier, Menu},
     util::is_sorted,
 };
+use butler_http::create_app;
 
 /// Perform a GET request.
 macro_rules! get {
@@ -48,10 +48,10 @@ async fn list_menus() {
     assert!(menus.len() > 5000);
 
     // Sanity check
-    assert!(Provider::from_str("invalid provider id").is_err());
+    assert!(Supplier::from_str("invalid provider id").is_err());
 
     for menu in menus {
-        assert!(Provider::from_str(&menu.provider().id).is_ok());
+        assert!(Supplier::from_str(&menu.supplier().id).is_ok());
     }
 }
 
@@ -67,12 +67,12 @@ async fn query_menu() {
 
         assert_eq!(menu.title(), "P A Fogelströms gymnasium, Stockholms stad");
         assert_eq!(
-            Provider::from_str(&menu.provider().id).unwrap(),
-            Provider::Skolmaten
+            Supplier::from_str(&menu.supplier().id).unwrap(),
+            Supplier::Skolmaten
         );
         assert_eq!(
             menu.id().clone(),
-            MenuID::new(Provider::Skolmaten, "85957002".to_owned())
+            MenuId::new(Supplier::Skolmaten, "85957002".to_owned())
         );
     }
 

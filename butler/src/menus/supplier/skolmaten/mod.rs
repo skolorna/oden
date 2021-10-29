@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::{
     errors::{ButlerError, ButlerResult},
-    menus::{id::MenuID, supplier::Supplier, Day, Menu},
+    menus::{id::MenuId, supplier::Supplier, Day, Menu},
 };
 
 use self::{days::query_station, fetch::fetch};
@@ -57,7 +57,7 @@ impl Station {
             None
         } else {
             Some(Menu::new(
-                MenuID::new(Supplier::Skolmaten, self.id.to_string()),
+                MenuId::new(Supplier::Skolmaten, self.id.to_string()),
                 format!("{}, {}", self.name.trim(), district_name),
             ))
         }

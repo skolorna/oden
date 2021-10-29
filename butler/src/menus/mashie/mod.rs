@@ -11,7 +11,7 @@ use crate::{
     util::is_sorted,
 };
 
-use super::{day::Day, id::MenuID, supplier::Supplier, Menu};
+use super::{day::Day, id::MenuId, supplier::Supplier, Menu};
 
 #[derive(Deserialize, Debug)]
 pub struct MashieMenu {
@@ -23,7 +23,7 @@ pub struct MashieMenu {
 
 impl MashieMenu {
     pub fn into_menu(self, supplier: Supplier) -> Menu {
-        let id = MenuID::new(supplier, self.id);
+        let id = MenuId::new(supplier, self.id);
         Menu::new(id, self.title)
     }
 }

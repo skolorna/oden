@@ -6,28 +6,30 @@ pub mod mashie;
 pub mod meal;
 pub mod supplier;
 
+use chrono::NaiveDate;
 use futures::{stream, StreamExt};
 use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
+use tracing::info;
 
 use crate::errors::ButlerResult;
 
 use self::{
     day::Day,
-    id::MenuID,
+    id::MenuId,
     meal::Meal,
     supplier::{Supplier, SupplierInfo},
 };
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Menu {
-    id: MenuID,
+    id: MenuId,
     title: String,
     supplier: SupplierInfo,
 }
 
 impl Menu {
-    pub fn new(id: MenuID, title: String) -> Self {
+    pub fn new(id: MenuId, title: String) -> Self {
         Self {
             supplier: id.supplier.info(),
             id,
@@ -35,7 +37,7 @@ impl Menu {
         }
     }
 
-    pub fn id(&self) -> &MenuID {
+    pub fn id(&self) -> &MenuId {
         &self.id
     }
 
@@ -64,4 +66,21 @@ pub async fn list_menus(concurrent: usize) -> ButlerResult<Vec<Menu>> {
     menus.sort_by(|a, b| a.title.cmp(&b.title));
 
     Ok(menus)
+}
+
+pub async fn query_menu(menu_id: &MenuId) -> ButlerResult<Menu> {
+    info!("Querying menu {}", menu_id);
+
+    menu_id.supplier.query_menu(&menu_id.local_id).await
+}
+
+pub async fn list_days(
+    menu_id: &MenuId,
+    first: NaiveDate,
+    last: NaiveDate,
+) -> ButlerResult<Vec<Day>> {
+    menu_id
+        .supplier
+        .list_days(&menu_id.local_id, first, last)
+        .await
 }
