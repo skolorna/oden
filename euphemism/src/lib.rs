@@ -1,11 +1,31 @@
-use itertools::Itertools;
 use tokenizer::tokenize;
+use util::{bigrams, BigramSet};
 
 use std::{collections::HashSet, fmt::Display, hash::Hash};
 
 pub mod tokenizer;
+pub mod util;
 
-type BigramSet = HashSet<(char, char)>;
+pub fn create_clusters(data: &[&str]) -> Vec<Cluster> {
+    let mut clusters = Vec::<Cluster>::new();
+
+    for label in data {
+        let sample = Sample::new(label);
+
+        let best = clusters
+            .iter_mut()
+            .max_by(|a, b| a.score(&sample).partial_cmp(&b.score(&sample)).unwrap());
+
+        match best {
+            Some(cluster) if cluster.score(&sample) > 0.6 => {
+                cluster.samples.push(sample);
+            }
+            _ => clusters.push(Cluster::with_samples(vec![sample])),
+        };
+    }
+
+    clusters
+}
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Sample {
@@ -64,17 +84,13 @@ impl Cluster {
 impl Display for Cluster {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.label().unwrap_or("UNNAMED"))?;
-        
+
         for sample in &self.samples {
             writeln!(f, "- {}", sample.label)?;
         }
 
         Ok(())
     }
-}
-
-pub fn bigrams(val: &str) -> BigramSet {
-    val.chars().tuple_windows().collect()
 }
 /// ```
 /// use std::collections::HashSet;
@@ -100,27 +116,12 @@ pub fn jaccard_index<T: Eq + Hash>(a: &HashSet<T>, b: &HashSet<T>) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::{Cluster, Sample};
+    use crate::create_clusters;
 
     #[test]
     fn it_works() {
         let lines = include_str!("../sample.txt").lines();
-        let mut clusters = Vec::<Cluster>::new();
-
-        for line in lines {
-            let sample = Sample::new(line);
-
-            let best = clusters
-                .iter_mut()
-                .max_by(|a, b| a.score(&sample).partial_cmp(&b.score(&sample)).unwrap());
-
-            match best {
-                Some(cluster) if cluster.score(&sample) > 0.6 => {
-                    cluster.samples.push(sample);
-                }
-                _ => clusters.push(Cluster::with_samples(vec![sample])),
-            };
-        }
+        let clusters = create_clusters(&lines.collect::<Vec<_>>());
 
         for cluster in clusters {
             eprintln!("{}", cluster)

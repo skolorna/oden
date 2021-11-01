@@ -1,4 +1,7 @@
-const STOP_WORDS: &[&str] = &["med", "serveras"];
+const STOP_WORDS: &[&str] = &[
+    "i", "på", "under", "över", "från", "ur", "bakom", "med", "bredvid", "vid", "till", "hos",
+    "mellan", "framför", "ovanför",
+];
 
 /// Tokenize a value, preparing it for further processing.
 ///
