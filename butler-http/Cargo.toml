@@ -6,7 +6,7 @@ edition = "2018"
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-actix-rt = "2.3.0"
+actix-rt = "2.4.0"
 actix-web = "4.0.0-beta.10"
 butler-lib = { path = "../butler-lib" }
 chrono = "0.4.19"
