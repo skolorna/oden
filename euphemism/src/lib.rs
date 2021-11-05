@@ -1,5 +1,5 @@
 use tokenizer::tokenize;
-use util::{BigramSet, bigrams};
+use util::{bigrams, BigramSet};
 
 use std::{collections::HashSet, fmt::Display, hash::Hash};
 
