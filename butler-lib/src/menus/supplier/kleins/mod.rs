@@ -89,7 +89,9 @@ async fn raw_query_school(school_slug: &str) -> ButlerResult<QuerySchoolResponse
         .next()
         .map(|elem| elem.text().next())
         .flatten()
-        .ok_or(ButlerError::ScrapeError)?;
+        .ok_or_else(|| ButlerError::ScrapeError {
+            context: html.to_owned(),
+        })?;
     let school = KleinsSchool {
         slug: school_slug.to_owned(),
         title: title.to_owned(),
@@ -100,7 +102,9 @@ async fn raw_query_school(school_slug: &str) -> ButlerResult<QuerySchoolResponse
         .next()
         .map(extract_menu_url)
         .flatten()
-        .ok_or(ButlerError::ScrapeError)?;
+        .ok_or_else(|| ButlerError::ScrapeError {
+            context: html.to_owned(),
+        })?;
 
     Ok(QuerySchoolResponse { school, menu_url })
 }

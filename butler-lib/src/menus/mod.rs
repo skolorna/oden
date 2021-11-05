@@ -13,27 +13,17 @@ use strum::IntoEnumIterator;
 
 use crate::errors::ButlerResult;
 
-use self::{
-    day::Day,
-    id::MenuId,
-    meal::Meal,
-    supplier::{Supplier, SupplierInfo},
-};
+use self::{day::Day, id::MenuId, meal::Meal, supplier::Supplier};
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
 pub struct Menu {
     id: MenuId,
     title: String,
-    supplier: SupplierInfo,
 }
 
 impl Menu {
     pub fn new(id: MenuId, title: String) -> Self {
-        Self {
-            supplier: id.supplier.info(),
-            id,
-            title,
-        }
+        Self { id, title }
     }
 
     pub fn id(&self) -> &MenuId {
@@ -43,9 +33,14 @@ impl Menu {
     pub fn title(&self) -> &str {
         &self.title
     }
+}
 
-    pub fn supplier(&self) -> &SupplierInfo {
-        &self.supplier
+#[cfg(feature = "meilisearch-sdk")]
+impl meilisearch_sdk::document::Document for Menu {
+    type UIDType = MenuId;
+
+    fn get_uid(&self) -> &Self::UIDType {
+        self.id()
     }
 }
 

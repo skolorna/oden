@@ -8,8 +8,8 @@ pub enum ButlerError {
     #[error("{0}")]
     HttpError(#[from] reqwest::Error),
 
-    #[error("something went wrong when scraping")]
-    ScrapeError,
+    #[error("something went wrong when scraping {context}")]
+    ScrapeError { context: String },
 
     #[error("invalid menu id")]
     InvalidMenuId,

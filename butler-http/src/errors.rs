@@ -29,7 +29,7 @@ impl From<ButlerError> for AppError {
         match e {
             ButlerError::MenuNotFound => Self::MenuNotFound,
             ButlerError::HttpError(_) => Self::InternalError,
-            ButlerError::ScrapeError => Self::InternalError,
+            ButlerError::ScrapeError { .. } => Self::InternalError,
             ButlerError::InvalidMenuId => Self::BadRequest("invalid menu id".into()),
         }
     }

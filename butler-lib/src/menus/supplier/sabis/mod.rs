@@ -5,7 +5,7 @@ use lazy_static::lazy_static;
 use reqwest::redirect::Policy;
 use reqwest::{Client, StatusCode};
 use scraper::{Html, Selector};
-use tracing::error;
+use tracing::{error, info};
 use url::Url;
 
 use crate::errors::{ButlerError, ButlerResult};
@@ -79,8 +79,9 @@ pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> Butl
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_id)
     );
-    let client = Client::builder().redirect(Policy::none()).build()?;
+    let client = Client::new();
     let res = client.get(&url).send().await?;
+
     if res.status() == StatusCode::NOT_FOUND {
         return Err(ButlerError::MenuNotFound);
     }
@@ -91,7 +92,7 @@ pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> Butl
         Some(elem) => elem.text().flat_map(|s| s.chars()),
         None => {
             error!("No title found for Sabis menu \"{}\"!", menu_id);
-            return Err(ButlerError::ScrapeError);
+            return Err(ButlerError::ScrapeError { context: html });
         }
     };
 

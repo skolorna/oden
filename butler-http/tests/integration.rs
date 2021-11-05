@@ -51,7 +51,7 @@ async fn list_menus() {
     assert!(Supplier::from_str("invalid provider id").is_err());
 
     for menu in menus {
-        assert!(Supplier::from_str(&menu.supplier().id).is_ok());
+        assert!(Supplier::from_str(&menu.id().supplier.id()).is_ok());
     }
 }
 
@@ -66,10 +66,6 @@ async fn query_menu() {
         let menu: Menu = read_body_json(resp).await;
 
         assert_eq!(menu.title(), "P A Fogelströms gymnasium, Stockholms stad");
-        assert_eq!(
-            Supplier::from_str(&menu.supplier().id).unwrap(),
-            Supplier::Skolmaten
-        );
         assert_eq!(
             menu.id().clone(),
             MenuId::new(Supplier::Skolmaten, "85957002".to_owned())

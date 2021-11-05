@@ -1,5 +1,6 @@
 use std::{fmt::Display, str::FromStr};
 
+use base64::display::Base64Display;
 use serde::{de, Deserialize, Deserializer, Serialize};
 
 use super::supplier::Supplier;
@@ -47,7 +48,12 @@ impl FromStr for MenuId {
 
 impl Display for MenuId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}.{}", self.supplier, self.local_id)
+        let raw = format!("{}.{}", self.supplier, self.local_id);
+        write!(
+            f,
+            "{}",
+            Base64Display::with_config(raw.as_bytes(), base64::URL_SAFE_NO_PAD)
+        )
     }
 }
 

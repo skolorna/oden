@@ -119,8 +119,13 @@ async fn raw_fetch_menu(
     if res.status() == 404 {
         Err(ButlerError::MenuNotFound)
     } else {
-        let res = res.json::<SkolmatenMenuResponse>().await?;
-        Ok(res)
+        match res.json::<SkolmatenMenuResponse>().await {
+            Ok(res) => Ok(res),
+            Err(e) => {
+                println!("{} ---- {}", path, e);
+                Err(ButlerError::MenuNotFound)
+            }
+        }
     }
 }
 
