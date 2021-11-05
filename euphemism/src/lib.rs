@@ -6,7 +6,8 @@ use std::{collections::HashSet, fmt::Display, hash::Hash};
 pub mod tokenizer;
 pub mod util;
 
-pub fn create_clusters(data: &[&str]) -> Vec<Cluster> {
+/// Very much a proof-of-concept.
+pub fn form_clusters(data: &[&str]) -> Vec<Cluster> {
     let mut clusters = Vec::<Cluster>::new();
 
     for label in data {
@@ -116,12 +117,12 @@ pub fn jaccard_index<T: Eq + Hash>(a: &HashSet<T>, b: &HashSet<T>) -> f32 {
 
 #[cfg(test)]
 mod tests {
-    use crate::create_clusters;
+    use crate::form_clusters;
 
     #[test]
     fn it_works() {
         let lines = include_str!("../sample.txt").lines();
-        let clusters = create_clusters(&lines.collect::<Vec<_>>());
+        let clusters = form_clusters(&lines.collect::<Vec<_>>());
 
         for cluster in clusters {
             eprintln!("{}", cluster)
