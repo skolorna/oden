@@ -22,7 +22,7 @@ jobs:
       - run: cargo build --release
       - uses: ncipollo/release-action@v1
         with:
-          artifacts: target/release/butler_http
+          artifacts: target/release/butler-http
           tag: v${{ steps.prep.outputs.version }}
           token: ${{ secrets.GITHUB_TOKEN }}
 
