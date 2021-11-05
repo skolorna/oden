@@ -82,6 +82,12 @@ impl Cluster {
     }
 }
 
+impl Default for Cluster {
+    fn default() -> Self {
+        Self { samples: vec![] }
+    }
+}
+
 impl Display for Cluster {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         writeln!(f, "{}", self.label().unwrap_or("UNNAMED"))?;
@@ -93,6 +99,8 @@ impl Display for Cluster {
         Ok(())
     }
 }
+/// Calculate `|a ∩ b| / |a ∪ b|` of sets *a* and *b*.
+///
 /// ```
 /// use std::collections::HashSet;
 /// use euphemism::jaccard_index;
