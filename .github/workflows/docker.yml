@@ -24,7 +24,7 @@ jobs:
           override: true
 
       - id: prep
-        working-directory: butler-indexer
+        working-directory: ./butler-indexer
         run: |
           echo ::set-output name=version::$(cargo pkgid | cut -d "#" -f2 -)
 
