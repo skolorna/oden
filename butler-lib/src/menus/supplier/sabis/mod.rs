@@ -2,18 +2,17 @@ use std::str::FromStr;
 
 use chrono::{Datelike, NaiveDate, Utc, Weekday};
 use lazy_static::lazy_static;
-use reqwest::redirect::Policy;
 use reqwest::{Client, StatusCode};
 use scraper::{Html, Selector};
-use tracing::{error, info};
+use tracing::error;
 use url::Url;
 
 use crate::errors::{ButlerError, ButlerResult};
-use crate::menus::day::Day;
 use crate::menus::id::MenuId;
 use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
 use crate::menus::Menu;
+use crate::types::day::Day;
 use crate::util::{extract_digits, last_path_segment};
 
 lazy_static! {
@@ -57,7 +56,7 @@ pub async fn query_menu(menu_id: &str) -> ButlerResult<Menu> {
 
     menus
         .into_iter()
-        .find(|m| m.id.local_id == menu_id)
+        .find(|m| m.id().local_id == menu_id)
         .ok_or(ButlerError::MenuNotFound)
 }
 
@@ -140,7 +139,7 @@ mod tests {
     async fn test_query_menu() {
         let menu = query_menu("rosenbad").await.unwrap();
 
-        assert_eq!(menu.title, "Restaurang Björnen");
+        assert_eq!(menu.title(), "Restaurang Björnen");
 
         assert!(query_menu("om-oss").await.is_err());
     }

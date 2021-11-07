@@ -1,0 +1,12 @@
+[package]
+name = "database"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+butler-lib = { path = "../butler-lib" }
+chrono = "0.4.19"
+diesel = { version = "1.4.8", features = ["chrono", "postgres"] }
+serde = { version = "1.0.130", features = ["derive"] }

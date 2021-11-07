@@ -8,10 +8,11 @@ use serde::Deserialize;
 use crate::{
     errors::{ButlerError, ButlerResult},
     menus::mashie::scrape::scrape_mashie_days,
+    types::day::Day,
     util::is_sorted,
 };
 
-use super::{day::Day, id::MenuId, supplier::Supplier, Menu};
+use super::{id::MenuId, supplier::Supplier, Menu};
 
 #[derive(Deserialize, Debug)]
 pub struct MashieMenu {
@@ -78,7 +79,8 @@ pub async fn list_days(
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
         use crate::errors::ButlerResult;
-        use crate::menus::{day::Day, mashie, Menu};
+        use crate::menus::{mashie, Menu};
+        use crate::types::day::Day;
         use chrono::NaiveDate;
 
         const HOST: &str = $host;
@@ -159,8 +161,8 @@ mod tests {
         #[tokio::test]
         async fn query_menu_test() {
             let menu = query_menu(MENU_ID).await.unwrap();
-            assert_eq!(menu.title, "Loket, Pysslingen");
-            assert_eq!(menu.id.local_id, MENU_ID);
+            assert_eq!(menu.title(), "Loket, Pysslingen");
+            assert_eq!(menu.id().local_id, MENU_ID);
 
             assert!(query_menu("unexisting").await.is_err());
         }

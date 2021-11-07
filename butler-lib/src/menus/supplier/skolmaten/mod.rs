@@ -174,14 +174,14 @@ mod tests {
         assert!(menus.len() > 5000);
 
         for menu in menus {
-            assert!(!menu.title.to_lowercase().contains("info"));
+            assert!(!menu.title().to_lowercase().contains("info"));
         }
     }
 
     #[tokio::test]
     async fn query_menu_test() {
         let menu = query_menu(4791333780717568).await.unwrap();
-        assert_eq!(menu.title, "Stråtjära förskola, Söderhamns kommun");
+        assert_eq!(menu.title(), "Stråtjära förskola, Söderhamns kommun");
         assert!(query_menu(0).await.is_err());
         assert!(query_menu(5236876508135424).await.is_err()); // Invalid station name
     }
@@ -195,6 +195,6 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(days.len() > 0);
+        assert!(!days.is_empty());
     }
 }

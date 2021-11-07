@@ -10,7 +10,7 @@ pub enum ParseMealValueError {
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord, Hash, Clone)]
 pub struct Meal {
-    value: String,
+    pub value: String,
 }
 
 impl Meal {

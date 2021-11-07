@@ -2,12 +2,14 @@ use std::str::FromStr;
 
 use chrono::{Datelike, NaiveDate};
 use futures::stream::{self, StreamExt};
-use reqwest::Client;
+use reqwest::{Client, StatusCode};
 use serde::Deserialize;
+use tracing::error;
 
 use crate::{
     errors::{ButlerError, ButlerResult},
-    menus::{day::dedup_dates, Day, Meal, Menu},
+    menus::{Day, Meal, Menu},
+    types::day::dedup_day_dates,
 };
 
 use super::{fetch::fetch, District, Station};
@@ -115,16 +117,15 @@ async fn raw_fetch_menu(
     );
 
     let res = fetch(client, &path).await?;
-
-    if res.status() == 404 {
-        Err(ButlerError::MenuNotFound)
-    } else {
-        match res.json::<SkolmatenMenuResponse>().await {
-            Ok(res) => Ok(res),
-            Err(e) => {
-                println!("{} ---- {}", path, e);
-                Err(ButlerError::MenuNotFound)
+    let status = res.status();
+    match res.json::<SkolmatenMenuResponse>().await {
+        Ok(res) => Ok(res),
+        Err(e) => {
+            if status != StatusCode::NOT_FOUND {
+                error!("{}", e);
             }
+
+            Err(ButlerError::MenuNotFound)
         }
     }
 }
@@ -200,7 +201,7 @@ pub async fn list_days(
         .collect::<Vec<_>>();
 
     days.sort();
-    dedup_dates(&mut days);
+    dedup_day_dates(&mut days);
 
     Ok(days)
 }

@@ -4,7 +4,7 @@ use chrono::{Datelike, Local, NaiveDate};
 use lazy_static::lazy_static;
 use scraper::{ElementRef, Html, Selector};
 
-use crate::menus::{day::Day, meal::Meal};
+use crate::{menus::meal::Meal, types::day::Day};
 
 lazy_static! {
     static ref S_DAY: Selector = Selector::parse(".panel-group > .panel").unwrap();

@@ -8,7 +8,8 @@ use url::Url;
 
 use crate::{
     errors::{ButlerError, ButlerResult},
-    menus::{day::Day, id::MenuId, mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu},
+    menus::{id::MenuId, mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu},
+    types::day::Day,
     util::last_path_segment,
 };
 use fetch::fetch;

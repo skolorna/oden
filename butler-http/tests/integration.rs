@@ -5,29 +5,26 @@ use actix_web::{
     test::{call_service, init_service, read_body_json, TestRequest},
 };
 use butler_http::create_app;
-use butler_lib::{
-    menus::{day::Day, id::MenuId, supplier::Supplier, Menu},
-    util::is_sorted,
-};
+use butler_lib::{menus::{id::MenuId, supplier::Supplier}, types::{day::Day, menu::Menu}, util::is_sorted};
 
 /// Perform a GET request.
 macro_rules! get {
     ($app:expr, $uri:expr) => {{
         let req = TestRequest::with_uri($uri).to_request();
-        call_service(&mut $app, req).await
+        call_service(&$app, req).await
     }};
 }
 
 #[actix_rt::test]
 async fn health_ok() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
     let resp = get!(app, "/health");
     assert_eq!(resp.status(), StatusCode::OK);
 }
 
 #[actix_rt::test]
 async fn server_header() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
     let resp = get!(app, "/thisshoulddefinitelyreturn404");
     let header = resp.headers().get("server").unwrap();
 
@@ -40,7 +37,7 @@ async fn server_header() {
 
 #[actix_rt::test]
 async fn list_menus() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
     let resp = get!(app, "/menus");
     assert_eq!(resp.status(), StatusCode::OK);
 
@@ -57,7 +54,7 @@ async fn list_menus() {
 
 #[actix_rt::test]
 async fn query_menu() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
 
     {
         let resp = get!(app, "/menus/skolmaten.85957002");
@@ -90,7 +87,7 @@ async fn query_menu() {
 
 #[actix_rt::test]
 async fn list_days() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
 
     {
         let resp = get!(app, "/menus/skolmaten.4791333780717568/days");

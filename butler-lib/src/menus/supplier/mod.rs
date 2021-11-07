@@ -10,12 +10,13 @@ use chrono::NaiveDate;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use strum::{EnumIter, EnumString};
 
-use super::{day::Day, Menu};
-
-use crate::errors::{ButlerError, ButlerResult};
+use crate::{
+    errors::{ButlerError, ButlerResult},
+    types::{day::Day, menu::Menu},
+};
 
 /// A provider of menus.
-#[derive(PartialEq, Debug, Clone, Copy, EnumString, strum::Display, EnumIter)]
+#[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, EnumString, strum::Display, EnumIter)]
 #[strum(serialize_all = "lowercase")]
 pub enum Supplier {
     Skolmaten,
@@ -155,7 +156,7 @@ mod tests {
                 .query_menu("e8851c61-013b-4617-93d9-adab00820bcd")
                 .await
                 .unwrap()
-                .title,
+                .title(),
             "Södermalmsskolan, Södermalmsskolan"
         );
         assert!(Supplier::Sodexo.query_menu("bruh").await.is_err());
@@ -167,7 +168,7 @@ mod tests {
             .query_menu("viktor-rydberg-grundskola-jarlaplan")
             .await
             .unwrap();
-        assert_eq!(menu.title, "Viktor Rydberg Gymnasium Jarlaplan");
+        assert_eq!(menu.title(), "Viktor Rydberg Gymnasium Jarlaplan");
         assert!(Supplier::Kleins.query_menu("nonexistent").await.is_err());
     }
 }
