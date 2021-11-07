@@ -1,20 +1,20 @@
 use serde::{Deserialize, Serialize};
 
-use crate::menus::id::MenuId;
+use crate::menus::id::MenuSlug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Menu {
-    pub id: MenuId,
+    pub slug: MenuSlug,
     pub title: String,
 }
 
 impl Menu {
-    pub fn new(id: MenuId, title: String) -> Self {
-        Self { id, title }
+    pub fn new(slug: MenuSlug, title: String) -> Self {
+        Self { slug, title }
     }
 
-    pub fn id(&self) -> &MenuId {
-        &self.id
+    pub fn slug(&self) -> &MenuSlug {
+        &self.slug
     }
 
     pub fn title(&self) -> &str {

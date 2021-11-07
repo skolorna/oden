@@ -1,20 +1,21 @@
 table! {
-    days (id) {
-        id -> Text,
+    meals (id) {
+        id -> Bytea,
         date -> Date,
-        meals -> Text,
-        menu_id -> Text,
+        value -> Text,
+        menu_id -> Int4,
     }
 }
 
 table! {
     menus (id) {
-        id -> Text,
+        id -> Int4,
         title -> Text,
+        slug -> Text,
         updated_at -> Nullable<Timestamptz>,
     }
 }
 
-joinable!(days -> menus (menu_id));
+joinable!(meals -> menus (menu_id));
 
-allow_tables_to_appear_in_same_query!(days, menus,);
+allow_tables_to_appear_in_same_query!(meals, menus,);

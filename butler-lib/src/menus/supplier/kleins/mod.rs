@@ -8,7 +8,7 @@ use url::Url;
 
 use crate::{
     errors::{ButlerError, ButlerResult},
-    menus::{id::MenuId, mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu},
+    menus::{id::MenuSlug, mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu},
     types::day::Day,
     util::last_path_segment,
 };
@@ -28,7 +28,7 @@ struct KleinsSchool {
 
 impl KleinsSchool {
     pub fn into_menu(self) -> Menu {
-        let id = MenuId::new(Supplier::Kleins, self.slug);
+        let id = MenuSlug::new(Supplier::Kleins, self.slug);
 
         Menu::new(id, self.title)
     }
@@ -110,15 +110,15 @@ async fn raw_query_school(school_slug: &str) -> ButlerResult<QuerySchoolResponse
     Ok(QuerySchoolResponse { school, menu_url })
 }
 
-pub async fn query_menu(menu_id: &str) -> ButlerResult<Menu> {
-    let res = raw_query_school(menu_id).await?;
+pub async fn query_menu(menu_slug: &str) -> ButlerResult<Menu> {
+    let res = raw_query_school(menu_slug).await?;
 
     Ok(res.school.into_menu())
 }
 
-pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> ButlerResult<Vec<Day>> {
+pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> ButlerResult<Vec<Day>> {
     let menu_url = {
-        let res = raw_query_school(menu_id).await?;
+        let res = raw_query_school(menu_slug).await?;
         res.menu_url
     };
     let html = reqwest::get(&menu_url).await?.text().await?;

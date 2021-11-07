@@ -4,11 +4,9 @@ use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
 use crate::{
-    menus::{id::MenuId, meal::Meal},
+    menus::{meal::Meal},
     util::retain_unique,
 };
-
-pub type DayId = String;
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Day {
@@ -34,10 +32,6 @@ impl Day {
 
     pub fn meals(&self) -> &Vec<Meal> {
         &self.meals
-    }
-
-    pub fn get_id(&self, menu: &MenuId) -> String {
-        format!("{}-{}", menu, self.date)
     }
 
     /// Check if a day is *between* two `NaiveDate`s (inclusive).

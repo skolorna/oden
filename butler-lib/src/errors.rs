@@ -12,7 +12,7 @@ pub enum ButlerError {
     ScrapeError { context: String },
 
     #[error("invalid menu id")]
-    InvalidMenuId,
+    InvalidMenuSlug,
 }
 
 pub type ButlerResult<T> = Result<T, ButlerError>;

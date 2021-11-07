@@ -14,7 +14,7 @@ use crate::{
     types::{day::Day, menu::Menu},
 };
 
-use self::{id::MenuId, meal::Meal, supplier::Supplier};
+use self::{id::MenuSlug, meal::Meal, supplier::Supplier};
 
 /// List all the menus everywhere (from all suppliers).
 pub async fn list_menus(concurrent: usize) -> ButlerResult<Vec<Menu>> {
@@ -34,17 +34,17 @@ pub async fn list_menus(concurrent: usize) -> ButlerResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(menu_id: &MenuId) -> ButlerResult<Menu> {
-    menu_id.supplier.query_menu(&menu_id.local_id).await
+pub async fn query_menu(menu_slug: &MenuSlug) -> ButlerResult<Menu> {
+    menu_slug.supplier.query_menu(&menu_slug.local_id).await
 }
 
 pub async fn list_days(
-    menu_id: &MenuId,
+    menu_slug: &MenuSlug,
     first: NaiveDate,
     last: NaiveDate,
 ) -> ButlerResult<Vec<Day>> {
-    menu_id
+    menu_slug
         .supplier
-        .list_days(&menu_id.local_id, first, last)
+        .list_days(&menu_slug.local_id, first, last)
         .await
 }

@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 atomic-counter = "1.0.1"
 base64 = "0.13.0"
-database = { path = "../database" }
+database = { path = "../database", features = ["meilisearch-sdk"] }
 butler-lib = { path = "../butler-lib", features = ["diesel"] }
 chrono = "0.4.19"
 chrono-tz = "0.6.0"

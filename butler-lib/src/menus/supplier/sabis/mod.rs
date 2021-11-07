@@ -8,7 +8,7 @@ use tracing::error;
 use url::Url;
 
 use crate::errors::{ButlerError, ButlerResult};
-use crate::menus::id::MenuId;
+use crate::menus::id::MenuSlug;
 use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
 use crate::menus::Menu;
@@ -42,7 +42,7 @@ pub async fn list_menus() -> ButlerResult<Vec<Menu>> {
             debug_assert!(local_id.is_some());
 
             Some(Menu::new(
-                MenuId::new(Supplier::Sabis, local_id?.into()),
+                MenuSlug::new(Supplier::Sabis, local_id?.into()),
                 title,
             ))
         })
@@ -51,12 +51,12 @@ pub async fn list_menus() -> ButlerResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(menu_id: &str) -> ButlerResult<Menu> {
+pub async fn query_menu(menu_slug: &str) -> ButlerResult<Menu> {
     let menus = list_menus().await?;
 
     menus
         .into_iter()
-        .find(|m| m.id().local_id == menu_id)
+        .find(|m| m.slug().local_id == menu_slug)
         .ok_or(ButlerError::MenuNotFound)
 }
 
@@ -73,10 +73,10 @@ pub fn parse_weekday(literal: &str) -> Option<Weekday> {
     }
 }
 
-pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> ButlerResult<Vec<Day>> {
+pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> ButlerResult<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",
-        urlencoding::encode(menu_id)
+        urlencoding::encode(menu_slug)
     );
     let client = Client::new();
     let res = client.get(&url).send().await?;
@@ -90,7 +90,7 @@ pub async fn list_days(menu_id: &str, first: NaiveDate, last: NaiveDate) -> Butl
     let chars = match doc.select(&S_ENTRY_TITLE).next() {
         Some(elem) => elem.text().flat_map(|s| s.chars()),
         None => {
-            error!("No title found for Sabis menu \"{}\"!", menu_id);
+            error!("No title found for Sabis menu \"{}\"!", menu_slug);
             return Err(ButlerError::ScrapeError { context: html });
         }
     };

@@ -67,24 +67,24 @@ impl Supplier {
         }
     }
 
-    pub async fn query_menu(&self, menu_id: &str) -> ButlerResult<Menu> {
+    pub async fn query_menu(&self, menu_slug: &str) -> ButlerResult<Menu> {
         use Supplier::*;
 
         match *self {
             Skolmaten => {
-                skolmaten::query_menu(menu_id.parse().map_err(|_| ButlerError::InvalidMenuId)?)
+                skolmaten::query_menu(menu_slug.parse().map_err(|_| ButlerError::InvalidMenuSlug)?)
                     .await
             }
-            Sodexo => sodexo::query_menu(menu_id).await,
-            MPI => mpi::query_menu(menu_id).await,
-            Kleins => kleins::query_menu(menu_id).await,
-            Sabis => sabis::query_menu(menu_id).await,
+            Sodexo => sodexo::query_menu(menu_slug).await,
+            MPI => mpi::query_menu(menu_slug).await,
+            Kleins => kleins::query_menu(menu_slug).await,
+            Sabis => sabis::query_menu(menu_slug).await,
         }
     }
 
     pub async fn list_days(
         &self,
-        menu_id: &str,
+        menu_slug: &str,
         first: NaiveDate,
         last: NaiveDate,
     ) -> ButlerResult<Vec<Day>> {
@@ -93,16 +93,16 @@ impl Supplier {
         match *self {
             Skolmaten => {
                 skolmaten::list_days(
-                    menu_id.parse().map_err(|_| ButlerError::InvalidMenuId)?,
+                    menu_slug.parse().map_err(|_| ButlerError::InvalidMenuSlug)?,
                     first,
                     last,
                 )
                 .await
             }
-            Sodexo => sodexo::list_days(menu_id, first, last).await,
-            MPI => mpi::list_days(menu_id, first, last).await,
-            Kleins => kleins::list_days(menu_id, first, last).await,
-            Sabis => sabis::list_days(menu_id, first, last).await,
+            Sodexo => sodexo::list_days(menu_slug, first, last).await,
+            MPI => mpi::list_days(menu_slug, first, last).await,
+            Kleins => kleins::list_days(menu_slug, first, last).await,
+            Sabis => sabis::list_days(menu_slug, first, last).await,
         }
     }
 }

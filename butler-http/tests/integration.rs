@@ -6,7 +6,7 @@ use actix_web::{
 };
 use butler_http::create_app;
 use butler_lib::{
-    menus::{id::MenuId, supplier::Supplier},
+    menus::{id::MenuSlug, supplier::Supplier},
     types::{day::Day, menu::Menu},
     util::is_sorted,
 };
@@ -52,7 +52,7 @@ async fn list_menus() {
     assert!(Supplier::from_str("invalid provider id").is_err());
 
     for menu in menus {
-        assert!(Supplier::from_str(&menu.id().supplier.id()).is_ok());
+        assert!(Supplier::from_str(&menu.slug().supplier.id()).is_ok());
     }
 }
 
@@ -68,8 +68,8 @@ async fn query_menu() {
 
         assert_eq!(menu.title(), "P A Fogelströms gymnasium, Stockholms stad");
         assert_eq!(
-            menu.id().clone(),
-            MenuId::new(Supplier::Skolmaten, "85957002".to_owned())
+            menu.slug().clone(),
+            MenuSlug::new(Supplier::Skolmaten, "85957002".to_owned())
         );
     }
 

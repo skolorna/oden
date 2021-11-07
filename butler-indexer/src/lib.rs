@@ -1,10 +1,11 @@
 use butler_lib::errors::ButlerResult;
-use butler_lib::menus::id::MenuId;
+use butler_lib::menus::id::MenuSlug;
 use butler_lib::menus::list_menus;
 use butler_lib::types;
 use chrono::Duration;
 use chrono::Utc;
-use database::models::day::NewDay;
+use database::models::meal::NewMeal;
+use database::models::menu::MenuId;
 use database::models::menu::NewMenu;
 use diesel::prelude::*;
 use diesel::PgConnection;
@@ -18,6 +19,9 @@ pub enum IndexerError {
 
     #[error("{0}")]
     ButlerError(#[from] butler_lib::errors::ButlerError),
+
+    #[error("{0}")]
+    MeiliError(#[from] meilisearch_sdk::errors::Error),
 }
 
 pub type IndexerResult<T> = Result<T, IndexerError>;
@@ -49,10 +53,10 @@ pub async fn load_menus(connection: &PgConnection) -> IndexerResult<usize> {
     Ok(inserted_count)
 }
 
-pub fn get_candidates(connection: &PgConnection, limit: Option<i64>) -> QueryResult<Vec<MenuId>> {
+pub fn get_candidates(connection: &PgConnection, limit: Option<i64>) -> QueryResult<Vec<(MenuId, MenuSlug)>> {
     use database::schema::menus::dsl::*;
 
-    let q = menus.select(id).filter(
+    let q = menus.select((id, slug)).filter(
         updated_at
             .lt(Utc::now() - Duration::days(1))
             .or(updated_at.is_null()),
@@ -61,15 +65,15 @@ pub fn get_candidates(connection: &PgConnection, limit: Option<i64>) -> QueryRes
     if let Some(limit) = limit {
         q.limit(limit).load(connection)
     } else {
-        q.load::<MenuId>(connection)
+        q.load(connection)
     }
 }
 
-pub fn insert_days_and_update_menus(
+pub fn finalize(
     connection: &PgConnection,
     results: Vec<(MenuId, ButlerResult<Vec<types::day::Day>>)>,
 ) -> QueryResult<()> {
-    use database::schema::days::table as days_table;
+    use database::schema::meals::table as meals_table;
     use database::schema::menus::{columns as menus_columns, table as menus_table};
 
     let successful = results
@@ -83,18 +87,18 @@ pub fn insert_days_and_update_menus(
             let d = r
                 .ok()?
                 .into_iter()
-                .map(|d| NewDay::from_day(d, m.to_owned()))
+                .flat_map(|d| NewMeal::from_day(d, m))
                 .collect::<Vec<_>>();
 
             Some(d)
         })
         .flatten()
-        .collect::<Vec<NewDay>>();
+        .collect::<Vec<NewMeal>>();
 
-    info!("Inserting {} days", records.len());
+    info!("Inserting {} meals", records.len());
 
     for chunk in records.chunks(10000) {
-        diesel::insert_into(days_table)
+        diesel::insert_into(meals_table)
             .values(chunk)
             .on_conflict_do_nothing()
             .execute(connection)?;

@@ -1,6 +1,7 @@
 -- Your SQL goes here
 CREATE TABLE menus (
-  id TEXT PRIMARY KEY,
+  id SERIAL PRIMARY KEY,
   title TEXT NOT NULL,
+  slug TEXT NOT NULL UNIQUE,
   updated_at TIMESTAMPTZ
 );
