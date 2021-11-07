@@ -3,7 +3,6 @@ FROM ekidd/rust-musl-builder:beta as builder
 WORKDIR /home/rust/src/butler
 RUN sudo chown -R rust:rust /home/rust/src/butler
 ADD . .
-RUN ls
 RUN cargo build --release --bin butler-indexer
 
 FROM alpine:latest
