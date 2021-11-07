@@ -5,7 +5,7 @@ RUN sudo chown -R rust:rust /home/rust/src/butler
 ADD . .
 RUN cargo build --release
 
-FROM alpine:latest AS build-http
+FROM alpine:latest AS http
 
 RUN addgroup -S appuser \
     && adduser -S -g appuser appuser
@@ -24,7 +24,7 @@ USER appuser
 EXPOSE 8000
 CMD ["./butler-http"]
 
-FROM alpine:latest AS build-indexer
+FROM alpine:latest AS indexer
 
 RUN addgroup -S appuser \
     && adduser -S -g appuser appuser
