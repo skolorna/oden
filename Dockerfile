@@ -1,4 +1,4 @@
-FROM ekidd/rust-musl-builder:beta as builder
+FROM ekidd/rust-musl-builder:beta as base
 
 WORKDIR /home/rust/src/butler
 RUN sudo chown -R rust:rust /home/rust/src/butler
@@ -16,7 +16,7 @@ RUN apk update \
 
 WORKDIR /usr/src/app
 
-COPY --from=builder /home/rust/src/butler/target/x86_64-unknown-linux-musl/release/butler-http ./
+COPY --from=base /home/rust/src/butler/target/x86_64-unknown-linux-musl/release/butler-http ./
 
 RUN chown -R appuser:appuser /usr/src/app
 USER appuser
@@ -35,7 +35,7 @@ RUN apk update \
 
 WORKDIR /usr/src/app
 
-COPY --from=builder /home/rust/src/butler/target/x86_64-unknown-linux-musl/release/butler-indexer ./
+COPY --from=base /home/rust/src/butler/target/x86_64-unknown-linux-musl/release/butler-indexer ./
 
 RUN chown -R appuser:appuser /usr/src/app
 USER appuser
