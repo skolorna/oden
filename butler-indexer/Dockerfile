@@ -17,10 +17,9 @@ RUN apk update \
 
 WORKDIR /usr/src/app
 
-COPY --from=builder /home/rust/src/butler/target/x86_64-unknown-linux-musl/release/butler-http ./
+COPY --from=builder /home/rust/src/butler/target/x86_64-unknown-linux-musl/release/butler-indexer ./
 
 RUN chown -R appuser:appuser /usr/src/app
 USER appuser
 
-EXPOSE 8000
-CMD ["./butler-http"]
+CMD ["./butler-indexer"]
