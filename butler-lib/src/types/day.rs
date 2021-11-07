@@ -3,10 +3,7 @@ use std::collections::HashSet;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::{
-    menus::{meal::Meal},
-    util::retain_unique,
-};
+use crate::{menus::meal::Meal, util::retain_unique};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Day {

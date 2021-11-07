@@ -53,7 +53,10 @@ pub async fn load_menus(connection: &PgConnection) -> IndexerResult<usize> {
     Ok(inserted_count)
 }
 
-pub fn get_candidates(connection: &PgConnection, limit: Option<i64>) -> QueryResult<Vec<(MenuId, MenuSlug)>> {
+pub fn get_candidates(
+    connection: &PgConnection,
+    limit: Option<i64>,
+) -> QueryResult<Vec<(MenuId, MenuSlug)>> {
     use database::schema::menus::dsl::*;
 
     let q = menus.select((id, slug)).filter(
@@ -78,7 +81,7 @@ pub fn finalize(
 
     let successful = results
         .iter()
-        .filter_map(|(m, r)| r.as_ref().ok().map(|_| m.clone()))
+        .filter_map(|(m, r)| r.as_ref().ok().map(|_| *m))
         .collect::<Vec<_>>();
 
     let records = results

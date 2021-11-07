@@ -72,8 +72,12 @@ impl Supplier {
 
         match *self {
             Skolmaten => {
-                skolmaten::query_menu(menu_slug.parse().map_err(|_| ButlerError::InvalidMenuSlug)?)
-                    .await
+                skolmaten::query_menu(
+                    menu_slug
+                        .parse()
+                        .map_err(|_| ButlerError::InvalidMenuSlug)?,
+                )
+                .await
             }
             Sodexo => sodexo::query_menu(menu_slug).await,
             MPI => mpi::query_menu(menu_slug).await,
@@ -93,7 +97,9 @@ impl Supplier {
         match *self {
             Skolmaten => {
                 skolmaten::list_days(
-                    menu_slug.parse().map_err(|_| ButlerError::InvalidMenuSlug)?,
+                    menu_slug
+                        .parse()
+                        .map_err(|_| ButlerError::InvalidMenuSlug)?,
                     first,
                     last,
                 )

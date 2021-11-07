@@ -116,7 +116,11 @@ pub async fn query_menu(menu_slug: &str) -> ButlerResult<Menu> {
     Ok(res.school.into_menu())
 }
 
-pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> ButlerResult<Vec<Day>> {
+pub async fn list_days(
+    menu_slug: &str,
+    first: NaiveDate,
+    last: NaiveDate,
+) -> ButlerResult<Vec<Day>> {
     let menu_url = {
         let res = raw_query_school(menu_slug).await?;
         res.menu_url

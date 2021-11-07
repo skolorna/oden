@@ -1,6 +1,6 @@
 table! {
     meals (id) {
-        id -> Bytea,
+        id -> Int4,
         date -> Date,
         value -> Text,
         menu_id -> Int4,

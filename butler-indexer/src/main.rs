@@ -2,8 +2,8 @@ use std::sync::Arc;
 
 use atomic_counter::AtomicCounter;
 use atomic_counter::RelaxedCounter;
-use butler_indexer::get_candidates;
 use butler_indexer::finalize;
+use butler_indexer::get_candidates;
 use butler_indexer::load_menus;
 use butler_indexer::IndexerResult;
 use butler_lib::errors::ButlerResult;
@@ -15,8 +15,8 @@ use chrono::Utc;
 use chrono_tz::Europe::Stockholm;
 
 use database::models::menu::Menu;
-use database::MeiliIndexable;
 use database::models::menu::MenuId;
+use database::MeiliIndexable;
 use diesel::prelude::*;
 use diesel::PgConnection;
 use dotenv::dotenv;

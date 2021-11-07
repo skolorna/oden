@@ -73,7 +73,11 @@ pub fn parse_weekday(literal: &str) -> Option<Weekday> {
     }
 }
 
-pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> ButlerResult<Vec<Day>> {
+pub async fn list_days(
+    menu_slug: &str,
+    first: NaiveDate,
+    last: NaiveDate,
+) -> ButlerResult<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_slug)
