@@ -3,7 +3,10 @@ use std::collections::HashSet;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::{menus::{id::MenuId, meal::Meal}, util::retain_unique};
+use crate::{
+    menus::{id::MenuId, meal::Meal},
+    util::retain_unique,
+};
 
 pub type DayId = String;
 

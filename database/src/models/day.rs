@@ -1,6 +1,6 @@
 use butler_lib::types;
 use butler_lib::{menus::id::MenuId, types::day::DayId};
-use chrono::{NaiveDate};
+use chrono::NaiveDate;
 
 use crate::models::menu::Menu;
 use crate::schema::days;

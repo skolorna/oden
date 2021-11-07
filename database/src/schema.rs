@@ -17,7 +17,4 @@ table! {
 
 joinable!(days -> menus (menu_id));
 
-allow_tables_to_appear_in_same_query!(
-    days,
-    menus,
-);
+allow_tables_to_appear_in_same_query!(days, menus,);

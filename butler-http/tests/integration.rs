@@ -5,7 +5,11 @@ use actix_web::{
     test::{call_service, init_service, read_body_json, TestRequest},
 };
 use butler_http::create_app;
-use butler_lib::{menus::{id::MenuId, supplier::Supplier}, types::{day::Day, menu::Menu}, util::is_sorted};
+use butler_lib::{
+    menus::{id::MenuId, supplier::Supplier},
+    types::{day::Day, menu::Menu},
+    util::is_sorted,
+};
 
 /// Perform a GET request.
 macro_rules! get {
