@@ -16,10 +16,7 @@ jobs:
         with:
           target: base
           push: false
-          cache-from: type=gha
-          cache-to: |
-            type=gha,mode=max
-            type=local,dest=/tmp/.buildx-cache,mode=max      -
+          cache-to: type=local,dest=/tmp/.buildx-cache,mode=max      -
       - name: Upload base image
         uses: actions/upload-artifact@v2
         with:
