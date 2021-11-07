@@ -22,7 +22,6 @@ use futures::stream;
 use futures::StreamExt;
 use structopt::StructOpt;
 
-
 use tracing::info;
 
 #[derive(Debug, StructOpt)]
@@ -49,8 +48,6 @@ struct Opt {
 async fn main() -> IndexerResult<()> {
     dotenv().ok();
     tracing_subscriber::fmt::init();
-
-    
 
     let opt = Opt::from_args();
     let connection = PgConnection::establish(&opt.postgres_url).unwrap();
