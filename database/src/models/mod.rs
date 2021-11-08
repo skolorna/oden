@@ -1,2 +1,2 @@
-pub mod meal;
+pub mod day;
 pub mod menu;

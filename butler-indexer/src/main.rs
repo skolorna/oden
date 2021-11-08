@@ -1,32 +1,28 @@
-use std::sync::Arc;
-
-use atomic_counter::AtomicCounter;
-use atomic_counter::RelaxedCounter;
-use butler_indexer::finalize;
 use butler_indexer::get_candidates;
 use butler_indexer::load_menus;
+use butler_indexer::submit_days;
 use butler_indexer::IndexerResult;
-use butler_lib::errors::ButlerResult;
+
 use butler_lib::menus::list_days;
-use butler_lib::types::day::Day;
+
 use chrono::Duration;
 use chrono::TimeZone;
 use chrono::Utc;
 use chrono_tz::Europe::Stockholm;
 
 use database::models::menu::Menu;
-use database::models::menu::MenuId;
 use database::MeiliIndexable;
 use diesel::prelude::*;
 use diesel::PgConnection;
 use dotenv::dotenv;
 use futures::stream;
 use futures::StreamExt;
+
 use meilisearch_sdk::client::Client;
 use structopt::StructOpt;
 
+use tracing::error;
 use tracing::info;
-use tracing::log::error;
 
 #[derive(Debug, StructOpt)]
 struct Opt {
@@ -48,11 +44,17 @@ struct Opt {
     #[structopt(long, default_value = "90")]
     days: u32,
 
-    #[structopt(long, default_value = "100")]
+    #[structopt(long, default_value = "50")]
     concurrent: usize,
+
+    #[structopt(long, default_value = "500")]
+    batch_size: usize,
 
     #[structopt(long, short)]
     limit: Option<i64>,
+
+    #[structopt(long, default_value = "86400")]
+    max_age_secs: i64,
 }
 
 #[tokio::main]
@@ -67,7 +69,7 @@ async fn main() -> IndexerResult<()> {
         load_menus(&connection).await?;
     }
 
-    let must_update = get_candidates(&connection, opt.limit)?;
+    let must_update = get_candidates(&connection, Duration::seconds(opt.max_age_secs), opt.limit)?;
 
     info!("Updating {} menus ...", must_update.len());
 
@@ -75,24 +77,19 @@ async fn main() -> IndexerResult<()> {
     let first = Stockholm.from_utc_date(&utc).naive_local();
     let last = first + Duration::days(opt.days as i64);
 
-    let completed_count = Arc::new(RelaxedCounter::new(0));
-    let total_count = must_update.len();
-
-    let results = stream::iter(must_update)
-        .map(|(id, slug)| {
-            let completed_count = completed_count.clone();
-            async move {
-                let d = list_days(&slug, first, last).await;
-                completed_count.inc();
-                info!("{}/{}", completed_count.get(), total_count);
-                (id, d)
-            }
+    let stream = stream::iter(must_update)
+        .map(|(id, slug)| async move {
+            let d = list_days(&slug, first, last).await;
+            (id, d)
         })
-        .buffer_unordered(opt.concurrent)
-        .collect::<Vec<(MenuId, ButlerResult<Vec<Day>>)>>()
-        .await;
+        .buffer_unordered(opt.concurrent);
 
-    finalize(&connection, results)?;
+    stream
+        .chunks(opt.batch_size)
+        .for_each(|chunk| async {
+            submit_days(&connection, chunk).unwrap();
+        })
+        .await;
 
     if let Some(meili_url) = opt.meili_url {
         use database::schema::menus::dsl::*;

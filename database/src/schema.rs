@@ -1,8 +1,8 @@
 table! {
-    meals (id) {
+    days (id) {
         id -> Int4,
         date -> Date,
-        value -> Text,
+        meals -> Bytea,
         menu_id -> Int4,
     }
 }
@@ -16,6 +16,6 @@ table! {
     }
 }
 
-joinable!(meals -> menus (menu_id));
+joinable!(days -> menus (menu_id));
 
-allow_tables_to_appear_in_same_query!(meals, menus,);
+allow_tables_to_appear_in_same_query!(days, menus,);

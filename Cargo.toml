@@ -1,2 +1,2 @@
 [workspace]
-members = ["butler-http", "butler-indexer", "butler-lib", "database", "euphemism"]
+members = ["butler-http", "butler-indexer", "butler-lib", "database", "euphemism", "libshoco-sys", "shoco"]

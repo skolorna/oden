@@ -1,5 +1,6 @@
 pub mod models;
 pub mod schema;
+pub mod types;
 
 #[macro_use]
 extern crate diesel;

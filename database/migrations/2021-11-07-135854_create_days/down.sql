@@ -1,2 +1,2 @@
 -- This file should undo anything in `up.sql`
-DROP TABLE IF EXISTS meals;
+DROP TABLE IF EXISTS days;
