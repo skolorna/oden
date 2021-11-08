@@ -2,4 +2,4 @@
 
 ## To do
 
-- [] Fix fuzzing errors
+- [ ] Fix fuzzing errors
