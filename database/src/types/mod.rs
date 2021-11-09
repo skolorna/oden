@@ -1,1 +1,1 @@
-pub mod shocotext;
+pub mod smaztext;

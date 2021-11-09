@@ -7,6 +7,8 @@ use diesel::{
 };
 use serde::{Deserialize, Serialize};
 
+/// A text type that is compressed with [Smaz](https://github.com/antirez/smaz)
+/// in the database.
 #[derive(
     Debug,
     Clone,
@@ -21,15 +23,15 @@ use serde::{Deserialize, Serialize};
     Deserialize,
 )]
 #[sql_type = "diesel::sql_types::Binary"]
-pub struct ShocoText(String);
+pub struct SmazText(String);
 
-impl Display for ShocoText {
+impl Display for SmazText {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         self.0.fmt(f)
     }
 }
 
-impl<DB> ToSql<sql_types::Binary, DB> for ShocoText
+impl<DB> ToSql<sql_types::Binary, DB> for SmazText
 where
     DB: Backend,
     Vec<u8>: ToSql<sql_types::Binary, DB>,
@@ -38,25 +40,25 @@ where
         &self,
         out: &mut diesel::serialize::Output<W, DB>,
     ) -> diesel::serialize::Result {
-        let compressed = shoco::compress(self.0.as_str());
+        let compressed = smaz::compress(self.0.as_bytes());
         compressed.to_sql(out)
     }
 }
 
-impl<DB> FromSql<sql_types::Binary, DB> for ShocoText
+impl<DB> FromSql<sql_types::Binary, DB> for SmazText
 where
     DB: Backend,
     Vec<u8>: FromSql<sql_types::Binary, DB>,
 {
     fn from_sql(bytes: Option<&DB::RawValue>) -> diesel::deserialize::Result<Self> {
         let compressed = Vec::<u8>::from_sql(bytes)?;
-        let plain = shoco::decompress(&compressed);
+        let plain = smaz::decompress(&compressed)?;
         let s = String::from_utf8(plain)?;
         Ok(Self(s))
     }
 }
 
-impl From<String> for ShocoText {
+impl From<String> for SmazText {
     fn from(s: String) -> Self {
         Self(s)
     }

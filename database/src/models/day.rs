@@ -3,7 +3,7 @@ use chrono::NaiveDate;
 
 use crate::models::menu::Menu;
 use crate::schema::days;
-use crate::types::shocotext::ShocoText;
+use crate::types::smaztext::SmazText;
 
 use super::menu::MenuId;
 
@@ -15,7 +15,7 @@ pub type DayId = i32;
 pub struct Day {
     pub id: DayId,
     pub date: NaiveDate,
-    pub meals: ShocoText,
+    pub meals: SmazText,
     pub menu_id: MenuId,
 }
 
@@ -24,7 +24,7 @@ pub struct Day {
 pub struct NewDay {
     date: NaiveDate,
     menu_id: MenuId,
-    meals: ShocoText,
+    meals: SmazText,
 }
 
 impl NewDay {
