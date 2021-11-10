@@ -273,6 +273,7 @@ pub static CODEBOOK: [&[u8]; 254] = [
 ];
 
 lazy_static! {
+    static ref LONGEST_CODE: usize = CODEBOOK.iter().map(|c| c.len()).max().unwrap();
     static ref CODEBOOK_MAP: HashMap<Vec<u8>, u8> = {
         let mut map: HashMap<Vec<u8>, u8> = HashMap::new();
         for (i, code) in CODEBOOK.iter().enumerate() {
@@ -332,10 +333,7 @@ pub fn compress(input: &[u8]) -> Vec<u8> {
 
     while input_index < input.len() {
         let mut encoded = false;
-        let mut max_len = 7;
-        if (input.len() - input_index) < 7 {
-            max_len = input.len() - input_index
-        }
+        let max_len = LONGEST_CODE.min(input.len() - input_index);
 
         for i in (0..=max_len).rev() {
             let code = CODEBOOK_MAP.get(&input[input_index..input_index + i]);
@@ -424,5 +422,10 @@ mod tests {
     pub fn unicode() {
         let plaintext = "Fisk Björkeby";
         assert!(compress(plaintext.as_bytes()).len() < plaintext.len());
+    }
+
+    #[test]
+    pub fn long() {
+        assert_eq!(compress(b" serveras med ").len(), 1);
     }
 }
