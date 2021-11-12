@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::{
     errors::{ButlerError, ButlerResult},
-    menus::{id::MenuId, supplier::Supplier, Day, Menu},
+    menus::{id::MenuSlug, supplier::Supplier, Day, Menu},
 };
 
 use self::{days::query_station, fetch::fetch};
@@ -57,7 +57,7 @@ impl Station {
             None
         } else {
             Some(Menu::new(
-                MenuId::new(Supplier::Skolmaten, self.id.to_string()),
+                MenuSlug::new(Supplier::Skolmaten, self.id.to_string()),
                 format!("{}, {}", self.name.trim(), district_name),
             ))
         }
@@ -143,22 +143,22 @@ pub(super) async fn list_menus() -> ButlerResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub(super) async fn query_menu(menu_id: u64) -> ButlerResult<Menu> {
+pub(super) async fn query_menu(menu_slug: u64) -> ButlerResult<Menu> {
     let client = Client::new();
 
-    let station = query_station(&client, menu_id).await?;
+    let station = query_station(&client, menu_slug).await?;
     let menu = station.to_menu().ok_or(ButlerError::MenuNotFound)?;
 
     Ok(menu)
 }
 
 pub(super) async fn list_days(
-    menu_id: u64,
+    menu_slug: u64,
     first: NaiveDate,
     last: NaiveDate,
 ) -> ButlerResult<Vec<Day>> {
     let client = Client::new();
-    days::list_days(&client, menu_id, first, last).await
+    days::list_days(&client, menu_slug, first, last).await
 }
 
 #[cfg(test)]
@@ -174,14 +174,14 @@ mod tests {
         assert!(menus.len() > 5000);
 
         for menu in menus {
-            assert!(!menu.title.to_lowercase().contains("info"));
+            assert!(!menu.title().to_lowercase().contains("info"));
         }
     }
 
     #[tokio::test]
     async fn query_menu_test() {
         let menu = query_menu(4791333780717568).await.unwrap();
-        assert_eq!(menu.title, "Stråtjära förskola, Söderhamns kommun");
+        assert_eq!(menu.title(), "Stråtjära förskola, Söderhamns kommun");
         assert!(query_menu(0).await.is_err());
         assert!(query_menu(5236876508135424).await.is_err()); // Invalid station name
     }
@@ -195,6 +195,6 @@ mod tests {
             .await
             .unwrap();
 
-        assert!(days.len() > 0);
+        assert!(!days.is_empty());
     }
 }

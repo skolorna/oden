@@ -4,7 +4,7 @@ use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
-use butler_lib::menus::{id::MenuId, list_days, list_menus, query_menu};
+use butler_lib::menus::{id::MenuSlug, list_days, list_menus, query_menu};
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use chrono_tz::Europe::Stockholm;
 use serde::Deserialize;
@@ -27,9 +27,9 @@ async fn list_menus_route() -> AppResult<HttpResponse> {
     Ok(res)
 }
 
-#[get("{menu_id}")]
-async fn query_menu_route(menu_id: web::Path<MenuId>) -> AppResult<HttpResponse> {
-    let menu = query_menu(&menu_id).await?;
+#[get("{menu_slug}")]
+async fn query_menu_route(menu_slug: web::Path<MenuSlug>) -> AppResult<HttpResponse> {
+    let menu = query_menu(&menu_slug).await?;
     let res = HttpResponse::Ok()
         .insert_header(CacheControl(vec![
             CacheDirective::MaxAge(604_800), // 7 days
@@ -47,9 +47,9 @@ struct ListDaysRouteQuery {
 }
 
 /// Route for listing days.
-#[get("{menu_id}/days")]
+#[get("{menu_slug}/days")]
 async fn list_days_route(
-    menu_id: web::Path<MenuId>,
+    menu_slug: web::Path<MenuSlug>,
     query: web::Query<ListDaysRouteQuery>,
 ) -> AppResult<HttpResponse> {
     let first = query.first.unwrap_or_else(|| {
@@ -75,7 +75,7 @@ async fn list_days_route(
         )));
     }
 
-    let days = list_days(&menu_id, first, last).await?;
+    let days = list_days(&menu_slug, first, last).await?;
     let res = HttpResponse::Ok()
         .insert_header(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
         .json(days);

@@ -8,10 +8,11 @@ use serde::Deserialize;
 use crate::{
     errors::{ButlerError, ButlerResult},
     menus::mashie::scrape::scrape_mashie_days,
+    types::day::Day,
     util::is_sorted,
 };
 
-use super::{day::Day, id::MenuId, supplier::Supplier, Menu};
+use super::{id::MenuSlug, supplier::Supplier, Menu};
 
 #[derive(Deserialize, Debug)]
 pub struct MashieMenu {
@@ -23,7 +24,7 @@ pub struct MashieMenu {
 
 impl MashieMenu {
     pub fn into_menu(self, supplier: Supplier) -> Menu {
-        let id = MenuId::new(supplier, self.id);
+        let id = MenuSlug::new(supplier, self.id);
         Menu::new(id, self.title)
     }
 }
@@ -44,11 +45,11 @@ pub async fn list_menus(host: &str) -> ButlerResult<Vec<MashieMenu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(host: &str, menu_id: &str) -> ButlerResult<MashieMenu> {
+pub async fn query_menu(host: &str, menu_slug: &str) -> ButlerResult<MashieMenu> {
     let menus = list_menus(host).await?;
     let menu = menus
         .into_iter()
-        .find(|m| m.id == menu_id)
+        .find(|m| m.id == menu_slug)
         .ok_or(ButlerError::MenuNotFound)?;
 
     Ok(menu)
@@ -56,11 +57,11 @@ pub async fn query_menu(host: &str, menu_id: &str) -> ButlerResult<MashieMenu> {
 
 pub async fn list_days(
     host: &str,
-    menu_id: &str,
+    menu_slug: &str,
     first: NaiveDate,
     last: NaiveDate,
 ) -> ButlerResult<Vec<Day>> {
-    let menu = query_menu(host, menu_id).await?;
+    let menu = query_menu(host, menu_slug).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
     let doc = Html::parse_document(&html);
@@ -78,7 +79,8 @@ pub async fn list_days(
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
         use crate::errors::ButlerResult;
-        use crate::menus::{day::Day, mashie, Menu};
+        use crate::menus::{mashie, Menu};
+        use crate::types::day::Day;
         use chrono::NaiveDate;
 
         const HOST: &str = $host;
@@ -93,8 +95,8 @@ macro_rules! mashie_impl {
             Ok(menus)
         }
 
-        pub async fn query_menu(menu_id: &str) -> ButlerResult<Menu> {
-            let menu = mashie::query_menu(HOST, menu_id)
+        pub async fn query_menu(menu_slug: &str) -> ButlerResult<Menu> {
+            let menu = mashie::query_menu(HOST, menu_slug)
                 .await?
                 .into_menu($supplier);
 
@@ -102,11 +104,11 @@ macro_rules! mashie_impl {
         }
 
         pub async fn list_days(
-            menu_id: &str,
+            menu_slug: &str,
             first: NaiveDate,
             last: NaiveDate,
         ) -> ButlerResult<Vec<Day>> {
-            mashie::list_days(HOST, menu_id, first, last).await
+            mashie::list_days(HOST, menu_slug, first, last).await
         }
     };
 }
@@ -148,7 +150,7 @@ mod tests {
 
         mashie_impl!("https://sodexo.mashie.com", Supplier::Sodexo);
 
-        const MENU_ID: &str = "312dd0ae-3ebd-49d9-870e-abeb008c0e4b";
+        const MENU_SLUG: &str = "312dd0ae-3ebd-49d9-870e-abeb008c0e4b";
 
         #[tokio::test]
         async fn list_menus_test() {
@@ -158,9 +160,9 @@ mod tests {
 
         #[tokio::test]
         async fn query_menu_test() {
-            let menu = query_menu(MENU_ID).await.unwrap();
-            assert_eq!(menu.title, "Loket, Pysslingen");
-            assert_eq!(menu.id.local_id, MENU_ID);
+            let menu = query_menu(MENU_SLUG).await.unwrap();
+            assert_eq!(menu.title(), "Loket, Pysslingen");
+            assert_eq!(menu.slug().local_id, MENU_SLUG);
 
             assert!(query_menu("unexisting").await.is_err());
         }
@@ -170,7 +172,7 @@ mod tests {
             let first = offset::Utc::today().naive_utc();
             let last = first + Duration::days(365);
 
-            let days = list_days(MENU_ID, first, last).await.unwrap();
+            let days = list_days(MENU_SLUG, first, last).await.unwrap();
 
             assert!(days.len() > 5);
             assert!(is_sorted(&days));

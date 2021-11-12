@@ -1,4 +1,3 @@
-pub mod day;
 pub mod id;
 
 #[macro_use]
@@ -8,46 +7,14 @@ pub mod supplier;
 
 use chrono::NaiveDate;
 use futures::{stream, StreamExt};
-use serde::{Deserialize, Serialize};
 use strum::IntoEnumIterator;
 
-use crate::errors::ButlerResult;
-
-use self::{
-    day::Day,
-    id::MenuId,
-    meal::Meal,
-    supplier::{Supplier, SupplierInfo},
+use crate::{
+    errors::ButlerResult,
+    types::{day::Day, menu::Menu},
 };
 
-#[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct Menu {
-    id: MenuId,
-    title: String,
-    supplier: SupplierInfo,
-}
-
-impl Menu {
-    pub fn new(id: MenuId, title: String) -> Self {
-        Self {
-            supplier: id.supplier.info(),
-            id,
-            title,
-        }
-    }
-
-    pub fn id(&self) -> &MenuId {
-        &self.id
-    }
-
-    pub fn title(&self) -> &str {
-        &self.title
-    }
-
-    pub fn supplier(&self) -> &SupplierInfo {
-        &self.supplier
-    }
-}
+use self::{id::MenuSlug, meal::Meal, supplier::Supplier};
 
 /// List all the menus everywhere (from all suppliers).
 pub async fn list_menus(concurrent: usize) -> ButlerResult<Vec<Menu>> {
@@ -62,22 +29,22 @@ pub async fn list_menus(concurrent: usize) -> ButlerResult<Vec<Menu>> {
         .flatten()
         .collect::<Vec<Menu>>();
 
-    menus.sort_by(|a, b| a.title.cmp(&b.title));
+    menus.sort_by(|a, b| a.title().cmp(b.title()));
 
     Ok(menus)
 }
 
-pub async fn query_menu(menu_id: &MenuId) -> ButlerResult<Menu> {
-    menu_id.supplier.query_menu(&menu_id.local_id).await
+pub async fn query_menu(menu_slug: &MenuSlug) -> ButlerResult<Menu> {
+    menu_slug.supplier.query_menu(&menu_slug.local_id).await
 }
 
 pub async fn list_days(
-    menu_id: &MenuId,
+    menu_slug: &MenuSlug,
     first: NaiveDate,
     last: NaiveDate,
 ) -> ButlerResult<Vec<Day>> {
-    menu_id
+    menu_slug
         .supplier
-        .list_days(&menu_id.local_id, first, last)
+        .list_days(&menu_slug.local_id, first, last)
         .await
 }

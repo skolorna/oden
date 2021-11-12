@@ -1,7 +1,7 @@
 use tokenizer::tokenize;
 use util::{bigrams, BigramSet};
 
-use std::{collections::HashSet, fmt::Display, hash::Hash};
+use std::{collections::HashSet, hash::Hash};
 
 pub mod tokenizer;
 pub mod util;
@@ -88,17 +88,6 @@ impl Default for Cluster {
     }
 }
 
-impl Display for Cluster {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        writeln!(f, "{}", self.label().unwrap_or("UNNAMED"))?;
-
-        for sample in &self.samples {
-            writeln!(f, "- {}", sample.label)?;
-        }
-
-        Ok(())
-    }
-}
 /// Calculate `|a ∩ b| / |a ∪ b|` of sets *a* and *b*.
 ///
 /// ```
@@ -121,19 +110,4 @@ impl Display for Cluster {
 /// ```
 pub fn jaccard_index<T: Eq + Hash>(a: &HashSet<T>, b: &HashSet<T>) -> f32 {
     a.intersection(b).count() as f32 / a.union(b).count() as f32
-}
-
-#[cfg(test)]
-mod tests {
-    use crate::form_clusters;
-
-    #[test]
-    fn it_works() {
-        let lines = include_str!("../sample.txt").lines();
-        let clusters = form_clusters(&lines.collect::<Vec<_>>());
-
-        for cluster in clusters {
-            eprintln!("{}", cluster)
-        }
-    }
 }

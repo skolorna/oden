@@ -1,5 +1,8 @@
 *
+!/database
+!/euphemism
 !/butler-http
+!/butler-indexer
 !/butler-lib
 !Cargo.toml
 !Cargo.lock

@@ -6,7 +6,8 @@ use actix_web::{
 };
 use butler_http::create_app;
 use butler_lib::{
-    menus::{day::Day, id::MenuId, supplier::Supplier, Menu},
+    menus::{id::MenuSlug, supplier::Supplier},
+    types::{day::Day, menu::Menu},
     util::is_sorted,
 };
 
@@ -14,20 +15,20 @@ use butler_lib::{
 macro_rules! get {
     ($app:expr, $uri:expr) => {{
         let req = TestRequest::with_uri($uri).to_request();
-        call_service(&mut $app, req).await
+        call_service(&$app, req).await
     }};
 }
 
 #[actix_rt::test]
 async fn health_ok() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
     let resp = get!(app, "/health");
     assert_eq!(resp.status(), StatusCode::OK);
 }
 
 #[actix_rt::test]
 async fn server_header() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
     let resp = get!(app, "/thisshoulddefinitelyreturn404");
     let header = resp.headers().get("server").unwrap();
 
@@ -40,7 +41,7 @@ async fn server_header() {
 
 #[actix_rt::test]
 async fn list_menus() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
     let resp = get!(app, "/menus");
     assert_eq!(resp.status(), StatusCode::OK);
 
@@ -51,13 +52,13 @@ async fn list_menus() {
     assert!(Supplier::from_str("invalid provider id").is_err());
 
     for menu in menus {
-        assert!(Supplier::from_str(&menu.supplier().id).is_ok());
+        assert!(Supplier::from_str(&menu.slug().supplier.id()).is_ok());
     }
 }
 
 #[actix_rt::test]
 async fn query_menu() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
 
     {
         let resp = get!(app, "/menus/skolmaten.85957002");
@@ -67,12 +68,8 @@ async fn query_menu() {
 
         assert_eq!(menu.title(), "P A Fogelströms gymnasium, Stockholms stad");
         assert_eq!(
-            Supplier::from_str(&menu.supplier().id).unwrap(),
-            Supplier::Skolmaten
-        );
-        assert_eq!(
-            menu.id().clone(),
-            MenuId::new(Supplier::Skolmaten, "85957002".to_owned())
+            menu.slug().clone(),
+            MenuSlug::new(Supplier::Skolmaten, "85957002".to_owned())
         );
     }
 
@@ -94,7 +91,7 @@ async fn query_menu() {
 
 #[actix_rt::test]
 async fn list_days() {
-    let mut app = init_service(create_app!()).await;
+    let app = init_service(create_app!()).await;
 
     {
         let resp = get!(app, "/menus/skolmaten.4791333780717568/days");

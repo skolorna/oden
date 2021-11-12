@@ -36,11 +36,11 @@ mod tests {
     async fn health_ok() {
         use actix_web::{http::StatusCode, test, web, App};
 
-        let mut app =
+        let app =
             test::init_service(App::new().service(web::resource("/health").to(get_health))).await;
 
         let req = test::TestRequest::with_uri("/health").to_request();
-        let resp = test::call_service(&mut app, req).await;
+        let resp = test::call_service(&app, req).await;
 
         assert_eq!(resp.status(), StatusCode::OK);
         assert_eq!(

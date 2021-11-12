@@ -3,15 +3,13 @@ use std::collections::HashSet;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::util::retain_unique;
-
-use super::meal::Meal;
+use crate::{menus::meal::Meal, util::retain_unique};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Day {
     /// Time zones aren't really relevant here.
-    date: NaiveDate,
-    meals: Vec<Meal>,
+    pub date: NaiveDate,
+    pub meals: Vec<Meal>,
 }
 
 impl Day {
@@ -75,7 +73,7 @@ impl Day {
 /// ]
 /// );
 /// ```
-pub fn dedup_dates(days: &mut Vec<Day>) {
+pub fn dedup_day_dates(days: &mut Vec<Day>) {
     let mut seen_dates = HashSet::<NaiveDate>::new();
     days.retain(|day| seen_dates.insert(day.date));
 }
@@ -111,7 +109,7 @@ mod tests {
             },
         ];
 
-        dedup_dates(&mut days);
+        dedup_day_dates(&mut days);
 
         assert_eq!(
             days,
