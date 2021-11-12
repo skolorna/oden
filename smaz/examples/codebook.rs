@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::{cmp::Ordering, collections::HashMap};
 
 trait ContainsSlice<T>: PartialEq<[T]> {
     fn contains_slice(self: &'_ Self, slice: &'_ [T]) -> bool;
@@ -30,7 +30,13 @@ fn main() {
     }
 
     let mut frequencies = frequencies.into_iter().collect::<Vec<_>>();
-    frequencies.sort_by(|(_, a), (_, b)| b.cmp(a)); // Sort from highest to lowest
+    frequencies.sort_by(|(va, fa), (vb, fb)| {
+        let f_ord = fb.cmp(fa);
+        match f_ord {
+            Ordering::Equal => vb.len().cmp(&va.len()),
+            _ => f_ord,
+        }
+    }); // Sort from highest to lowest
 
     let mut out: Vec<(Vec<u8>, usize)> = Vec::with_capacity(254);
     let mut i = 0;
