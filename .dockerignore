@@ -4,5 +4,6 @@
 !/butler-http
 !/butler-indexer
 !/butler-lib
+!/smaz
 !Cargo.toml
 !Cargo.lock

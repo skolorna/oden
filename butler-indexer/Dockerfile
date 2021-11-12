@@ -21,4 +21,4 @@ COPY --from=builder /home/rust/src/butler/target/x86_64-unknown-linux-musl/relea
 RUN chown -R appuser:appuser /usr/src/app
 USER appuser
 
-CMD ["./butler-indexer"]
+ENTRYPOINT ["./butler-indexer"]
