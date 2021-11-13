@@ -43,3 +43,12 @@ impl NewDay {
         }
     }
 }
+
+impl From<Day> for types::day::Day {
+    fn from(d: Day) -> Self {
+        Self {
+            date: d.date,
+            meals: d.meals.into(),
+        }
+    }
+}

@@ -1,6 +1,7 @@
 use actix_web::{http::StatusCode, ResponseError};
 use munin_lib::errors::MuninError;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Debug, Error)]
 pub enum AppError {
@@ -32,6 +33,27 @@ impl From<MuninError> for AppError {
             MuninError::ScrapeError { .. } => Self::InternalError,
             MuninError::InvalidMenuSlug => Self::BadRequest("invalid menu id".into()),
         }
+    }
+}
+
+impl From<r2d2::Error> for AppError {
+    fn from(e: r2d2::Error) -> Self {
+        error!("r2d2 encountered an error: {}", e);
+        Self::InternalError
+    }
+}
+
+impl From<actix_web::error::BlockingError> for AppError {
+    fn from(e: actix_web::error::BlockingError) -> Self {
+        error!("blocking error: {}", e);
+        Self::InternalError
+    }
+}
+
+impl From<diesel::result::Error> for AppError {
+    fn from(e: diesel::result::Error) -> Self {
+        error!("diesel error: {}", e);
+        Self::InternalError
     }
 }
 

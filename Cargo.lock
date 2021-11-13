@@ -1584,11 +1584,14 @@ dependencies = [
  "chrono-tz",
  "database",
  "diesel",
+ "dotenv",
  "futures",
  "munin-lib",
+ "r2d2",
  "serde",
  "structopt",
  "thiserror",
+ "tracing",
  "tracing-subscriber",
 ]
 

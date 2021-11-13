@@ -5,6 +5,7 @@ use diesel::{
     sql_types,
     types::{FromSql, ToSql},
 };
+use munin_lib::menus::meal::Meal;
 use serde::{Deserialize, Serialize};
 
 /// A text type that is compressed with [Smaz](https://github.com/antirez/smaz)
@@ -61,5 +62,17 @@ where
 impl From<String> for SmazText {
     fn from(s: String) -> Self {
         Self(s)
+    }
+}
+
+impl From<SmazText> for Vec<Meal> {
+    fn from(t: SmazText) -> Self {
+        let lines = t.0.lines();
+
+        lines
+            .map(|l| Meal {
+                value: l.to_owned(),
+            })
+            .collect()
     }
 }

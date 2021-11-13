@@ -6,41 +6,59 @@ use actix_web::{
 };
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use chrono_tz::Europe::Stockholm;
-use munin_lib::{
-    menus::{list_days, list_menus, query_menu},
-    types::slug::MenuSlug,
-};
+use database::models::{self, menu::MenuId};
+use diesel::prelude::*;
+use munin_lib::types;
 use serde::Deserialize;
 
 use crate::{
     errors::{AppError, AppResult},
     routes::swr,
+    PgPoolData,
 };
 
 /// Route for listing menus.
-async fn list_menus_route() -> AppResult<HttpResponse> {
-    let menus = list_menus(10).await?;
+async fn list_menus_route(pool: PgPoolData) -> AppResult<HttpResponse> {
+    use database::schema::menus::dsl::*;
+
+    let connection = pool.get()?;
+    let rows = web::block(move || menus.load::<models::menu::Menu>(&connection)).await??;
+
     let res = HttpResponse::Ok()
         .insert_header(CacheControl(vec![
-            CacheDirective::MaxAge(604_800), // 7 days
-            swr(2_419_200),                  // 28 days
+            CacheDirective::MaxAge(86_400), // 1 day
+            swr(604_800),                   // 7 days
         ]))
-        .json(menus);
+        .json(rows);
 
     Ok(res)
 }
 
-#[get("{menu_slug}")]
-async fn query_menu_route(menu_slug: web::Path<MenuSlug>) -> AppResult<HttpResponse> {
-    let menu = query_menu(&menu_slug).await?;
-    let res = HttpResponse::Ok()
-        .insert_header(CacheControl(vec![
-            CacheDirective::MaxAge(604_800), // 7 days
-            swr(2_419_200),                  // 28 days
-        ]))
-        .json(menu);
+#[get("{menu}")]
+async fn query_menu_route(menu_id: web::Path<MenuId>, pool: PgPoolData) -> AppResult<HttpResponse> {
+    use database::schema::menus::dsl::*;
 
-    Ok(res)
+    let connection = pool.get()?;
+    let row: Option<models::menu::Menu> = web::block(move || {
+        menus
+            .find(menu_id.into_inner())
+            .first(&connection)
+            .optional()
+    })
+    .await??;
+
+    if let Some(menu) = row {
+        let res = HttpResponse::Ok()
+            .insert_header(CacheControl(vec![
+                CacheDirective::MaxAge(86_400), // 1 day
+                swr(604_800),                   // 7 days
+            ]))
+            .json(menu);
+
+        Ok(res)
+    } else {
+        Err(AppError::MenuNotFound)
+    }
 }
 
 #[derive(Deserialize)]
@@ -50,11 +68,14 @@ struct ListDaysRouteQuery {
 }
 
 /// Route for listing days.
-#[get("{menu_slug}/days")]
+#[get("{menu}/days")]
 async fn list_days_route(
-    menu_slug: web::Path<MenuSlug>,
+    menu: web::Path<MenuId>,
     query: web::Query<ListDaysRouteQuery>,
+    pool: PgPoolData,
 ) -> AppResult<HttpResponse> {
+    use database::schema::days::dsl::*;
+
     let first = query.first.unwrap_or_else(|| {
         let naive_now = Utc::now().naive_utc();
 
@@ -78,10 +99,18 @@ async fn list_days_route(
         )));
     }
 
-    let days = list_days(&menu_slug, first, last).await?;
+    let connection = pool.get()?;
+
+    let rows: Vec<types::day::Day> = days
+        .filter(menu_id.eq(menu.into_inner()).and(date.between(first, last)))
+        .load::<models::day::Day>(&connection)?
+        .into_iter()
+        .map(|d| d.into())
+        .collect();
+
     let res = HttpResponse::Ok()
-        .insert_header(CacheControl(vec![CacheDirective::MaxAge(86_400)]))
-        .json(days);
+        .insert_header(CacheControl(vec![CacheDirective::MaxAge(3600)]))
+        .json(rows);
 
     Ok(res)
 }
