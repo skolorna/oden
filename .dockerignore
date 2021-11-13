@@ -1,4 +1,9 @@
 *
-!/src
+!/oden-http
+!/database
+!/euphemism
+!/munin
+!/munin-lib
+!/smaz
 !Cargo.toml
 !Cargo.lock

@@ -1,0 +1,15 @@
+# Compose file for DEVELOPMENT
+version: "3"
+services:
+  meilisearch:
+    image: getmeili/meilisearch
+    ports:
+      - "7700:7700"
+
+  postgres:
+    image: postgres
+    environment:
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "munin"
+    ports:
+      - "5432:5432"
