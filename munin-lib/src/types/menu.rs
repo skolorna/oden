@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::menus::id::MenuSlug;
+use super::slug::MenuSlug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Menu {

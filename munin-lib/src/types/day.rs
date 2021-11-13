@@ -35,7 +35,8 @@ impl Day {
     /// ```
     /// use chrono::NaiveDate;
     /// use std::str::FromStr;
-    /// use munin_lib::menus::{day::Day, meal::Meal};
+    /// use munin_lib::types::day::Day;
+    /// use munin_lib::menus::meal::Meal;
     ///
     /// let meals = vec![Meal::from_str("Sushi").unwrap()];
     /// let day = Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), meals).unwrap();
@@ -56,15 +57,15 @@ impl Day {
 /// ```
 /// use chrono::NaiveDate;
 /// use std::str::FromStr;
-/// use munin_lib::menus::day::{Day, dedup_dates};
 /// use munin_lib::menus::meal::Meal;
+/// use munin_lib::types::day::{Day, dedup_day_dates};
 ///
 /// let mut days = vec![
 ///     Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), vec![Meal::from_str("Tacos").unwrap()]).unwrap(),
 ///     Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), vec![Meal::from_str("Sushi").unwrap()]).unwrap(),
 /// ];
 ///
-/// dedup_dates(&mut days);
+/// dedup_day_dates(&mut days);
 ///
 /// assert_eq!(
 /// days,

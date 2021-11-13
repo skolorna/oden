@@ -10,7 +10,7 @@ use diesel::{
 };
 use serde::{de, Deserialize, Deserializer, Serialize};
 
-use super::supplier::Supplier;
+use crate::menus::supplier::Supplier;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 #[cfg_attr(feature = "diesel", derive(AsExpression, FromSqlRow))]
@@ -122,19 +122,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_menu_slug() {
-        let parsed = MenuSlug::from_str("skolmaten.aaa-bbb-ccc").unwrap();
-
-        assert_eq!(parsed.local_id, "aaa-bbb-ccc");
-        assert_eq!(parsed.supplier, Supplier::Skolmaten);
-
-        assert!(MenuSlug::from_str("invalid").is_err());
-        assert!(MenuSlug::from_str(".").is_err());
-        assert!(MenuSlug::from_str("skolmaten.").is_err());
-        assert!(MenuSlug::from_str(".abc").is_err());
-    }
-
-    #[test]
     fn menu_slug_eq() {
         let a = MenuSlug::new(Supplier::Skolmaten, "foo".to_owned());
         let b = MenuSlug::new(Supplier::Skolmaten, "bar".to_owned());
@@ -147,7 +134,7 @@ mod tests {
     fn menu_slug_roundtrip() {
         let original = MenuSlug::new(Supplier::Skolmaten, "local-id".to_owned());
         let serialized = original.to_string();
-        assert_eq!(serialized, "skolmaten.local-id");
+        assert_eq!(serialized, "c2tvbG1hdGVuLmxvY2FsLWlk");
         let parsed = MenuSlug::from_str(&serialized).unwrap();
         assert_eq!(original, parsed);
     }
@@ -156,17 +143,17 @@ mod tests {
     fn menu_slug_ser() {
         let id = MenuSlug::new(Supplier::Skolmaten, "local".to_owned());
         let s = serde_json::to_string(&id).unwrap();
-        assert_eq!(s, "\"skolmaten.local\"");
+        assert_eq!(s, "\"c2tvbG1hdGVuLmxvY2Fs\"");
     }
 
     #[test]
     fn menu_slug_de() {
-        let s = "\"skolmaten.local\"";
+        let s = "\"c2tvbG1hdGVuLmxvY2Fs\"";
         assert_eq!(
             serde_json::from_str::<MenuSlug>(s).unwrap(),
             MenuSlug::new(Supplier::Skolmaten, "local".to_owned())
         );
 
-        assert!(serde_json::from_str::<MenuSlug>("\"bruh.local\"").is_err());
+        assert!(serde_json::from_str::<MenuSlug>("\"bruh\"").is_err());
     }
 }

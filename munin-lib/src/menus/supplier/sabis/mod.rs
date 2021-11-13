@@ -2,17 +2,17 @@ use std::str::FromStr;
 
 use chrono::{Datelike, NaiveDate, Utc, Weekday};
 use lazy_static::lazy_static;
+use reqwest::redirect::Policy;
 use reqwest::{Client, StatusCode};
 use scraper::{Html, Selector};
 use tracing::error;
 use url::Url;
 
 use crate::errors::{MuninError, MuninResult};
-use crate::menus::id::MenuSlug;
 use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
 use crate::menus::Menu;
-use crate::types::day::Day;
+use crate::types::{day::Day, slug::MenuSlug};
 use crate::util::{extract_digits, last_path_segment};
 
 lazy_static! {
@@ -82,7 +82,7 @@ pub async fn list_days(
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_slug)
     );
-    let client = Client::new();
+    let client = Client::builder().redirect(Policy::none()).build()?;
     let res = client.get(&url).send().await?;
 
     if res.status() == StatusCode::NOT_FOUND {

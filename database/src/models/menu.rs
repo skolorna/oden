@@ -1,6 +1,6 @@
-use munin_lib::menus::id::MenuSlug;
 use chrono::{DateTime, Utc};
 use diesel::{Identifiable, Insertable, Queryable};
+use munin_lib::types::slug::MenuSlug;
 use serde::{Deserialize, Serialize};
 
 use crate::schema::menus;

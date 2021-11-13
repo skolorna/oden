@@ -1,5 +1,5 @@
-use munin_lib::types;
 use chrono::NaiveDate;
+use munin_lib::types;
 
 use crate::models::menu::Menu;
 use crate::schema::days;

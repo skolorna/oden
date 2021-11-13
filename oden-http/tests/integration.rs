@@ -4,12 +4,12 @@ use actix_web::{
     http::StatusCode,
     test::{call_service, init_service, read_body_json, TestRequest},
 };
-use butler_http::create_app;
 use munin_lib::{
-    menus::{id::MenuSlug, supplier::Supplier},
-    types::{day::Day, menu::Menu},
+    menus::supplier::Supplier,
+    types::{day::Day, menu::Menu, slug::MenuSlug},
     util::is_sorted,
 };
+use oden_http::create_app;
 
 /// Perform a GET request.
 macro_rules! get {
@@ -35,7 +35,7 @@ async fn server_header() {
     assert_eq!(resp.status(), StatusCode::NOT_FOUND);
     assert_eq!(
         header.to_str().unwrap(),
-        format!("butler-http/{}", env!("CARGO_PKG_VERSION"))
+        format!("oden/{}", env!("CARGO_PKG_VERSION"))
     );
 }
 

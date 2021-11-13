@@ -65,6 +65,8 @@ async fn main() -> IndexerResult<()> {
     let opt = Opt::from_args();
     let connection = PgConnection::establish(&opt.postgres_url).unwrap();
 
+    database::run_migrations(&connection).expect("migrations failed");
+
     if opt.load_menus {
         load_menus(&connection).await?;
     }

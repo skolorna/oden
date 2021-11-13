@@ -8,7 +8,7 @@ use url::Url;
 
 use crate::{
     errors::{MuninError, MuninResult},
-    menus::{id::MenuSlug, mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu},
+    menus::{mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu, MenuSlug},
     types::day::Day,
     util::last_path_segment,
 };

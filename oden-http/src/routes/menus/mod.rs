@@ -4,9 +4,12 @@ use actix_web::{
     web::{self, ServiceConfig},
     HttpResponse,
 };
-use munin_lib::menus::{id::MenuSlug, list_days, list_menus, query_menu};
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use chrono_tz::Europe::Stockholm;
+use munin_lib::{
+    menus::{list_days, list_menus, query_menu},
+    types::slug::MenuSlug,
+};
 use serde::Deserialize;
 
 use crate::{

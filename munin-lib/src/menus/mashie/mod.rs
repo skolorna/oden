@@ -12,7 +12,7 @@ use crate::{
     util::is_sorted,
 };
 
-use super::{id::MenuSlug, supplier::Supplier, Menu};
+use super::{supplier::Supplier, Menu, MenuSlug};
 
 #[derive(Deserialize, Debug)]
 pub struct MashieMenu {

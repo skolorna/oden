@@ -1,7 +1,3 @@
-use munin_lib::errors::MuninResult;
-use munin_lib::menus::id::MenuSlug;
-use munin_lib::menus::list_menus;
-use munin_lib::types;
 use chrono::Duration;
 use chrono::Utc;
 use database::models::day::NewDay;
@@ -10,6 +6,10 @@ use database::models::menu::NewMenu;
 use diesel::pg::upsert::excluded;
 use diesel::prelude::*;
 use diesel::PgConnection;
+use munin_lib::errors::MuninResult;
+use munin_lib::menus::list_menus;
+use munin_lib::types;
+use munin_lib::types::slug::MenuSlug;
 use thiserror::Error;
 use tracing::info;
 use tracing::warn;

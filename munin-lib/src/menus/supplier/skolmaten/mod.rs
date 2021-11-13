@@ -8,7 +8,7 @@ use serde::Deserialize;
 
 use crate::{
     errors::{MuninError, MuninResult},
-    menus::{id::MenuSlug, supplier::Supplier, Day, Menu},
+    menus::{supplier::Supplier, Day, Menu, MenuSlug},
 };
 
 use self::{days::query_station, fetch::fetch};
@@ -85,10 +85,7 @@ async fn list_districts_in_province(
     Ok(res.districts)
 }
 
-async fn list_stations_in_district(
-    client: &Client,
-    district_id: u64,
-) -> MuninResult<Vec<Station>> {
+async fn list_stations_in_district(client: &Client, district_id: u64) -> MuninResult<Vec<Station>> {
     let res = fetch(client, &format!("stations?district={}", district_id))
         .await?
         .json::<StationsResponse>()

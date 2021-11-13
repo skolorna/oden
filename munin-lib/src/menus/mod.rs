@@ -1,5 +1,3 @@
-pub mod id;
-
 #[macro_use]
 pub mod mashie;
 pub mod meal;
@@ -11,10 +9,10 @@ use strum::IntoEnumIterator;
 
 use crate::{
     errors::MuninResult,
-    types::{day::Day, menu::Menu},
+    types::{day::Day, menu::Menu, slug::MenuSlug},
 };
 
-use self::{id::MenuSlug, meal::Meal, supplier::Supplier};
+use self::{meal::Meal, supplier::Supplier};
 
 /// List all the menus everywhere (from all suppliers).
 pub async fn list_menus(concurrent: usize) -> MuninResult<Vec<Menu>> {
