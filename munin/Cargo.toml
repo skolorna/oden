@@ -1,5 +1,5 @@
 [package]
-name = "butler-indexer"
+name = "munin"
 version = "0.1.0"
 edition = "2018"
 
@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 base64 = "0.13.0"
 database = { path = "../database", features = ["meilisearch-sdk"] }
-butler-lib = { path = "../butler-lib", features = ["diesel"] }
+munin-lib = { path = "../munin-lib", features = ["diesel"] }
 chrono = "0.4.19"
 chrono-tz = "0.6.0"
 diesel = { version = "1.4.8", features = ["postgres", "chrono"] }

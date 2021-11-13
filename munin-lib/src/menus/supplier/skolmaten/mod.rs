@@ -7,7 +7,7 @@ use reqwest::Client;
 use serde::Deserialize;
 
 use crate::{
-    errors::{ButlerError, ButlerResult},
+    errors::{MuninError, MuninResult},
     menus::{id::MenuSlug, supplier::Supplier, Day, Menu},
 };
 
@@ -64,7 +64,7 @@ impl Station {
     }
 }
 
-async fn list_provinces(client: &Client) -> ButlerResult<Vec<Province>> {
+async fn list_provinces(client: &Client) -> MuninResult<Vec<Province>> {
     let res = fetch(client, "provinces")
         .await?
         .json::<ProvincesResponse>()
@@ -76,7 +76,7 @@ async fn list_provinces(client: &Client) -> ButlerResult<Vec<Province>> {
 async fn list_districts_in_province(
     client: &Client,
     province_id: u64,
-) -> ButlerResult<Vec<District>> {
+) -> MuninResult<Vec<District>> {
     let res = fetch(client, &format!("districts?province={}", province_id))
         .await?
         .json::<DistrictsResponse>()
@@ -88,7 +88,7 @@ async fn list_districts_in_province(
 async fn list_stations_in_district(
     client: &Client,
     district_id: u64,
-) -> ButlerResult<Vec<Station>> {
+) -> MuninResult<Vec<Station>> {
     let res = fetch(client, &format!("stations?district={}", district_id))
         .await?
         .json::<StationsResponse>()
@@ -97,7 +97,7 @@ async fn list_stations_in_district(
     Ok(res.stations)
 }
 
-pub(super) async fn list_menus() -> ButlerResult<Vec<Menu>> {
+pub(super) async fn list_menus() -> MuninResult<Vec<Menu>> {
     let client = Client::new();
 
     let provinces = list_provinces(&client).await?;
@@ -143,11 +143,11 @@ pub(super) async fn list_menus() -> ButlerResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub(super) async fn query_menu(menu_slug: u64) -> ButlerResult<Menu> {
+pub(super) async fn query_menu(menu_slug: u64) -> MuninResult<Menu> {
     let client = Client::new();
 
     let station = query_station(&client, menu_slug).await?;
-    let menu = station.to_menu().ok_or(ButlerError::MenuNotFound)?;
+    let menu = station.to_menu().ok_or(MuninError::MenuNotFound)?;
 
     Ok(menu)
 }
@@ -156,7 +156,7 @@ pub(super) async fn list_days(
     menu_slug: u64,
     first: NaiveDate,
     last: NaiveDate,
-) -> ButlerResult<Vec<Day>> {
+) -> MuninResult<Vec<Day>> {
     let client = Client::new();
     days::list_days(&client, menu_slug, first, last).await
 }

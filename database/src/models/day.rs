@@ -1,4 +1,4 @@
-use butler_lib::types;
+use munin_lib::types;
 use chrono::NaiveDate;
 
 use crate::models::menu::Menu;

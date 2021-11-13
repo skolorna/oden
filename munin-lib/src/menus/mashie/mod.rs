@@ -6,7 +6,7 @@ use scraper::Html;
 use serde::Deserialize;
 
 use crate::{
-    errors::{ButlerError, ButlerResult},
+    errors::{MuninError, MuninResult},
     menus::mashie::scrape::scrape_mashie_days,
     types::day::Day,
     util::is_sorted,
@@ -29,7 +29,7 @@ impl MashieMenu {
     }
 }
 
-pub async fn list_menus(host: &str) -> ButlerResult<Vec<MashieMenu>> {
+pub async fn list_menus(host: &str) -> MuninResult<Vec<MashieMenu>> {
     let client = Client::new();
     let res = client
         .post(&format!(
@@ -45,12 +45,12 @@ pub async fn list_menus(host: &str) -> ButlerResult<Vec<MashieMenu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(host: &str, menu_slug: &str) -> ButlerResult<MashieMenu> {
+pub async fn query_menu(host: &str, menu_slug: &str) -> MuninResult<MashieMenu> {
     let menus = list_menus(host).await?;
     let menu = menus
         .into_iter()
         .find(|m| m.id == menu_slug)
-        .ok_or(ButlerError::MenuNotFound)?;
+        .ok_or(MuninError::MenuNotFound)?;
 
     Ok(menu)
 }
@@ -60,7 +60,7 @@ pub async fn list_days(
     menu_slug: &str,
     first: NaiveDate,
     last: NaiveDate,
-) -> ButlerResult<Vec<Day>> {
+) -> MuninResult<Vec<Day>> {
     let menu = query_menu(host, menu_slug).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
@@ -78,14 +78,14 @@ pub async fn list_days(
 /// Automagically generate a Mashie client.
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
-        use crate::errors::ButlerResult;
+        use crate::errors::MuninResult;
         use crate::menus::{mashie, Menu};
         use crate::types::day::Day;
         use chrono::NaiveDate;
 
         const HOST: &str = $host;
 
-        pub async fn list_menus() -> ButlerResult<Vec<Menu>> {
+        pub async fn list_menus() -> MuninResult<Vec<Menu>> {
             let menus = mashie::list_menus(HOST)
                 .await?
                 .into_iter()
@@ -95,7 +95,7 @@ macro_rules! mashie_impl {
             Ok(menus)
         }
 
-        pub async fn query_menu(menu_slug: &str) -> ButlerResult<Menu> {
+        pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
             let menu = mashie::query_menu(HOST, menu_slug)
                 .await?
                 .into_menu($supplier);
@@ -107,7 +107,7 @@ macro_rules! mashie_impl {
             menu_slug: &str,
             first: NaiveDate,
             last: NaiveDate,
-        ) -> ButlerResult<Vec<Day>> {
+        ) -> MuninResult<Vec<Day>> {
             mashie::list_days(HOST, menu_slug, first, last).await
         }
     };

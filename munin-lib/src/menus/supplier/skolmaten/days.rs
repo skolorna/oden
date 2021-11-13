@@ -7,7 +7,7 @@ use serde::Deserialize;
 use tracing::error;
 
 use crate::{
-    errors::{ButlerError, ButlerResult},
+    errors::{MuninError, MuninResult},
     menus::{Day, Meal, Menu},
     types::day::dedup_day_dates,
 };
@@ -110,7 +110,7 @@ async fn raw_fetch_menu(
     client: &Client,
     station_id: u64,
     span: &SkolmatenWeekSpan,
-) -> ButlerResult<SkolmatenMenuResponse> {
+) -> MuninResult<SkolmatenMenuResponse> {
     let path = format!(
         "menu?station={}&year={}&weekOfYear={}&count={}",
         station_id, span.year, span.week_of_year, span.count
@@ -125,7 +125,7 @@ async fn raw_fetch_menu(
                 error!("{}", e);
             }
 
-            Err(ButlerError::MenuNotFound)
+            Err(MuninError::MenuNotFound)
         }
     }
 }
@@ -176,7 +176,7 @@ pub async fn list_days(
     station_id: u64,
     first: NaiveDate,
     last: NaiveDate,
-) -> ButlerResult<Vec<Day>> {
+) -> MuninResult<Vec<Day>> {
     let spans = generate_week_spans(first, last);
 
     let results = stream::iter(spans)
@@ -192,7 +192,7 @@ pub async fn list_days(
         .collect::<Vec<_>>()
         .await;
 
-    let days_2d = results.into_iter().collect::<ButlerResult<Vec<_>>>()?;
+    let days_2d = results.into_iter().collect::<MuninResult<Vec<_>>>()?;
 
     let mut days = days_2d
         .into_iter()
@@ -209,7 +209,7 @@ pub async fn list_days(
 pub(super) async fn query_station(
     client: &Client,
     station_id: u64,
-) -> ButlerResult<DetailedStation> {
+) -> MuninResult<DetailedStation> {
     let now = chrono::offset::Utc::now();
 
     let span = SkolmatenWeekSpan {

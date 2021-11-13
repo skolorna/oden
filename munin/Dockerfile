@@ -1,9 +1,9 @@
 FROM ekidd/rust-musl-builder:beta as builder
 
-WORKDIR /home/rust/src/butler
-RUN sudo chown -R rust:rust /home/rust/src/butler
+WORKDIR /home/rust/src/munin
+RUN sudo chown -R rust:rust /home/rust/src/munin
 ADD . .
-RUN cargo build --release --bin butler-indexer
+RUN cargo build --release --bin munin
 
 FROM alpine:latest
 
@@ -16,9 +16,9 @@ RUN apk update \
 
 WORKDIR /usr/src/app
 
-COPY --from=builder /home/rust/src/butler/target/x86_64-unknown-linux-musl/release/butler-indexer ./
+COPY --from=builder /home/rust/src/munin/target/x86_64-unknown-linux-musl/release/munin ./
 
 RUN chown -R appuser:appuser /usr/src/app
 USER appuser
 
-ENTRYPOINT ["./butler-indexer"]
+ENTRYPOINT ["./munin"]

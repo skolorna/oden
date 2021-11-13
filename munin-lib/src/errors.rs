@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum ButlerError {
+pub enum MuninError {
     #[error("menu not found")]
     MenuNotFound,
 
@@ -15,4 +15,4 @@ pub enum ButlerError {
     InvalidMenuSlug,
 }
 
-pub type ButlerResult<T> = Result<T, ButlerError>;
+pub type MuninResult<T> = Result<T, MuninError>;

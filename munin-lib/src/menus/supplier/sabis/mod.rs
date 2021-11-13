@@ -7,7 +7,7 @@ use scraper::{Html, Selector};
 use tracing::error;
 use url::Url;
 
-use crate::errors::{ButlerError, ButlerResult};
+use crate::errors::{MuninError, MuninResult};
 use crate::menus::id::MenuSlug;
 use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
@@ -24,7 +24,7 @@ lazy_static! {
     static ref S_LUNCH_DISH: Selector = Selector::parse(".lunch-dish").unwrap();
 }
 
-pub async fn list_menus() -> ButlerResult<Vec<Menu>> {
+pub async fn list_menus() -> MuninResult<Vec<Menu>> {
     let html = reqwest::get("https://www.sabis.se/restauranger/")
         .await?
         .text()
@@ -51,13 +51,13 @@ pub async fn list_menus() -> ButlerResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(menu_slug: &str) -> ButlerResult<Menu> {
+pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
     let menus = list_menus().await?;
 
     menus
         .into_iter()
         .find(|m| m.slug().local_id == menu_slug)
-        .ok_or(ButlerError::MenuNotFound)
+        .ok_or(MuninError::MenuNotFound)
 }
 
 pub fn parse_weekday(literal: &str) -> Option<Weekday> {
@@ -77,7 +77,7 @@ pub async fn list_days(
     menu_slug: &str,
     first: NaiveDate,
     last: NaiveDate,
-) -> ButlerResult<Vec<Day>> {
+) -> MuninResult<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_slug)
@@ -86,7 +86,7 @@ pub async fn list_days(
     let res = client.get(&url).send().await?;
 
     if res.status() == StatusCode::NOT_FOUND {
-        return Err(ButlerError::MenuNotFound);
+        return Err(MuninError::MenuNotFound);
     }
     let html = res.text().await?;
     let doc = Html::parse_document(&html);
@@ -95,7 +95,7 @@ pub async fn list_days(
         Some(elem) => elem.text().flat_map(|s| s.chars()),
         None => {
             error!("No title found for Sabis menu \"{}\"!", menu_slug);
-            return Err(ButlerError::ScrapeError { context: html });
+            return Err(MuninError::ScrapeError { context: html });
         }
     };
 

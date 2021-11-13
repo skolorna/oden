@@ -11,7 +11,7 @@ use serde::{de, Deserialize, Deserializer, Serialize};
 use strum::{EnumIter, EnumString};
 
 use crate::{
-    errors::{ButlerError, ButlerResult},
+    errors::{MuninError, MuninResult},
     types::{day::Day, menu::Menu},
 };
 
@@ -55,7 +55,7 @@ impl Supplier {
         }
     }
 
-    pub async fn list_menus(&self) -> ButlerResult<Vec<Menu>> {
+    pub async fn list_menus(&self) -> MuninResult<Vec<Menu>> {
         use Supplier::*;
 
         match *self {
@@ -67,7 +67,7 @@ impl Supplier {
         }
     }
 
-    pub async fn query_menu(&self, menu_slug: &str) -> ButlerResult<Menu> {
+    pub async fn query_menu(&self, menu_slug: &str) -> MuninResult<Menu> {
         use Supplier::*;
 
         match *self {
@@ -75,7 +75,7 @@ impl Supplier {
                 skolmaten::query_menu(
                     menu_slug
                         .parse()
-                        .map_err(|_| ButlerError::InvalidMenuSlug)?,
+                        .map_err(|_| MuninError::InvalidMenuSlug)?,
                 )
                 .await
             }
@@ -91,7 +91,7 @@ impl Supplier {
         menu_slug: &str,
         first: NaiveDate,
         last: NaiveDate,
-    ) -> ButlerResult<Vec<Day>> {
+    ) -> MuninResult<Vec<Day>> {
         use Supplier::*;
 
         match *self {
@@ -99,7 +99,7 @@ impl Supplier {
                 skolmaten::list_days(
                     menu_slug
                         .parse()
-                        .map_err(|_| ButlerError::InvalidMenuSlug)?,
+                        .map_err(|_| MuninError::InvalidMenuSlug)?,
                     first,
                     last,
                 )

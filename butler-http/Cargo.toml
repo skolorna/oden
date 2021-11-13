@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 actix-rt = "2.3.0"
 actix-web = "4.0.0-beta.10"
-butler-lib = { path = "../butler-lib" }
+munin-lib = { path = "../munin-lib" }
 chrono = "0.4.19"
 chrono-tz = "0.6.0"
 const_format = "0.2.22"

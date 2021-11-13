@@ -1,7 +1,7 @@
-use butler_lib::errors::ButlerResult;
-use butler_lib::menus::id::MenuSlug;
-use butler_lib::menus::list_menus;
-use butler_lib::types;
+use munin_lib::errors::MuninResult;
+use munin_lib::menus::id::MenuSlug;
+use munin_lib::menus::list_menus;
+use munin_lib::types;
 use chrono::Duration;
 use chrono::Utc;
 use database::models::day::NewDay;
@@ -20,7 +20,7 @@ pub enum IndexerError {
     DieselError(#[from] diesel::result::Error),
 
     #[error("{0}")]
-    ButlerError(#[from] butler_lib::errors::ButlerError),
+    MuninError(#[from] munin_lib::errors::MuninError),
 
     #[error("{0}")]
     MeiliError(#[from] meilisearch_sdk::errors::Error),
@@ -75,7 +75,7 @@ pub fn get_candidates(
 
 pub fn submit_days(
     connection: &PgConnection,
-    results: Vec<(MenuId, ButlerResult<Vec<types::day::Day>>)>,
+    results: Vec<(MenuId, MuninResult<Vec<types::day::Day>>)>,
 ) -> QueryResult<()> {
     use database::schema::days::{columns as days_columns, table as days_table};
     use database::schema::menus::{columns as menus_columns, table as menus_table};

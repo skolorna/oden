@@ -14,7 +14,7 @@ lazy_static! {
 
 /// Parse a month literal in Swedish. Returns the month, starting from 1 with January.
 /// ```
-/// use butler_lib::menus::mashie::scrape::parse_month;
+/// use munin_lib::menus::mashie::scrape::parse_month;
 ///
 /// assert_eq!(parse_month("jun"), Some(6));
 /// assert!(parse_month("may").is_none()); // maj is correct

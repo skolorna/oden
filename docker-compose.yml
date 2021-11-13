@@ -10,6 +10,6 @@ services:
     image: postgres
     environment:
       POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: "butler"
+      POSTGRES_DB: "munin"
     ports:
       - "5432:5432"

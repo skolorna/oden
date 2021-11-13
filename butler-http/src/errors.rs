@@ -1,5 +1,5 @@
 use actix_web::{http::StatusCode, ResponseError};
-use butler_lib::errors::ButlerError;
+use munin_lib::errors::MuninError;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -24,13 +24,13 @@ impl ResponseError for AppError {
     }
 }
 
-impl From<ButlerError> for AppError {
-    fn from(e: ButlerError) -> Self {
+impl From<MuninError> for AppError {
+    fn from(e: MuninError) -> Self {
         match e {
-            ButlerError::MenuNotFound => Self::MenuNotFound,
-            ButlerError::HttpError(_) => Self::InternalError,
-            ButlerError::ScrapeError { .. } => Self::InternalError,
-            ButlerError::InvalidMenuSlug => Self::BadRequest("invalid menu id".into()),
+            MuninError::MenuNotFound => Self::MenuNotFound,
+            MuninError::HttpError(_) => Self::InternalError,
+            MuninError::ScrapeError { .. } => Self::InternalError,
+            MuninError::InvalidMenuSlug => Self::BadRequest("invalid menu id".into()),
         }
     }
 }

@@ -1,4 +1,4 @@
-use butler_lib::menus::id::MenuSlug;
+use munin_lib::menus::id::MenuSlug;
 use chrono::{DateTime, Utc};
 use diesel::{Identifiable, Insertable, Queryable};
 use serde::{Deserialize, Serialize};
@@ -36,8 +36,8 @@ pub struct NewMenu {
     pub title: String,
 }
 
-impl From<butler_lib::types::menu::Menu> for NewMenu {
-    fn from(menu: butler_lib::types::menu::Menu) -> Self {
+impl From<munin_lib::types::menu::Menu> for NewMenu {
+    fn from(menu: munin_lib::types::menu::Menu) -> Self {
         Self {
             slug: menu.slug,
             title: menu.title,

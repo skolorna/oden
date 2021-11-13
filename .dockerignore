@@ -1,9 +1,9 @@
 *
+!/butler-http
 !/database
 !/euphemism
-!/butler-http
-!/butler-indexer
-!/butler-lib
+!/munin
+!/munin-lib
 !/smaz
 !Cargo.toml
 !Cargo.lock

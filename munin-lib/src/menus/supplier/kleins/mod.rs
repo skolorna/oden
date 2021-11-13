@@ -7,7 +7,7 @@ use scraper::{ElementRef, Html, Selector};
 use url::Url;
 
 use crate::{
-    errors::{ButlerError, ButlerResult},
+    errors::{MuninError, MuninResult},
     menus::{id::MenuSlug, mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu},
     types::day::Day,
     util::last_path_segment,
@@ -34,7 +34,7 @@ impl KleinsSchool {
     }
 }
 
-async fn raw_list_schools() -> ButlerResult<Vec<KleinsSchool>> {
+async fn raw_list_schools() -> MuninResult<Vec<KleinsSchool>> {
     let client = Client::new();
     let html = fetch(&client, "https://www.kleinskitchen.se/skolor/")
         .await?
@@ -55,7 +55,7 @@ async fn raw_list_schools() -> ButlerResult<Vec<KleinsSchool>> {
     Ok(schools)
 }
 
-pub async fn list_menus() -> ButlerResult<Vec<Menu>> {
+pub async fn list_menus() -> MuninResult<Vec<Menu>> {
     let schools = raw_list_schools().await?;
 
     let menus = schools.into_iter().map(|s| s.into_menu()).collect();
@@ -76,7 +76,7 @@ fn extract_menu_url(iframe_elem: ElementRef) -> Option<String> {
     Some(menu_url)
 }
 
-async fn raw_query_school(school_slug: &str) -> ButlerResult<QuerySchoolResponse> {
+async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse> {
     let client = Client::new();
     let url = format!(
         "https://www.kleinskitchen.se/skolor/{}",
@@ -90,7 +90,7 @@ async fn raw_query_school(school_slug: &str) -> ButlerResult<QuerySchoolResponse
         .next()
         .map(|elem| elem.text().next())
         .flatten()
-        .ok_or_else(|| ButlerError::ScrapeError {
+        .ok_or_else(|| MuninError::ScrapeError {
             context: html.to_owned(),
         })?;
     let school = KleinsSchool {
@@ -103,14 +103,14 @@ async fn raw_query_school(school_slug: &str) -> ButlerResult<QuerySchoolResponse
         .next()
         .map(extract_menu_url)
         .flatten()
-        .ok_or_else(|| ButlerError::ScrapeError {
+        .ok_or_else(|| MuninError::ScrapeError {
             context: html.to_owned(),
         })?;
 
     Ok(QuerySchoolResponse { school, menu_url })
 }
 
-pub async fn query_menu(menu_slug: &str) -> ButlerResult<Menu> {
+pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
     let res = raw_query_school(menu_slug).await?;
 
     Ok(res.school.into_menu())
@@ -120,7 +120,7 @@ pub async fn list_days(
     menu_slug: &str,
     first: NaiveDate,
     last: NaiveDate,
-) -> ButlerResult<Vec<Day>> {
+) -> MuninResult<Vec<Day>> {
     let menu_url = {
         let res = raw_query_school(menu_slug).await?;
         res.menu_url

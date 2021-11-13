@@ -17,15 +17,15 @@ jobs:
           toolchain: stable
           override: true
       - id: prep
-        working-directory: ./butler-indexer
+        working-directory: ./munin
         run: |
           echo ::set-output name=version::$(cargo pkgid | cut -d "#" -f2 -)
       - uses: docker/build-push-action@v2
         with:
-          file: ./butler-indexer/Dockerfile
+          file: ./munin/Dockerfile
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
-            ghcr.io/skolorna/butler-indexer:${{ steps.prep.outputs.version }}
-            ghcr.io/skolorna/butler-indexer:latest
+            ghcr.io/skolorna/munin:${{ steps.prep.outputs.version }}
+            ghcr.io/skolorna/munin:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

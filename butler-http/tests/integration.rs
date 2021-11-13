@@ -5,7 +5,7 @@ use actix_web::{
     test::{call_service, init_service, read_body_json, TestRequest},
 };
 use butler_http::create_app;
-use butler_lib::{
+use munin_lib::{
     menus::{id::MenuSlug, supplier::Supplier},
     types::{day::Day, menu::Menu},
     util::is_sorted,
