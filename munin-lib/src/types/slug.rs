@@ -1,6 +1,5 @@
 use std::{fmt::Display, str::FromStr};
 
-use base64::display::Base64Display;
 #[cfg(feature = "diesel")]
 use diesel::{
     backend::Backend,
@@ -36,18 +35,12 @@ pub enum ParseMenuSlugError {
 
     #[error("failed to parse supplier name")]
     ParseSupplierError(#[from] strum::ParseError),
-
-    #[error("{0}")]
-    Base64Error(#[from] base64::DecodeError),
 }
 
 impl FromStr for MenuSlug {
     type Err = ParseMenuSlugError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let s = String::from_utf8(base64::decode_config(s, base64::URL_SAFE_NO_PAD)?)
-            .map_err(|_| ParseMenuSlugError::FieldsMissing)?;
-
         let (supplier_literal, local_id) =
             s.split_once(".").ok_or(ParseMenuSlugError::NoDelimiter)?;
 
@@ -63,12 +56,7 @@ impl FromStr for MenuSlug {
 
 impl Display for MenuSlug {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        let raw = format!("{}.{}", self.supplier, self.local_id);
-        write!(
-            f,
-            "{}",
-            Base64Display::with_config(raw.as_bytes(), base64::URL_SAFE_NO_PAD)
-        )
+        write!(f, "{}.{}", self.supplier, self.local_id)
     }
 }
 
@@ -134,7 +122,7 @@ mod tests {
     fn menu_slug_roundtrip() {
         let original = MenuSlug::new(Supplier::Skolmaten, "local-id".to_owned());
         let serialized = original.to_string();
-        assert_eq!(serialized, "c2tvbG1hdGVuLmxvY2FsLWlk");
+        assert_eq!(serialized, "skolmaten.local-id");
         let parsed = MenuSlug::from_str(&serialized).unwrap();
         assert_eq!(original, parsed);
     }
@@ -143,12 +131,12 @@ mod tests {
     fn menu_slug_ser() {
         let id = MenuSlug::new(Supplier::Skolmaten, "local".to_owned());
         let s = serde_json::to_string(&id).unwrap();
-        assert_eq!(s, "\"c2tvbG1hdGVuLmxvY2Fs\"");
+        assert_eq!(s, "\"skolmaten.local\"");
     }
 
     #[test]
     fn menu_slug_de() {
-        let s = "\"c2tvbG1hdGVuLmxvY2Fs\"";
+        let s = "\"skolmaten.local\"";
         assert_eq!(
             serde_json::from_str::<MenuSlug>(s).unwrap(),
             MenuSlug::new(Supplier::Skolmaten, "local".to_owned())
