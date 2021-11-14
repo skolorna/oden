@@ -686,6 +686,7 @@ dependencies = [
  "serde",
  "smaz",
  "tracing",
+ "uuid",
 ]
 
 [[package]]
@@ -712,6 +713,7 @@ dependencies = [
  "diesel_derives",
  "pq-sys",
  "r2d2",
+ "uuid",
 ]
 
 [[package]]
@@ -1468,7 +1470,6 @@ dependencies = [
 name = "munin"
 version = "0.1.0"
 dependencies = [
- "base64",
  "chrono",
  "chrono-tz",
  "database",
@@ -1489,7 +1490,6 @@ dependencies = [
 name = "munin-lib"
 version = "0.1.0"
 dependencies = [
- "base64",
  "chrono",
  "diesel",
  "futures",
@@ -1504,6 +1504,7 @@ dependencies = [
  "tracing",
  "url",
  "urlencoding",
+ "uuid",
 ]
 
 [[package]]
@@ -2953,6 +2954,16 @@ name = "utf-8"
 version = "0.7.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09cc8ee72d2a9becf2f2febe0205bbed8fc6615b7cb429ad062dc7b7ddd036a9"
+
+[[package]]
+name = "uuid"
+version = "0.8.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "bc5cf98d8186244414c848017f0e2676b3fcb46807f6668a97dfe67359a3c4b7"
+dependencies = [
+ "serde",
+ "sha1",
+]
 
 [[package]]
 name = "vcpkg"

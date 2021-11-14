@@ -7,7 +7,6 @@ publish = false
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-base64 = { version = "0.13.0" }
 chrono = { version = "0.4.19", features = ["serde"] }
 diesel = { version = "1.4.8", features = ["chrono", "postgres"], optional = true }
 futures = "0.3.17"
@@ -20,6 +19,7 @@ thiserror = "1.0.30"
 tracing = "0.1.29"
 url = "2.2.2"
 urlencoding = "2.1.0"
+uuid = { version = "0.8.2", features = ["v5"] }
 
 [dev-dependencies]
 serde_json = "1.0.68"

@@ -1,15 +1,14 @@
 table! {
-    days (id) {
-        id -> Int4,
+    days (date, menu_id) {
         date -> Date,
         meals -> Bytea,
-        menu_id -> Int4,
+        menu_id -> Uuid,
     }
 }
 
 table! {
     menus (id) {
-        id -> Int4,
+        id -> Uuid,
         title -> Text,
         slug -> Text,
         updated_at -> Nullable<Timestamptz>,
