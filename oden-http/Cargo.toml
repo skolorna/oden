@@ -14,7 +14,7 @@ chrono-tz = "0.6.0"
 futures = "0.3.17"
 serde = { version = "1.0.130", features = ["derive"] }
 thiserror = "1.0.30"
-tracing-subscriber = { version = "0.3.1", features = ["env-filter"] }
+tracing-subscriber = { version = "0.3.3", features = ["env-filter"] }
 database = { path = "../database", version = "0.2.0" }
 diesel = { version = "1.4.8", features = ["r2d2"] }
 structopt = "0.3.25"
