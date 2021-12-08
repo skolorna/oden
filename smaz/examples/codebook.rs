@@ -15,7 +15,7 @@ impl<T, Item: PartialEq<T>> ContainsSlice<T> for [Item] {
 }
 
 fn main() {
-    let dict = include_str!("../dictionary.txt");
+    let dict = include_str!("../../meals.txt");
 
     let mut frequencies: HashMap<Vec<u8>, usize> = HashMap::new();
 
