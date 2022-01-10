@@ -4,7 +4,6 @@ use chrono::NaiveDate;
 use lazy_static::lazy_static;
 use reqwest::Client;
 use scraper::{ElementRef, Html, Selector};
-use url::Url;
 
 use crate::{
     errors::{MuninError, MuninResult},
@@ -45,8 +44,7 @@ async fn raw_list_schools() -> MuninResult<Vec<KleinsSchool>> {
         .select(&S_SCHOOL_NAME)
         .filter_map(|elem| {
             let title = elem.text().next()?.trim().to_owned();
-            let url = Url::parse(elem.value().attr("href")?).ok()?;
-            let slug = last_path_segment(&url)?.to_owned();
+            let slug = last_path_segment(elem.value().attr("href")?)?.to_owned();
 
             Some(KleinsSchool { title, slug })
         })

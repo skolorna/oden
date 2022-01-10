@@ -6,7 +6,6 @@ use reqwest::redirect::Policy;
 use reqwest::{Client, StatusCode};
 use scraper::{Html, Selector};
 use tracing::error;
-use url::Url;
 
 use crate::errors::{MuninError, MuninResult};
 use crate::menus::meal::Meal;
@@ -16,8 +15,10 @@ use crate::types::{day::Day, slug::MenuSlug};
 use crate::util::{extract_digits, last_path_segment};
 
 lazy_static! {
+    static ref S_RESTAURANT_CARD: Selector = Selector::parse(".content-banner__content").unwrap();
+    static ref S_RESTAURANT_NAME: Selector = Selector::parse(".content_banner__title").unwrap();
     static ref S_RESTAURANT_ANCHOR: Selector =
-        Selector::parse("li.restaurant-list-item a").unwrap();
+        Selector::parse("a.content-banner__button--button").unwrap();
     static ref S_ENTRY_TITLE: Selector = Selector::parse(".entry-title").unwrap();
     static ref S_DAY_CONTAINER: Selector = Selector::parse(".lunch-day-container").unwrap();
     static ref S_LUNCH_DAY: Selector = Selector::parse(".lunch-day").unwrap();
@@ -25,19 +26,22 @@ lazy_static! {
 }
 
 pub async fn list_menus() -> MuninResult<Vec<Menu>> {
-    let html = reqwest::get("https://www.sabis.se/restauranger/")
+    let html = reqwest::get("https://beta.sabis.se/restaurang-service/vara-restauranger/")
         .await?
         .text()
         .await?;
     let doc = Html::parse_document(&html);
 
     let menus = doc
-        .select(&S_RESTAURANT_ANCHOR)
+        .select(&S_RESTAURANT_CARD)
         .filter_map(|e| {
-            let url = Url::parse(e.value().attr("href")?).ok()?;
-            let title = e.text().collect::<_>();
-
-            let local_id = last_path_segment(&url);
+            let title = e.select(&S_RESTAURANT_NAME).next()?.text().collect();
+            let href = e
+                .select(&S_RESTAURANT_ANCHOR)
+                .next()?
+                .value()
+                .attr("href")?;
+            let local_id = last_path_segment(href);
 
             debug_assert!(local_id.is_some());
 
@@ -141,9 +145,9 @@ mod tests {
 
     #[tokio::test]
     async fn test_query_menu() {
-        let menu = query_menu("rosenbad").await.unwrap();
+        let menu = query_menu("carnegie").await.unwrap();
 
-        assert_eq!(menu.title(), "Restaurang Björnen");
+        assert_eq!(menu.title(), "Carnegie");
 
         assert!(query_menu("om-oss").await.is_err());
     }
@@ -151,7 +155,7 @@ mod tests {
     #[tokio::test]
     async fn test_list_days() {
         let days = list_days(
-            "rosenbad",
+            "carnegie",
             NaiveDate::from_ymd(2000, 1, 1),
             NaiveDate::from_ymd(2077, 1, 1),
         )
@@ -160,7 +164,7 @@ mod tests {
 
         assert!(days.len() > 3);
         assert!(list_days(
-            "rosenbad",
+            "carnegie",
             NaiveDate::from_ymd(2005, 1, 1),
             NaiveDate::from_ymd(2005, 12, 31)
         )
