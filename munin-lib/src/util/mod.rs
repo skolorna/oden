@@ -1,5 +1,4 @@
 use std::{collections::HashSet, hash::Hash};
-use url::Url;
 
 /// Remove *all* duplicates from a vector, regardless of position.
 /// ```
@@ -26,8 +25,8 @@ pub fn is_sorted<T: Ord>(data: &[T]) -> bool {
     data.windows(2).all(|w| w[0] <= w[1])
 }
 
-pub fn last_path_segment(url: &Url) -> Option<&str> {
-    url.path_segments()?
+pub fn last_path_segment(path: &str) -> Option<&str> {
+    path.split('/')
         .filter(|s| !s.is_empty()) // If the url contains a trailing slash, the last segment will be "".
         .last()
 }

@@ -4,15 +4,16 @@ version = 3
 
 [[package]]
 name = "actix-codec"
-version = "0.4.0"
+version = "0.4.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d5dbeb2d9e51344cb83ca7cc170f1217f9fe25bfc50160e6e200b5c31c1019a"
+checksum = "a36c014a3e811624313b51a227b775ecba55d36ef9462bbaac7d4f13e54c9271"
 dependencies = [
  "bitflags",
  "bytes",
  "futures-core",
  "futures-sink",
  "log",
+ "memchr",
  "pin-project-lite",
  "tokio",
  "tokio-util",
@@ -83,9 +84,9 @@ dependencies = [
 
 [[package]]
 name = "actix-rt"
-version = "2.3.0"
+version = "2.6.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea360596a50aa9af459850737f99293e5cb9114ae831118cb6026b3bbc7583ad"
+checksum = "cdf3f2183be1241ed4dd22611850b85d38de0b08a09f1f7bcccbd0809084b359"
 dependencies = [
  "actix-macros",
  "futures-core",
@@ -657,7 +658,7 @@ dependencies = [
 
 [[package]]
 name = "database"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "chrono",
  "diesel",
@@ -1455,7 +1456,7 @@ dependencies = [
 
 [[package]]
 name = "munin"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1475,7 +1476,7 @@ dependencies = [
 
 [[package]]
 name = "munin-lib"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "chrono",
  "diesel",
@@ -1564,7 +1565,7 @@ dependencies = [
 
 [[package]]
 name = "oden-http"
-version = "0.2.0"
+version = "0.2.2"
 dependencies = [
  "actix-rt",
  "actix-web",

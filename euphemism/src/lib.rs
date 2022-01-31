@@ -27,7 +27,7 @@ impl Sample {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct Cluster {
     pub samples: Vec<Sample>,
 }
@@ -59,11 +59,5 @@ impl Cluster {
 
     pub fn label(&self) -> Option<&str> {
         Some(&self.samples.get(0)?.label)
-    }
-}
-
-impl Default for Cluster {
-    fn default() -> Self {
-        Self { samples: vec![] }
     }
 }

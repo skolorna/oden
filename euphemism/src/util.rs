@@ -24,7 +24,7 @@ pub fn bigrams(val: &str) -> BigramSet {
 ///
 /// ```
 /// use std::collections::HashSet;
-/// use euphemism::jaccard_index;
+/// use euphemism::util::jaccard_index;
 ///
 /// let mut a = HashSet::new();
 ///
