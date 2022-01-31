@@ -10,9 +10,8 @@ publish = false
 chrono = { version = "0.4.19", features = ["serde"] }
 diesel = { version = "1.4.8", features = ["chrono", "postgres"], optional = true }
 futures = "0.3.17"
-lazy_static = "1.4.0"
 reqwest = { version =  "0.11.6", features = ["json"] }
-scraper = "0.12.0"
+select = "0.5.0"
 serde = { version = "1.0.130", features = ["derive"] }
 strum = { version = "0.23.0", features = ["derive"] }
 thiserror = "1.0.30"
@@ -24,3 +23,5 @@ uuid = { version = "0.8.2", features = ["v5"] }
 [dev-dependencies]
 serde_json = "1.0.78"
 tokio = { version = "1.12.0", features = ["rt", "macros"] }
+
+[features]
