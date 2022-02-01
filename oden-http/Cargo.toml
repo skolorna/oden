@@ -10,7 +10,7 @@ actix-rt = "2.6.0"
 actix-web = "4.0.0-beta.12"
 munin-lib = { path = "../munin-lib", version = "0.2.2" }
 chrono = "0.4.19"
-chrono-tz = "0.6.0"
+chrono-tz = "0.6.1"
 futures = "0.3.17"
 serde = { version = "1.0.130", features = ["derive"] }
 thiserror = "1.0.30"
