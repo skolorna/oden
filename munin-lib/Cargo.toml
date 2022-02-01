@@ -13,7 +13,7 @@ diesel = { version = "1.4.8", features = ["chrono", "postgres"], optional = true
 futures = "0.3.17"
 reqwest = { version =  "0.11.6", features = ["json"] }
 select = "0.5.0"
-serde = { version = "1.0.130", features = ["derive"] }
+serde = { version = "1.0.136", features = ["derive"] }
 serde_urlencoded = "0.7.1"
 strum = { version = "0.23.0", features = ["derive"] }
 thiserror = "1.0.30"
