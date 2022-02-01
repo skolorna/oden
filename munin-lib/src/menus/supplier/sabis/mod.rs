@@ -1,10 +1,10 @@
 use std::str::FromStr;
 
-use chrono::{Datelike, NaiveDate, Utc, Weekday};
-use lazy_static::lazy_static;
+use chrono::{DateTime, Datelike, NaiveDate};
 use reqwest::redirect::Policy;
-use reqwest::{Client, StatusCode};
-use scraper::{Html, Selector};
+use reqwest::{header, Client, StatusCode};
+use select::document::Document;
+use select::predicate::{Class, Name, Predicate};
 use tracing::error;
 
 use crate::errors::{MuninError, MuninResult};
@@ -12,34 +12,22 @@ use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
 use crate::menus::Menu;
 use crate::types::{day::Day, slug::MenuSlug};
-use crate::util::{extract_digits, last_path_segment};
-
-lazy_static! {
-    static ref S_RESTAURANT_CARD: Selector = Selector::parse(".content-banner__content").unwrap();
-    static ref S_RESTAURANT_NAME: Selector = Selector::parse(".content_banner__title").unwrap();
-    static ref S_RESTAURANT_ANCHOR: Selector =
-        Selector::parse("a.content-banner__button--button").unwrap();
-    static ref S_ENTRY_TITLE: Selector = Selector::parse(".entry-title").unwrap();
-    static ref S_DAY_CONTAINER: Selector = Selector::parse(".lunch-day-container").unwrap();
-    static ref S_LUNCH_DAY: Selector = Selector::parse(".lunch-day").unwrap();
-    static ref S_LUNCH_DISH: Selector = Selector::parse(".lunch-dish").unwrap();
-}
+use crate::util::{extract_digits, last_path_segment, parse_weekday};
 
 pub async fn list_menus() -> MuninResult<Vec<Menu>> {
     let html = reqwest::get("https://beta.sabis.se/restaurang-service/vara-restauranger/")
         .await?
         .text()
         .await?;
-    let doc = Html::parse_document(&html);
+    let doc = Document::from(html.as_str());
 
     let menus = doc
-        .select(&S_RESTAURANT_CARD)
-        .filter_map(|e| {
-            let title = e.select(&S_RESTAURANT_NAME).next()?.text().collect();
-            let href = e
-                .select(&S_RESTAURANT_ANCHOR)
+        .find(Class("content-banner__content"))
+        .filter_map(|n| {
+            let title = n.find(Class("content_banner__title")).next()?.text();
+            let href = n
+                .find(Name("a").and(Class("content-banner__button--button")))
                 .next()?
-                .value()
                 .attr("href")?;
             let local_id = last_path_segment(href);
 
@@ -64,19 +52,6 @@ pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
         .ok_or(MuninError::MenuNotFound)
 }
 
-pub fn parse_weekday(literal: &str) -> Option<Weekday> {
-    match literal {
-        "Måndag" => Some(Weekday::Mon),
-        "Tisdag" => Some(Weekday::Tue),
-        "Onsdag" => Some(Weekday::Wed),
-        "Torsdag" => Some(Weekday::Thu),
-        "Fredag" => Some(Weekday::Fri),
-        "Lördag" => Some(Weekday::Sat),
-        "Söndag" => Some(Weekday::Sun),
-        _ => None,
-    }
-}
-
 pub async fn list_days(
     menu_slug: &str,
     first: NaiveDate,
@@ -88,40 +63,40 @@ pub async fn list_days(
     );
     let client = Client::builder().redirect(Policy::none()).build()?;
     let res = client.get(&url).send().await?;
+    let http_date = res.headers().get(header::DATE).unwrap().to_str().unwrap();
+    let res_timestamp = DateTime::parse_from_rfc2822(http_date).unwrap();
 
     if res.status() == StatusCode::NOT_FOUND {
         return Err(MuninError::MenuNotFound);
     }
-    let html = res.text().await?;
-    let doc = Html::parse_document(&html);
 
-    let chars = match doc.select(&S_ENTRY_TITLE).next() {
-        Some(elem) => elem.text().flat_map(|s| s.chars()),
+    let html = res.text().await?;
+    let doc = Document::from(html.as_str());
+
+    let entry_title = match doc.find(Class("entry-title")).next() {
+        Some(elem) => elem.text(),
         None => {
             error!("No title found for Sabis menu \"{}\"!", menu_slug);
             return Err(MuninError::ScrapeError { context: html });
         }
     };
 
-    let week_num = extract_digits(chars, 10);
-
-    let year = Utc::now().year();
+    let week_num = extract_digits(entry_title.chars(), 10);
 
     let days = doc
-        .select(&S_DAY_CONTAINER)
-        .filter_map(|e| {
-            let weekday_literal = e.select(&S_LUNCH_DAY).next()?.text().collect::<String>();
+        .find(Class("lunch-day-container"))
+        .filter_map(|n| {
+            let weekday_literal = n.find(Class("lunch-day")).next()?.text();
             let weekday = parse_weekday(weekday_literal.as_str())?;
-            let date = NaiveDate::from_isoywd_opt(year, week_num, weekday)?;
+            let date = NaiveDate::from_isoywd_opt(res_timestamp.year(), week_num, weekday)?;
 
             if date < first || date > last {
                 return None;
             }
 
-            let meals = e
-                .select(&S_LUNCH_DISH)
-                .map(|e| e.text().collect::<String>())
-                .filter_map(|v| Meal::from_str(&v).ok())
+            let meals = n
+                .find(Class("lunch-dish"))
+                .filter_map(|n| Meal::from_str(&n.text()).ok())
                 .collect::<Vec<_>>();
 
             Day::new_opt(date, meals)
@@ -139,7 +114,6 @@ mod tests {
     async fn test_list_menus() {
         let menus = list_menus().await.unwrap();
 
-        dbg!(&menus);
         assert!(menus.len() > 15);
     }
 
@@ -178,13 +152,5 @@ mod tests {
         )
         .await
         .is_err());
-    }
-
-    #[test]
-    fn weekday_parsing() {
-        assert_eq!(parse_weekday("Måndag"), Some(Weekday::Mon));
-        assert_eq!(parse_weekday("Lördag"), Some(Weekday::Sat));
-        assert_eq!(parse_weekday("Söndag"), Some(Weekday::Sun));
-        assert_eq!(parse_weekday("söndag"), None);
     }
 }

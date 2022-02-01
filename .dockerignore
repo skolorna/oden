@@ -7,3 +7,4 @@
 !/smaz
 !Cargo.toml
 !Cargo.lock
+**/Dockerfile

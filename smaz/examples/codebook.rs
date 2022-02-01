@@ -1,7 +1,7 @@
 use std::{cmp::Ordering, collections::HashMap};
 
 trait ContainsSlice<T>: PartialEq<[T]> {
-    fn contains_slice(self: &'_ Self, slice: &'_ [T]) -> bool;
+    fn contains_slice(&'_ self, slice: &'_ [T]) -> bool;
 }
 
 impl<T, Item: PartialEq<T>> ContainsSlice<T> for [Item] {
@@ -15,7 +15,7 @@ impl<T, Item: PartialEq<T>> ContainsSlice<T> for [Item] {
 }
 
 fn main() {
-    let dict = include_str!("../dictionary.txt");
+    let dict = include_str!("../../meals.txt");
 
     let mut frequencies: HashMap<Vec<u8>, usize> = HashMap::new();
 
@@ -44,10 +44,9 @@ fn main() {
     while out.len() < 254 {
         let (val, freq) = &frequencies[i];
 
-        if out
+        if !out
             .iter()
-            .find(|(b, f)| val.contains_slice(b) && *freq as f32 / *f as f32 > 0.99)
-            .is_none()
+            .any(|(b, f)| val.contains_slice(b) && *freq as f32 / *f as f32 > 0.99)
         {
             out.push((val.to_vec(), *freq))
         }

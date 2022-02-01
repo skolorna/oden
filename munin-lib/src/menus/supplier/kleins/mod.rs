@@ -1,9 +1,12 @@
 mod fetch;
 
 use chrono::NaiveDate;
-use lazy_static::lazy_static;
 use reqwest::Client;
-use scraper::{ElementRef, Html, Selector};
+use select::{
+    document::Document,
+    node::Node,
+    predicate::{Class, Name, Predicate},
+};
 
 use crate::{
     errors::{MuninError, MuninResult},
@@ -12,12 +15,6 @@ use crate::{
     util::last_path_segment,
 };
 use fetch::fetch;
-
-lazy_static! {
-    static ref S_SCHOOL_NAME: Selector = Selector::parse(".school .school-title a").unwrap();
-    static ref S_PAGE_TITLE: Selector = Selector::parse("h1.page-title").unwrap();
-    static ref S_MENU_IFRAME: Selector = Selector::parse("iframe").unwrap();
-}
 
 #[derive(Debug)]
 struct KleinsSchool {
@@ -39,12 +36,12 @@ async fn raw_list_schools() -> MuninResult<Vec<KleinsSchool>> {
         .await?
         .text()
         .await?;
-    let doc = Html::parse_document(&html);
+    let doc = Document::from(html.as_str());
     let schools = doc
-        .select(&S_SCHOOL_NAME)
-        .filter_map(|elem| {
-            let title = elem.text().next()?.trim().to_owned();
-            let slug = last_path_segment(elem.value().attr("href")?)?.to_owned();
+        .find(Class("school").descendant(Class("school-title").descendant(Name("a"))))
+        .filter_map(|node| {
+            let title = node.text().trim().to_owned();
+            let slug = last_path_segment(node.attr("href")?)?.to_owned();
 
             Some(KleinsSchool { title, slug })
         })
@@ -67,8 +64,8 @@ struct QuerySchoolResponse {
     menu_url: String,
 }
 
-fn extract_menu_url(iframe_elem: ElementRef) -> Option<String> {
-    let iframe_src = iframe_elem.value().attr("src")?;
+fn extract_menu_url(iframe_node: &Node) -> Option<String> {
+    let iframe_src = iframe_node.attr("src")?;
     let menu_url = iframe_src.replace("/menu/", "/app/");
 
     Some(menu_url)
@@ -81,25 +78,24 @@ async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse>
         urlencoding::encode(school_slug)
     );
     let html = fetch(&client, &url).await?.text().await?;
-    let doc = Html::parse_document(&html);
+    let doc = Document::from(html.as_str());
 
     let title = doc
-        .select(&S_PAGE_TITLE)
+        .find(Name("h1").and(Class("page-title")))
         .next()
-        .map(|elem| elem.text().next())
-        .flatten()
         .ok_or_else(|| MuninError::ScrapeError {
             context: html.to_owned(),
-        })?;
+        })?
+        .text();
     let school = KleinsSchool {
         slug: school_slug.to_owned(),
-        title: title.to_owned(),
+        title,
     };
 
     let menu_url = doc
-        .select(&S_MENU_IFRAME)
+        .find(Name("iframe"))
         .next()
-        .map(extract_menu_url)
+        .map(|n| extract_menu_url(&n))
         .flatten()
         .ok_or_else(|| MuninError::ScrapeError {
             context: html.to_owned(),
@@ -124,7 +120,7 @@ pub async fn list_days(
         res.menu_url
     };
     let html = reqwest::get(&menu_url).await?.text().await?;
-    let doc = Html::parse_document(&html);
+    let doc = Document::from(html.as_str());
     let days = scrape_mashie_days(&doc)
         .into_iter()
         .filter(|day| day.is_between(first, last))

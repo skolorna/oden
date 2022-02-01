@@ -2,7 +2,7 @@ pub mod scrape;
 
 use chrono::NaiveDate;
 use reqwest::{header::CONTENT_LENGTH, Client};
-use scraper::Html;
+use select::document::Document;
 use serde::Deserialize;
 
 use crate::{
@@ -64,7 +64,7 @@ pub async fn list_days(
     let menu = query_menu(host, menu_slug).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
-    let doc = Html::parse_document(&html);
+    let doc = Document::from(html.as_str());
     let days: Vec<Day> = scrape_mashie_days(&doc)
         .into_iter()
         .filter(|day| day.is_between(first, last))

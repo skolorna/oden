@@ -1,16 +1,13 @@
 use std::str::FromStr;
 
 use chrono::{Datelike, Local, NaiveDate};
-use lazy_static::lazy_static;
-use scraper::{ElementRef, Html, Selector};
+use select::{
+    document::Document,
+    node::Node,
+    predicate::{Class, Predicate},
+};
 
 use crate::{menus::meal::Meal, types::day::Day};
-
-lazy_static! {
-    static ref S_DAY: Selector = Selector::parse(".panel-group > .panel").unwrap();
-    static ref S_DATE: Selector = Selector::parse(".panel-heading .pull-right").unwrap();
-    static ref S_MEAL: Selector = Selector::parse(".app-daymenu-name").unwrap();
-}
 
 /// Parse a month literal in Swedish. Returns the month, starting from 1 with January.
 /// ```
@@ -54,30 +51,26 @@ fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
     NaiveDate::from_ymd_opt(y, m, d)
 }
 
-fn parse_meal_elem(elem: ElementRef) -> Option<Meal> {
-    let text = elem.text().next()?;
-    Meal::from_str(text).ok()
-}
+fn parse_day_node(node: &Node) -> Option<Day> {
+    let date_literal = node
+        .find(Class("panel-heading").descendant(Class("pull-right")))
+        .next()?
+        .text();
+    let date = parse_date_literal(&date_literal)?;
 
-fn parse_day_elem(elem: ElementRef) -> Option<Day> {
-    let date_literal = elem
-        .select(&S_DATE)
-        .next()
-        .map(|child| child.text().next())
-        .flatten()?;
-    let date = parse_date_literal(date_literal)?;
-
-    let meals = elem
-        .select(&S_MEAL)
-        .filter_map(parse_meal_elem)
+    let meals = node
+        .find(Class("app-daymenu-name"))
+        .filter_map(|n| Meal::from_str(&n.text()).ok())
         .collect::<Vec<Meal>>();
 
     Day::new_opt(date, meals)
 }
 
-pub fn scrape_mashie_days(doc: &Html) -> Vec<Day> {
-    let day_elems = doc.select(&S_DAY);
-    day_elems.filter_map(parse_day_elem).collect::<Vec<_>>()
+pub fn scrape_mashie_days(doc: &Document) -> Vec<Day> {
+    let day_elems = doc.find(Class("panel-group").child(Class("panel")));
+    day_elems
+        .filter_map(|n| parse_day_node(&n))
+        .collect::<Vec<_>>()
 }
 
 #[cfg(test)]
@@ -136,7 +129,7 @@ mod tests {
 
         let url = format!("{}/{}", host, menu.path);
         let html = reqwest::get(&url).await.unwrap().text().await.unwrap();
-        let doc = Html::parse_document(&html);
+        let doc = Document::from(html.as_str());
         let days = scrape_mashie_days(&doc);
 
         assert!(!days.is_empty());
@@ -146,6 +139,6 @@ mod tests {
             assert!(!day.meals().is_empty())
         }
 
-        assert!(scrape_mashie_days(&Html::parse_fragment("<h1>no days</h1>")).is_empty());
+        assert!(scrape_mashie_days(&Document::from("<h1>no days</h1>")).is_empty());
     }
 }
