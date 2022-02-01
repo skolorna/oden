@@ -10,8 +10,8 @@ publish = false
 chrono = { version = "0.4.19", features = ["serde"] }
 chrono-tz = "0.6.1"
 diesel = { version = "1.4.8", features = ["chrono", "postgres"], optional = true }
-futures = "0.3.17"
-reqwest = { version =  "0.11.9", features = ["json"] }
+futures = "0.3.19"
+reqwest = { version = "0.11.9", features = ["json"] }
 select = "0.5.0"
 serde = { version = "1.0.136", features = ["derive"] }
 serde_urlencoded = "0.7.1"
