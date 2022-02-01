@@ -1,6 +1,6 @@
 use std::str::FromStr;
 
-use chrono::{DateTime, Datelike, NaiveDate, Weekday};
+use chrono::{DateTime, Datelike, NaiveDate};
 use reqwest::redirect::Policy;
 use reqwest::{header, Client, StatusCode};
 use select::document::Document;
@@ -12,7 +12,7 @@ use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
 use crate::menus::Menu;
 use crate::types::{day::Day, slug::MenuSlug};
-use crate::util::{extract_digits, last_path_segment};
+use crate::util::{extract_digits, last_path_segment, parse_weekday};
 
 pub async fn list_menus() -> MuninResult<Vec<Menu>> {
     let html = reqwest::get("https://beta.sabis.se/restaurang-service/vara-restauranger/")
@@ -50,19 +50,6 @@ pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
         .into_iter()
         .find(|m| m.slug().local_id == menu_slug)
         .ok_or(MuninError::MenuNotFound)
-}
-
-pub fn parse_weekday(literal: &str) -> Option<Weekday> {
-    match literal {
-        "Måndag" => Some(Weekday::Mon),
-        "Tisdag" => Some(Weekday::Tue),
-        "Onsdag" => Some(Weekday::Wed),
-        "Torsdag" => Some(Weekday::Thu),
-        "Fredag" => Some(Weekday::Fri),
-        "Lördag" => Some(Weekday::Sat),
-        "Söndag" => Some(Weekday::Sun),
-        _ => None,
-    }
 }
 
 pub async fn list_days(
@@ -103,8 +90,6 @@ pub async fn list_days(
             let weekday = parse_weekday(weekday_literal.as_str())?;
             let date = NaiveDate::from_isoywd_opt(res_timestamp.year(), week_num, weekday)?;
 
-            dbg!(date);
-
             if date < first || date > last {
                 return None;
             }
@@ -129,7 +114,6 @@ mod tests {
     async fn test_list_menus() {
         let menus = list_menus().await.unwrap();
 
-        dbg!(&menus);
         assert!(menus.len() > 15);
     }
 
@@ -168,13 +152,5 @@ mod tests {
         )
         .await
         .is_err());
-    }
-
-    #[test]
-    fn weekday_parsing() {
-        assert_eq!(parse_weekday("Måndag"), Some(Weekday::Mon));
-        assert_eq!(parse_weekday("Lördag"), Some(Weekday::Sat));
-        assert_eq!(parse_weekday("Söndag"), Some(Weekday::Sun));
-        assert_eq!(parse_weekday("söndag"), None);
     }
 }

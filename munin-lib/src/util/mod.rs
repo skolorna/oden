@@ -1,5 +1,7 @@
 use std::{collections::HashSet, hash::Hash};
 
+use chrono::Weekday;
+
 /// Remove *all* duplicates from a vector, regardless of position.
 /// ```
 /// use munin_lib::util::retain_unique;
@@ -45,4 +47,28 @@ where
     let digits = chars.filter(|c| c.is_digit(radix)).collect::<String>();
 
     u32::from_str_radix(&digits, radix).unwrap()
+}
+
+/// Parse weekday (Swedish).
+///
+/// ```
+/// use munin_lib::util::parse_weekday;
+/// use chrono::Weekday;
+///
+/// assert_eq!(parse_weekday("Måndag"), Some(Weekday::Mon));
+/// assert_eq!(parse_weekday("Lördag"), Some(Weekday::Sat));
+/// assert_eq!(parse_weekday("Söndag"), Some(Weekday::Sun));
+/// assert_eq!(parse_weekday("söndag"), None);
+/// ```
+pub fn parse_weekday(literal: &str) -> Option<Weekday> {
+    match literal {
+        "Måndag" => Some(Weekday::Mon),
+        "Tisdag" => Some(Weekday::Tue),
+        "Onsdag" => Some(Weekday::Wed),
+        "Torsdag" => Some(Weekday::Thu),
+        "Fredag" => Some(Weekday::Fri),
+        "Lördag" => Some(Weekday::Sat),
+        "Söndag" => Some(Weekday::Sun),
+        _ => None,
+    }
 }

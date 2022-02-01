@@ -6,6 +6,7 @@ pub mod supplier;
 use chrono::NaiveDate;
 use futures::{stream, StreamExt};
 use strum::IntoEnumIterator;
+use tracing::{debug, instrument};
 
 use crate::{
     errors::MuninResult,
@@ -15,7 +16,10 @@ use crate::{
 use self::{meal::Meal, supplier::Supplier};
 
 /// List all the menus everywhere (from all suppliers).
+#[instrument]
 pub async fn list_menus(concurrent: usize) -> MuninResult<Vec<Menu>> {
+    debug!("listing menus");
+
     let mut menus = stream::iter(Supplier::iter())
         .map(|p| async move { p.list_menus().await })
         .buffer_unordered(concurrent)

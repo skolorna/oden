@@ -1,14 +1,16 @@
-mod kleins;
-mod mpi;
-mod sabis;
-mod skolmaten;
-mod sodexo;
+pub mod kleins;
+pub mod matilda;
+pub mod mpi;
+pub mod sabis;
+pub mod skolmaten;
+pub mod sodexo;
 
 use std::str::FromStr;
 
 use chrono::NaiveDate;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use strum::{EnumIter, EnumString};
+use tracing::{debug, instrument};
 
 use crate::{
     errors::{MuninError, MuninResult},
@@ -24,6 +26,7 @@ pub enum Supplier {
     MPI,
     Kleins,
     Sabis,
+    Matilda,
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
@@ -44,6 +47,7 @@ impl Supplier {
             Supplier::MPI => "MPI",
             Supplier::Kleins => "Klein's Kitchen",
             Supplier::Sabis => "Sabis",
+            Supplier::Matilda => "Matilda",
         }
         .to_owned()
     }
@@ -55,7 +59,10 @@ impl Supplier {
         }
     }
 
+    #[instrument]
     pub async fn list_menus(&self) -> MuninResult<Vec<Menu>> {
+        debug!("listing menus");
+
         use Supplier::*;
 
         match *self {
@@ -64,6 +71,7 @@ impl Supplier {
             MPI => mpi::list_menus().await,
             Kleins => kleins::list_menus().await,
             Sabis => sabis::list_menus().await,
+            Matilda => matilda::list_menus().await,
         }
     }
 
@@ -79,15 +87,19 @@ impl Supplier {
             MPI => mpi::query_menu(menu_slug).await,
             Kleins => kleins::query_menu(menu_slug).await,
             Sabis => sabis::query_menu(menu_slug).await,
+            Matilda => todo!(),
         }
     }
 
+    #[instrument]
     pub async fn list_days(
         &self,
         menu_slug: &str,
         first: NaiveDate,
         last: NaiveDate,
     ) -> MuninResult<Vec<Day>> {
+        debug!("listing days");
+
         use Supplier::*;
 
         match *self {
@@ -103,6 +115,14 @@ impl Supplier {
             MPI => mpi::list_days(menu_slug, first, last).await,
             Kleins => kleins::list_days(menu_slug, first, last).await,
             Sabis => sabis::list_days(menu_slug, first, last).await,
+            Matilda => {
+                matilda::list_days(
+                    &menu_slug.parse().map_err(|_| MuninError::InvalidMenuSlug)?,
+                    first,
+                    last,
+                )
+                .await
+            }
         }
     }
 }

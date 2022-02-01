@@ -241,6 +241,27 @@ dependencies = [
 ]
 
 [[package]]
+name = "async-stream"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "171374e7e3b2504e0e5236e3b59260560f9fe94bfe9ac39ba5e4e929c5590625"
+dependencies = [
+ "async-stream-impl",
+ "futures-core",
+]
+
+[[package]]
+name = "async-stream-impl"
+version = "0.3.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "648ed8c8d2ce5409ccd57453d9d1b214b342a0d69376a6feda1fd6cae3299308"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "atty"
 version = "0.2.14"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -410,9 +431,9 @@ dependencies = [
 
 [[package]]
 name = "chrono-tz"
-version = "0.6.0"
+version = "0.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "64c01c1c607d25c71bbaa67c113d6c6b36c434744b4fd66691d711b5b1bc0c8b"
+checksum = "58549f1842da3080ce63002102d5bc954c7bc843d4f47818e642abdc36253552"
 dependencies = [
  "chrono",
  "chrono-tz-build",
@@ -646,7 +667,7 @@ dependencies = [
 
 [[package]]
 name = "database"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "chrono",
  "diesel",
@@ -1417,7 +1438,7 @@ dependencies = [
 
 [[package]]
 name = "munin"
-version = "0.2.1"
+version = "0.2.3"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1437,18 +1458,21 @@ dependencies = [
 
 [[package]]
 name = "munin-lib"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "chrono",
+ "chrono-tz",
  "diesel",
  "futures",
  "reqwest",
  "select",
  "serde",
  "serde_json",
+ "serde_urlencoded",
  "strum",
  "thiserror",
  "tokio",
+ "tokio-test",
  "tracing",
  "url",
  "urlencoding",
@@ -1519,7 +1543,7 @@ dependencies = [
 
 [[package]]
 name = "oden-http"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "actix-rt",
  "actix-web",
@@ -2240,12 +2264,12 @@ dependencies = [
 
 [[package]]
 name = "serde_urlencoded"
-version = "0.7.0"
+version = "0.7.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "edfa57a7f8d9c1d260a549e7224100f6c43d43f9103e06dd8b4095a9b2b43ce9"
+checksum = "d3491c14715ca2294c4d6a88f15e84739788c1d030eed8c110436aafdaa2f3fd"
 dependencies = [
  "form_urlencoded",
- "itoa 0.4.7",
+ "itoa 1.0.1",
  "ryu",
  "serde",
 ]
@@ -2667,6 +2691,30 @@ checksum = "f7d995660bd2b7f8c1568414c1126076c13fbb725c40112dc0120b78eb9b717b"
 dependencies = [
  "native-tls",
  "tokio",
+]
+
+[[package]]
+name = "tokio-stream"
+version = "0.1.8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "50145484efff8818b5ccd256697f36863f587da82cf8b409c53adf1e840798e3"
+dependencies = [
+ "futures-core",
+ "pin-project-lite",
+ "tokio",
+]
+
+[[package]]
+name = "tokio-test"
+version = "0.4.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "53474327ae5e166530d17f2d956afcb4f8a004de581b3cae10f12006bc8163e3"
+dependencies = [
+ "async-stream",
+ "bytes",
+ "futures-core",
+ "tokio",
+ "tokio-stream",
 ]
 
 [[package]]
