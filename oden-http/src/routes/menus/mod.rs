@@ -101,12 +101,13 @@ async fn list_days_route(
 
     let connection = pool.get()?;
 
-    let rows: Vec<types::day::Day> = days
-        .filter(menu_id.eq(menu.into_inner()).and(date.between(first, last)))
-        .load::<models::day::Day>(&connection)?
-        .into_iter()
-        .map(|d| d.into())
-        .collect();
+    let rows: Vec<models::day::Day> = web::block(move || {
+        days.filter(menu_id.eq(menu.into_inner()).and(date.between(first, last)))
+            .load::<models::day::Day>(&connection)
+    })
+    .await??;
+
+    let rows: Vec<types::day::Day> = rows.into_iter().map(|d| d.into()).collect();
 
     let res = HttpResponse::Ok()
         .insert_header(CacheControl(vec![CacheDirective::MaxAge(3600)]))

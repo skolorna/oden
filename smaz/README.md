@@ -1,5 +1,7 @@
 # Smaz
 
+This is a fork of Dmitriy Sokolov's [Smaz](https://crates.io/crates/smaz) library.
+
 ## Generating a codebook
 
 ```rs

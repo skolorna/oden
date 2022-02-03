@@ -22,18 +22,18 @@ pub(super) struct DetailedStation {
 }
 
 impl DetailedStation {
-    pub fn to_menu(&self) -> Option<Menu> {
+    pub(crate) fn to_menu(&self) -> Option<Menu> {
         self.station.to_menu(&self.district.name)
     }
 }
 
 #[derive(Deserialize, Debug, Clone)]
-pub struct SkolmatenMeal {
-    pub value: String,
+struct SkolmatenMeal {
+    value: String,
 }
 
 impl SkolmatenMeal {
-    pub fn into_meal(self) -> Option<Meal> {
+    fn into_meal(self) -> Option<Meal> {
         Meal::from_str(&self.value).ok()
     }
 }
@@ -89,7 +89,7 @@ pub(super) struct SkolmatenMenuResponse {
 }
 
 impl SkolmatenMenuResponse {
-    pub fn into_days(self) -> Vec<Day> {
+    pub(crate) fn into_days(self) -> Vec<Day> {
         self.menu
             .weeks
             .into_iter()
@@ -100,10 +100,10 @@ impl SkolmatenMenuResponse {
 }
 
 #[derive(PartialEq, Debug)]
-pub struct SkolmatenWeekSpan {
-    pub year: i32,
-    pub week_of_year: u32,
-    pub count: u8,
+struct SkolmatenWeekSpan {
+    year: i32,
+    week_of_year: u32,
+    count: u8,
 }
 
 async fn raw_fetch_menu(
@@ -131,7 +131,7 @@ async fn raw_fetch_menu(
 }
 
 /// Generate a series of queries because the Skolmaten API cannot handle more than one year per request.
-pub fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Vec<SkolmatenWeekSpan> {
+fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Vec<SkolmatenWeekSpan> {
     assert!(first <= last, "First must not be after last.");
 
     let mut spans: Vec<SkolmatenWeekSpan> = Vec::new();

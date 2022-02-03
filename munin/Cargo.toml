@@ -1,13 +1,13 @@
 [package]
 name = "munin"
-version = "0.2.2"
+version = "0.2.3"
 edition = "2018"
 
 # See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
 
 [dependencies]
-database = { path = "../database", features = ["meilisearch-sdk"], version = "0.2.2" }
-munin-lib = { path = "../munin-lib", features = ["diesel"], version = "0.2.2" }
+database = { path = "../database", features = ["meilisearch-sdk"], version = "0.2.3" }
+munin-lib = { path = "../munin-lib", features = ["diesel"], version = "0.2.3" }
 chrono = "0.4.19"
 chrono-tz = "0.6.1"
 diesel = { version = "1.4.8", features = ["postgres", "chrono"] }
@@ -20,3 +20,5 @@ thiserror = "1.0.30"
 tokio = { version = "1.16.1", features = ["rt-multi-thread", "macros"] }
 tracing = "0.1.29"
 tracing-subscriber = { version = "0.3.7", features = ["env-filter"] }
+anyhow = "1.0.53"
+flate2 = "1.0.22"

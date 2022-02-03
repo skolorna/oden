@@ -241,6 +241,12 @@ dependencies = [
 ]
 
 [[package]]
+name = "anyhow"
+version = "1.0.53"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "94a45b455c14666b85fc40a019e8ab9eb75e3a124e05494f5397122bc9eb06e0"
+
+[[package]]
 name = "async-channel"
 version = "1.6.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -676,7 +682,7 @@ dependencies = [
 
 [[package]]
 name = "database"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "chrono",
  "diesel",
@@ -799,9 +805,9 @@ checksum = "4d3d6188b8804df28032815ea256b6955c9625c24da7525f387a7af02fbb8f01"
 
 [[package]]
 name = "flate2"
-version = "1.0.20"
+version = "1.0.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cd3aec53de10fe96d7d8c565eb17f2c687bb5518a2ec453b5b1252964526abe0"
+checksum = "1e6988e897c1c9c485f43b47a529cef42fde0547f9d8d41a7062518f1d8fc53f"
 dependencies = [
  "cfg-if",
  "crc32fast",
@@ -1451,13 +1457,15 @@ dependencies = [
 
 [[package]]
 name = "munin"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
+ "anyhow",
  "chrono",
  "chrono-tz",
  "database",
  "diesel",
  "dotenv",
+ "flate2",
  "futures",
  "meilisearch-sdk",
  "munin-lib",
@@ -1471,7 +1479,7 @@ dependencies = [
 
 [[package]]
 name = "munin-lib"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1556,7 +1564,7 @@ dependencies = [
 
 [[package]]
 name = "oden-http"
-version = "0.2.2"
+version = "0.2.3"
 dependencies = [
  "actix-rt",
  "actix-web",
