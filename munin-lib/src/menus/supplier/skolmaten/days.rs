@@ -171,7 +171,7 @@ fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Vec<SkolmatenWeekSp
 }
 
 /// List days of a particular Skolmaten menu.
-pub async fn list_days(
+pub(crate) async fn list_days(
     client: &Client,
     station_id: u64,
     first: NaiveDate,

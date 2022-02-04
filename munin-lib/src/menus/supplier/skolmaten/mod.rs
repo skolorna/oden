@@ -1,5 +1,5 @@
-pub mod days;
-pub mod fetch;
+mod days;
+mod fetch;
 
 use chrono::NaiveDate;
 use futures::stream::{self, StreamExt};
@@ -15,7 +15,8 @@ use self::{days::query_station, fetch::fetch};
 
 /// Maximum number of concurrent HTTP requests when crawling. For comparison,
 /// Firefox allows 7 concurrent requests. There is virtually no improvement for
-/// values above 64, and 32 is just marginally slower.
+/// values above 64, and 32 is just marginally slower (and half the memory
+/// usage).
 const CONCURRENT_REQUESTS: usize = 32;
 
 #[derive(Deserialize, Debug)]

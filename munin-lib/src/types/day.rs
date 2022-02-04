@@ -7,12 +7,22 @@ use crate::{menus::meal::Meal, util::retain_unique};
 
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Day {
-    /// Time zones aren't really relevant here.
+    /// Date of the day. (Time zones aren't really relevant here.)
     pub date: NaiveDate,
+
+    /// Meals served on this day.
     pub meals: Vec<Meal>,
 }
 
 impl Day {
+    /// Construct a day, but disallow empty meals.
+    ///
+    /// ```
+    /// let date = NaiveDate::from_ymd(1789, 7, 14);
+    ///
+    /// assert!(Day::new_opt(date, vec![]).is_none());
+    /// assert!(Day::new_opt(date, vec![Meal::from_str("Fisk Björkeby").unwrap()]).is_some());
+    /// ```
     pub fn new_opt(date: NaiveDate, mut meals: Vec<Meal>) -> Option<Self> {
         if meals.is_empty() {
             None
@@ -84,14 +94,6 @@ mod tests {
     use std::str::FromStr;
 
     use super::*;
-
-    #[test]
-    fn construct_day() {
-        let date = NaiveDate::from_ymd(1789, 7, 14);
-
-        assert!(Day::new_opt(date, vec![]).is_none());
-        assert!(Day::new_opt(date, vec![Meal::from_str("Fisk Björkeby").unwrap()]).is_some());
-    }
 
     #[test]
     fn dedup() {

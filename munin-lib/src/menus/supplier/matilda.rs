@@ -104,29 +104,25 @@ impl FromStr for MatildaMenuIdentifier {
     }
 }
 
-pub trait MatildaMenulike {
-    fn menu_slug(&self) -> MenuSlug {
-        MenuSlug {
-            supplier: Supplier::Matilda,
-            local_id: serde_urlencoded::to_string(&self.query()).unwrap(),
-        }
-    }
-
+pub trait MatildaMenu {
     fn query(&self) -> MatildaMenuIdentifier;
 
     fn title(&self) -> Cow<str>;
 }
 
-impl<T: MatildaMenulike> From<T> for Menu {
+impl<T: MatildaMenu> From<T> for Menu {
     fn from(i: T) -> Self {
         Self {
-            slug: i.menu_slug(),
+            slug: MenuSlug {
+                supplier: Supplier::Matilda,
+                local_id: i.query().to_string(),
+            },
             title: i.title().into(),
         }
     }
 }
 
-impl MatildaMenulike for Part<'_> {
+impl MatildaMenu for Part<'_> {
     fn title(&self) -> Cow<'_, str> {
         Cow::Borrowed(&self.name)
     }
@@ -141,7 +137,7 @@ impl MatildaMenulike for Part<'_> {
     }
 }
 
-impl MatildaMenulike for Customer<'_> {
+impl MatildaMenu for Customer<'_> {
     fn title(&self) -> Cow<'_, str> {
         format!("{} ({})", self.name, self.part.name).into()
     }
