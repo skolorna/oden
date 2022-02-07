@@ -22,3 +22,7 @@ tracing = "0.1.29"
 tracing-subscriber = { version = "0.3.7", features = ["env-filter"] }
 anyhow = "1.0.53"
 flate2 = "1.0.22"
+csv = "1.1.6"
+serde_json = "1.0.78"
+
+[features]

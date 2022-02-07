@@ -1,6 +1,8 @@
 use diesel::prelude::*;
 use diesel::PgConnection;
 use dotenv::dotenv;
+use munin::exporter::export;
+use munin::exporter::ExporterOpt;
 use munin::indexer::index;
 use munin::indexer::IndexerOpt;
 use structopt::StructOpt;
@@ -17,6 +19,7 @@ struct Opt {
 #[derive(Debug, StructOpt)]
 enum Command {
     Index(IndexerOpt),
+    Export(ExporterOpt),
 }
 
 #[tokio::main]
@@ -31,6 +34,7 @@ async fn main() -> anyhow::Result<()> {
 
     match opt.cmd {
         Command::Index(opt) => index(&connection, &opt).await?,
+        Command::Export(opt) => export(&connection, &opt)?,
     }
 
     Ok(())
