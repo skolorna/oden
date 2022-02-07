@@ -1,0 +1,48 @@
+name: Munin
+
+on:
+  workflow_dispatch:
+  push:
+  # schedule:
+  #   - cron: "0 0 * * *"
+
+jobs:
+  index:
+    runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres
+        ports:
+          - 5432:5432
+        env:
+          POSTGRES_PASSWORD: postgres
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+      meilisearch:
+        image: getmeili/meilisearch
+        ports:
+          - 7700:7700
+    steps:
+      - uses: docker://ghcr.io/skolorna/munin
+        env:
+          POSTGRES_URL: postgresql://postgres:postgres@localhost
+          MEILI_URL: http://localhost:7700
+        with:
+          args: --load-menus
+      - id: dump
+        run: |
+          echo "::set-output name=uid::$(curl -sX POST http://localhost:7700/dumps | jq .uid)"
+      - uses: mydea/action-wait-for-api@v1.0.0
+        with:
+          url: http://localhost:7700/dumps/${{ steps.dump.outputs.uid }}/status
+          expected-response-field: status
+          expected-response-value: done
+          interval: "1"
+          timeout: "30"
+      - run: docker ps
+      - run: |
+          docker cp meilisearch:/home/meili/dumps/${{ steps.dump.outputs.uid }}.dump ./
+      - run: ls
