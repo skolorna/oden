@@ -28,8 +28,8 @@ jobs:
     steps:
       - uses: docker://ghcr.io/skolorna/munin
         env:
-          POSTGRES_URL: postgresql://postgres:postgres@localhost
-          MEILI_URL: http://localhost:7700
+          POSTGRES_URL: postgresql://postgres:postgres@postgres
+          MEILI_URL: http://meilisearch:7700
         with:
           args: --load-menus
       - id: dump
