@@ -1,6 +1,6 @@
 use deunicode::deunicode_char;
 
-use crate::tokenizer::{SeparatorKind, TokenKind};
+use crate::tokenizer::{SeparatorKind, Token, TokenKind};
 
 /// Classify a separator.
 ///
@@ -34,19 +34,27 @@ pub enum CharCategory {
     Other,
 }
 
-impl From<CharCategory> for TokenKind {
-    fn from(cat: CharCategory) -> Self {
-        match cat {
-            CharCategory::Separator(sep) => TokenKind::Separator(sep),
-            CharCategory::Other => TokenKind::Word,
-        }
-    }
-}
-
 pub fn categorize_char(ch: char) -> CharCategory {
     if let Some(kind) = classify_separator(ch) {
         CharCategory::Separator(kind)
     } else {
         CharCategory::Other
     }
+}
+
+const STOP_WORDS: &[&str] = &[
+    "i", "på", "under", "över", "från", "ur", "bakom", "med", "bredvid", "vid", "till", "hos",
+    "mellan", "framför", "ovanför",
+];
+
+pub fn classify(token: &Token<'_>) -> TokenKind {
+    if STOP_WORDS.contains(&token.word().as_ref()) {
+        return TokenKind::StopWord;
+    }
+
+    if let Some(kind) = token.word().chars().find_map(classify_separator) {
+        return TokenKind::Separator(kind);
+    }
+
+    TokenKind::Word
 }

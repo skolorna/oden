@@ -19,6 +19,9 @@ serde_json = "1.0.79"
 slice-group-by = "0.3.0"
 strsim = "0.10.0"
 thiserror = "1.0.30"
+tracing = "0.1.30"
+tracing-subscriber = "0.3.8"
+unicode-normalization = "0.1.19"
 
 [dev-dependencies]
 tokio = { version = "1.16.1", features = ["rt", "macros"] }

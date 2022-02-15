@@ -3,8 +3,9 @@ use std::borrow::Cow;
 use cow_utils::CowUtils;
 
 use rust_stemmers::Stemmer;
+use unicode_normalization::UnicodeNormalization;
 
-use crate::detection::{categorize_char, CharCategory};
+use crate::detection::{categorize_char, classify, CharCategory};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SeparatorKind {
@@ -16,6 +17,7 @@ pub enum SeparatorKind {
 pub enum TokenKind {
     Word,
     Separator(SeparatorKind),
+    StopWord,
     Unknown,
 }
 
@@ -42,8 +44,25 @@ impl<'a> Token<'a> {
     pub fn word(&'a self) -> Cow<'a, str> {
         Cow::Borrowed(&self.word)
     }
+
+    pub fn is_stop_word(&self) -> bool {
+        matches!(self.kind, TokenKind::StopWord)
+    }
+
+    pub fn is_word(&self) -> bool {
+        matches!(self.kind, TokenKind::Word)
+    }
 }
 
+/// A latin-based tokenizer.
+///
+/// ```
+/// use euphemism::tokenizer::LatinTokenizer;
+///
+/// let mut s: Vec<String> = LatinTokenizer::new("Fisk Björkeby med hemlagat potatismos").map(|t| t.word().to_string()).collect();
+///
+/// assert_eq!(s, ["Fisk"," ", "Björkeby", " ", "med", " ", "hemlagat", " ", "potatismos"])
+/// ```
 pub struct LatinTokenizer<'a> {
     inner: &'a str,
     /// [`CharCategory`] of the next character.
@@ -66,8 +85,8 @@ impl<'a> Iterator for LatinTokenizer<'a> {
 
     fn next(&mut self) -> Option<Self::Item> {
         let token_category = self.next_category;
-        let chars = self.inner.chars();
-        let mut len = 0;
+        let mut chars = self.inner.chars();
+        let mut len = chars.next()?.len_utf8();
 
         for ch in chars {
             self.next_category = categorize_char(ch);
@@ -79,14 +98,12 @@ impl<'a> Iterator for LatinTokenizer<'a> {
             len += ch.len_utf8();
         }
 
-        if len == 0 {
-            return None;
-        }
-
-        let token = Token {
+        let mut token = Token {
             word: Cow::Borrowed(&self.inner[0..len]),
-            kind: token_category.into(),
+            kind: TokenKind::Unknown,
         };
+
+        token.kind = classify(&token);
 
         self.inner = &self.inner[len..];
 
@@ -108,8 +125,8 @@ impl<'a> Iterator for TokenStream<'a> {
 
 pub fn analyze(text: &str) -> TokenStream<'_> {
     let iter = LatinTokenizer::new(text)
-        .filter(|token| token.kind == TokenKind::Word)
         .map(|token| LowercaseFilter::default().filter(token))
+        .map(|token| UnicodeNormalizationFilter::default().filter(token))
         .map(|token| StemmingFilter::default().filter(token));
 
     TokenStream {
@@ -134,6 +151,17 @@ impl Filter for LowercaseFilter {
     }
 }
 
+#[derive(Default)]
+struct UnicodeNormalizationFilter;
+
+impl Filter for UnicodeNormalizationFilter {
+    fn filter<'a>(&self, mut token: Token<'a>) -> Token<'a> {
+        token.word = Cow::Owned(token.word.nfc().to_string());
+
+        token
+    }
+}
+
 struct StemmingFilter {
     stemmer: Stemmer,
 }
@@ -149,7 +177,7 @@ impl Default for StemmingFilter {
 impl Filter for StemmingFilter {
     fn filter<'a>(&self, mut token: Token<'a>) -> Token<'a> {
         match token.kind {
-            TokenKind::Word | TokenKind::Unknown => {
+            TokenKind::Word | TokenKind::StopWord | TokenKind::Unknown => {
                 let stem = self.stemmer.stem(&token.word);
                 token.word = Cow::Owned(stem.to_string());
             }
