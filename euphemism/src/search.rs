@@ -1,5 +1,6 @@
-use std::{collections::BTreeSet, time::Instant};
+use std::{borrow::Cow, collections::BTreeSet, time::Instant};
 
+use fst::{IntoStreamer, Streamer};
 use levenshtein_automata::LevenshteinAutomatonBuilder as LevBuilder;
 use once_cell::sync::Lazy;
 
@@ -25,9 +26,12 @@ where
         let before = Instant::now();
         let mut words = BTreeSet::new();
         let mut doc_ids = BTreeSet::<DocId>::new();
+        let words_fst = self.index.words();
+
+        println!("build fst in {:.02?}", before.elapsed());
 
         for token in analyze(self.query) {
-            let derivations = word_derivations(&token.word(), self.index.words());
+            let derivations = word_derivations(&token.word(), &words_fst);
 
             for derivation in derivations {
                 words.insert(derivation.word.to_string());
@@ -56,36 +60,47 @@ const MAX_TYPOS: u8 = 2;
 static LEV_BUILDER: Lazy<LevBuilder> = Lazy::new(|| LevBuilder::new(MAX_TYPOS, true));
 
 #[derive(Debug)]
-pub struct DerivedWord<'a> {
-    word: &'a str,
+pub struct DerivedWord {
+    word: String,
     distance: u8,
 }
 
-pub fn word_derivations<'a>(
-    query: &str,
-    words: impl Iterator<Item = &'a str>,
-) -> impl Iterator<Item = DerivedWord<'a>> {
+pub fn word_derivations(query: &str, words: &fst::Set<Cow<'_, [u8]>>) -> Vec<DerivedWord> {
     let dfa = LEV_BUILDER.build_dfa(query);
+    let mut stream = words.search_with_state(&dfa).into_stream();
+    let mut derived_words = Vec::new();
 
-    words.filter_map(move |word| {
-        let mut state = dfa.initial_state();
-        for &b in word.as_bytes() {
-            state = dfa.transition(state, b);
-        }
+    while let Some((word, state)) = stream.next() {
+        let word = std::str::from_utf8(word).unwrap();
         let distance = dfa.distance(state).to_u8();
+        // println!("{}", distance);
+        derived_words.push(DerivedWord {
+            word: word.to_string(),
+            distance,
+        });
+    }
 
-        if distance > MAX_TYPOS {
-            return None;
-        }
+    derived_words
 
-        if distance > 1 && word.chars().count() <= 8 {
-            return None;
-        }
+    // words.filter_map(move |word| {
+    //     let mut state = dfa.initial_state();
+    //     for &b in word.as_bytes() {
+    //         state = dfa.transition(state, b);
+    //     }
+    //     let distance = dfa.distance(state).to_u8();
 
-        if distance > 0 && word.chars().count() <= 4 {
-            return None;
-        }
+    //     if distance > MAX_TYPOS {
+    //         return None;
+    //     }
 
-        Some(DerivedWord { word, distance })
-    })
+    //     if distance > 1 && word.chars().count() <= 8 {
+    //         return None;
+    //     }
+
+    //     if distance > 0 && word.chars().count() <= 4 {
+    //         return None;
+    //     }
+
+    //     Some(DerivedWord { word, distance })
+    // })
 }

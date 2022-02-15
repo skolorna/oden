@@ -1,4 +1,7 @@
-use std::collections::{BTreeMap, HashMap};
+use std::{
+    borrow::Cow,
+    collections::{BTreeMap, HashMap},
+};
 
 use crate::tokenizer::analyze;
 
@@ -56,7 +59,10 @@ where
         self.documents.get(id)
     }
 
-    pub fn words(&self) -> impl Iterator<Item = &'_ str> {
-        self.inverted_index.keys().map(|k| k.as_str())
+    pub fn words<'a>(&self) -> fst::Set<Cow<'a, [u8]>> {
+        fst::Set::from_iter(self.inverted_index.keys().map(|k| k.as_str()))
+            .unwrap()
+            .map_data(Cow::Owned)
+            .unwrap()
     }
 }

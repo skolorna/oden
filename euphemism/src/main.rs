@@ -13,7 +13,7 @@ fn main() {
 
     println!("indexed in {:.02?}", index_start.elapsed());
     println!("index size: {}", index.documents().len());
-    println!("no. words: {}", index.words().count());
+    // println!("no. words: {}", index.words().count());
 
     let search = Search::new(&index, "pasta med köttfärssås");
 
