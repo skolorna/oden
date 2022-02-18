@@ -15,8 +15,8 @@ fn main() {
 
     let index = index_builder.build();
 
-    let search = Search::new(&index, "Fisk Björkeby med kokt potatis", 100);
-    // let search = Search::new(&index, "pasta med köttfärssås", 20);
+    // let search = Search::new(&index, "Fisk Björkeby med kokt potatis", 100);
+    let search = Search::new(&index, "Pannkakor ECO serveras med sylt och keso", 20);
 
     let hits = search.execute();
 

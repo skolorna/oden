@@ -48,11 +48,11 @@ const STOP_WORDS: &[&str] = &[
 ];
 
 pub fn classify(token: &Token<'_>) -> TokenKind {
-    if STOP_WORDS.contains(&token.word().as_ref()) {
+    if STOP_WORDS.contains(&token.text()) {
         return TokenKind::StopWord;
     }
 
-    if let Some(kind) = token.word().chars().find_map(classify_separator) {
+    if let Some(kind) = token.text().chars().find_map(classify_separator) {
         return TokenKind::Separator(kind);
     }
 

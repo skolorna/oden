@@ -41,7 +41,7 @@ where
         let words_fst = self.index.words_fst();
 
         for token in analyze(self.query).filter(|t| t.is_word()) {
-            let derivations = word_derivations(&token.word(), words_fst);
+            let derivations = word_derivations(token.text(), words_fst);
 
             words.extend(derivations.into_iter().map(|d| d.word));
         }
@@ -55,7 +55,7 @@ where
         for word in words {
             println!("{}", word);
 
-            if let Some(docs) = self.index.inverted_index.get(&word) {
+            if let Some(docs) = self.index.word_docids.get(&word) {
                 doc_ids.extend(docs.iter());
             }
         }
@@ -70,12 +70,15 @@ where
         let i = doc_frequencies.len().saturating_sub(self.limit + 1);
 
         let candidates = if i >= doc_frequencies.len() {
-            &mut []
+            doc_frequencies.as_mut()
         } else {
             let (_, _, top) = doc_frequencies.select_nth_unstable_by_key(i, |(_id, freq)| *freq);
 
             top
         };
+
+        candidates.sort_by_key(|(_id, freq)| *freq);
+        candidates.reverse();
 
         debug!(
             "found {} candidates after {:.02?}",
@@ -110,7 +113,10 @@ pub fn word_derivations(query: &str, words_fst: &fst::Set<Cow<'_, [u8]>>) -> Vec
     let mut derived_words = Vec::new();
 
     while let Some((word, state)) = stream.next() {
-        let word = std::str::from_utf8(word).unwrap();
+        let word = match std::str::from_utf8(word) {
+            Ok(w) => w,
+            Err(_e) => continue,
+        };
         let distance = dfa.distance(state).to_u8();
         let char_count = word.chars().count();
 

@@ -29,20 +29,13 @@ impl Default for TokenKind {
 
 #[derive(Debug, PartialEq, Eq)]
 pub struct Token<'a> {
-    word: Cow<'a, str>,
-    kind: TokenKind,
+    pub word: Cow<'a, str>,
+    pub kind: TokenKind,
 }
 
 impl<'a> Token<'a> {
-    fn new<W: Into<Cow<'a, str>>>(word: W) -> Self {
-        Self {
-            word: word.into(),
-            kind: Default::default(),
-        }
-    }
-
-    pub fn word(&'a self) -> Cow<'a, str> {
-        Cow::Borrowed(&self.word)
+    pub fn text(&'a self) -> &str {
+        self.word.as_ref()
     }
 
     pub fn is_stop_word(&self) -> bool {
@@ -52,6 +45,10 @@ impl<'a> Token<'a> {
     pub fn is_word(&self) -> bool {
         matches!(self.kind, TokenKind::Word)
     }
+
+    pub fn is_separator(&self) -> bool {
+        matches!(self.kind, TokenKind::Separator(_))
+    }
 }
 
 /// A latin-based tokenizer.
@@ -59,7 +56,7 @@ impl<'a> Token<'a> {
 /// ```
 /// use euphemism::tokenizer::LatinTokenizer;
 ///
-/// let mut s: Vec<String> = LatinTokenizer::new("Fisk Björkeby med hemlagat potatismos").map(|t| t.word().to_string()).collect();
+/// let mut s: Vec<String> = LatinTokenizer::new("Fisk Björkeby med hemlagat potatismos").map(|t| t.text().to_string()).collect();
 ///
 /// assert_eq!(s, ["Fisk"," ", "Björkeby", " ", "med", " ", "hemlagat", " ", "potatismos"])
 /// ```
