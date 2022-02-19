@@ -60,6 +60,7 @@ impl<'a> Token<'a> {
 ///
 /// assert_eq!(s, ["Fisk"," ", "Björkeby", " ", "med", " ", "hemlagat", " ", "potatismos"])
 /// ```
+#[derive(Debug)]
 pub struct LatinTokenizer<'a> {
     inner: &'a str,
     /// [`CharCategory`] of the next character.

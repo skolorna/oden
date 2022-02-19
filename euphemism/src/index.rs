@@ -12,12 +12,6 @@ use crate::{position::extract_word_pair_proximities, tokenizer::analyze};
 
 pub type DocId = u32;
 
-#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
-pub struct Suggestion {
-    distance: usize,
-    value: String,
-}
-
 pub struct Index<'a, T> {
     pub word_docids: HashMap<String, Vec<DocId>>,
     pub docid_words: HashMap<DocId, Vec<String>>,
@@ -61,6 +55,7 @@ impl<'a, T> Index<'a, T> {
     }
 }
 
+/// Some kind of serialization for using FSTs with multiple levels of keys.
 fn docid_word_pair_to_bytes(doc: &DocId, a: &str, b: &str) -> Vec<u8> {
     const SEPARATOR: u8 = b' ';
 
