@@ -1,7 +1,7 @@
 use std::{
     borrow::Cow,
     collections::{BTreeSet, HashMap},
-    time::Instant,
+    time::Instant, any::Any,
 };
 
 use fst::{IntoStreamer, Streamer};
@@ -25,6 +25,7 @@ impl<'a, T> Search<'a, T>
 where
     T: ToString + std::fmt::Debug,
 {
+    /// Construct a new search query.
     pub fn new(index: &'a Index<T>, query: &'a str, limit: usize) -> Self {
         Self {
             query,
@@ -36,37 +37,39 @@ where
     #[instrument(level = "debug")]
     pub fn execute(&self) -> Vec<&'a T> {
         let before = Instant::now();
-        let mut words = BTreeSet::new();
-        let mut doc_ids = Vec::new();
+        let mut terms = BTreeSet::new();
+        let mut docids = Vec::new();
         let words_fst = self.index.words_fst();
 
         for token in analyze(self.query).filter(|t| t.is_word()) {
             let derivations = word_derivations(token.text(), words_fst);
 
-            words.extend(derivations.into_iter().map(|d| d.word));
+            terms.extend(derivations.into_iter());
         }
 
         debug!(
-            "derived {} words after {:.02?}",
-            words.len(),
+            "derived {} terms after {:.02?}",
+            terms.len(),
             before.elapsed()
         );
 
-        for word in words {
-            println!("{}", word);
+        for term in terms {
+            println!("{:?}", term);
 
-            if let Some(docs) = self.index.word_docids.get(&word) {
-                doc_ids.extend(docs.iter());
+            if let Some(docs) = self.index.word_docids.get(&term.word) {
+                docids.extend(docs.iter().map(|d| (*d, term.typos)));
             }
         }
 
-        let mut doc_frequencies = HashMap::<DocId, usize>::new();
+        let mut docid_typos = HashMap::<DocId, usize>::new();
 
-        for doc in doc_ids {
-            *doc_frequencies.entry(doc).or_default() += 1;
+        dbg!(docids.len());
+
+        for (doc, typos) in docids {
+            *docid_typos.entry(doc).or_default() += typos as usize;
         }
 
-        let mut doc_frequencies: Vec<_> = doc_frequencies.into_iter().collect();
+        let mut doc_frequencies: Vec<_> = docid_typos.into_iter().collect();
         let i = doc_frequencies.len().saturating_sub(self.limit + 1);
 
         let candidates = if i >= doc_frequencies.len() {
@@ -78,7 +81,6 @@ where
         };
 
         candidates.sort_by_key(|(_id, freq)| *freq);
-        candidates.reverse();
 
         debug!(
             "found {} candidates after {:.02?}",
@@ -101,10 +103,10 @@ const MAX_TYPOS: u8 = 2;
 
 static LEV_BUILDER: Lazy<LevBuilder> = Lazy::new(|| LevBuilder::new(MAX_TYPOS, true));
 
-#[derive(Debug)]
+#[derive(Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct DerivedWord {
     word: String,
-    distance: u8,
+    typos: u8,
 }
 
 pub fn word_derivations(query: &str, words_fst: &fst::Set<Cow<'_, [u8]>>) -> Vec<DerivedWord> {
@@ -117,20 +119,20 @@ pub fn word_derivations(query: &str, words_fst: &fst::Set<Cow<'_, [u8]>>) -> Vec
             Ok(w) => w,
             Err(_e) => continue,
         };
-        let distance = dfa.distance(state).to_u8();
+        let typos = dfa.distance(state).to_u8();
         let char_count = word.chars().count();
 
-        if distance > 1 && char_count <= 8 {
+        if typos > 1 && char_count <= 8 {
             continue;
         }
 
-        if distance > 0 && char_count <= 4 {
+        if typos > 0 && char_count <= 4 {
             continue;
         }
 
         derived_words.push(DerivedWord {
             word: word.to_owned(),
-            distance,
+            typos,
         });
     }
 

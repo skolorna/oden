@@ -6,7 +6,7 @@ fn main() {
     env::set_var("RUST_LOG", "debug");
     tracing_subscriber::fmt::init();
 
-    let recipes = include_str!("../../meals.txt").lines();
+    let recipes = include_str!("../recipes.txt").lines();
     let mut index_builder = IndexBuilder::new();
 
     for recipe in recipes {
