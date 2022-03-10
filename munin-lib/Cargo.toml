@@ -17,7 +17,7 @@ serde = { version = "1.0.136", features = ["derive"] }
 serde_urlencoded = "0.7.1"
 strum = { version = "0.23.0", features = ["derive"] }
 thiserror = "1.0.30"
-tracing = "0.1.29"
+tracing = "0.1.32"
 url = "2.2.2"
 urlencoding = "2.1.0"
 uuid = { version = "0.8.2", features = ["v5"] }
