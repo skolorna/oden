@@ -18,7 +18,7 @@ serde = { version = "1.0.136", features = ["derive"] }
 structopt = "0.3.26"
 thiserror = "1.0.30"
 tokio = { version = "1.16.1", features = ["rt-multi-thread", "macros"] }
-tracing = "0.1.29"
+tracing = "0.1.33"
 tracing-subscriber = { version = "0.3.7", features = ["env-filter"] }
 anyhow = "1.0.53"
 flate2 = "1.0.22"

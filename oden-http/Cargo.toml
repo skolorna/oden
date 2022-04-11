@@ -20,4 +20,4 @@ diesel = { version = "1.4.8", features = ["r2d2"] }
 structopt = "0.3.26"
 dotenv = "0.15.0"
 r2d2 = "0.8.9"
-tracing = "0.1.29"
+tracing = "0.1.33"
