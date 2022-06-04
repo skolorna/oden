@@ -162,7 +162,7 @@ async fn get_doc<T: Serialize + std::fmt::Debug>(
         .query(query)
         .send()
         .await?;
-    trace!("GET {}", res.url());
+    dbg!("GET {}", res.url());
     let html = res.text().await?;
     Ok(Document::from(html.as_str()))
 }
@@ -345,8 +345,7 @@ async fn days_by_week(
 
     let year = doc
         .find(Attr("id", "Year"))
-        .next()
-        .and_then(|n| n.attr("value")?.parse().ok())
+        .next().and_then(|n| n.attr("value")?.parse().ok())
         .ok_or(MuninError::ScrapeError {
             context: "couldn't get year".into(),
         })?;
@@ -431,12 +430,12 @@ mod tests {
     #[tokio::test]
     async fn should_list_days() {
         let menu = MatildaMenuIdentifier {
-            customer: Some(12599),
-            part: 2409,
-            municipality: 5002,
-            region: 100,
+            customer: Some(10242),
+            part: 1594,
+            municipality: 2161,
+            region: 21,
         };
-        let first = Utc::now();
+        let first = Utc::now() - Duration::weeks(1);
 
         let days = list_days(
             &menu,
@@ -446,7 +445,7 @@ mod tests {
         .await
         .unwrap();
 
-        assert!(days.len() > 7);
+        assert!(days.len() >= 7);
     }
 
     #[test]
