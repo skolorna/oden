@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::{Identifiable, Insertable, Queryable};
-use munin_lib::types::slug::MenuSlug;
+use munin_lib::types::menu_slug::MenuSlug;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 

@@ -19,7 +19,7 @@ use munin_lib::errors::MuninResult;
 use munin_lib::menus::list_days;
 use munin_lib::menus::list_menus;
 use munin_lib::types;
-use munin_lib::types::slug::MenuSlug;
+use munin_lib::types::menu_slug::MenuSlug;
 use structopt::StructOpt;
 use thiserror::Error;
 use tracing::info;

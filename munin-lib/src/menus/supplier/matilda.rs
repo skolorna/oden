@@ -15,7 +15,7 @@ use tracing::{error, instrument, trace};
 use crate::{
     errors::{MuninError, MuninResult},
     menus::meal::Meal,
-    types::{day::Day, menu::Menu, slug::MenuSlug},
+    types::{day::Day, menu::Menu, menu_slug::MenuSlug},
     util::parse_weekday,
 };
 
@@ -200,7 +200,7 @@ async fn list_municipalities<'r>(
 ) -> MuninResult<Vec<Municipality<'r>>> {
     let doc = get_doc(client, &region).await?;
     let municipalities = scrape_options(&doc, "MunicipalityList")
-        .map(|(id, name)| Municipality { id, name, region })
+        .map(|(id, name)| Municipality { id, region, name })
         .collect();
 
     Ok(municipalities)
@@ -215,8 +215,8 @@ async fn list_parts<'m>(
     let parts = scrape_options(&doc, "PartList")
         .map(|(id, name)| Part {
             id,
-            name,
             municipality,
+            name,
         })
         .collect();
 
@@ -227,7 +227,7 @@ async fn list_parts<'m>(
 async fn list_customers<'p>(client: &Client, part: &'p Part<'p>) -> MuninResult<Vec<Customer<'p>>> {
     let doc = get_doc(client, part).await?;
     let customers = scrape_options(&doc, "CustomerList")
-        .map(|(id, name)| Customer { id, name, part })
+        .map(|(id, name)| Customer { id, part, name })
         .collect();
 
     Ok(customers)
@@ -242,7 +242,7 @@ async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> MuninResult<Vec<M
     if customers.is_empty() {
         Ok(vec![part.into()])
     } else {
-        Ok(customers.into_iter().map(|c| c.into()).collect())
+        Ok(customers.into_iter().map(Into::into).collect())
     }
 }
 
@@ -275,7 +275,7 @@ async fn menus_in_region(client: &Client, region: &Region) -> MuninResult<Vec<Me
         .buffer_unordered(CONCURRENT_REQUESTS);
 
     while let Some(result) = parts_stream.next().await {
-        menus.append(&mut result?)
+        menus.append(&mut result?);
     }
 
     Ok(menus)

@@ -23,7 +23,8 @@ pub struct MashieMenu {
 }
 
 impl MashieMenu {
-    pub fn into_menu(self, supplier: Supplier) -> Menu {
+    #[must_use]
+    pub fn normalize(self, supplier: Supplier) -> Menu {
         let id = MenuSlug::new(supplier, self.id);
         Menu::new(id, self.title)
     }
@@ -89,7 +90,7 @@ macro_rules! mashie_impl {
             let menus = mashie::list_menus(HOST)
                 .await?
                 .into_iter()
-                .map(|m| m.into_menu($supplier))
+                .map(|m| m.normalize($supplier))
                 .collect();
 
             Ok(menus)
@@ -98,7 +99,7 @@ macro_rules! mashie_impl {
         pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
             let menu = mashie::query_menu(HOST, menu_slug)
                 .await?
-                .into_menu($supplier);
+                .normalize($supplier);
 
             Ok(menu)
         }

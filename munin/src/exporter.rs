@@ -1,7 +1,6 @@
 use std::{
     convert::{TryFrom, TryInto},
     fs::{create_dir, OpenOptions},
-    io::Write,
     path::PathBuf,
     time::Instant,
 };

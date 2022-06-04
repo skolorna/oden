@@ -1,9 +1,5 @@
 #![doc = include_str!("../README.md")]
-#![warn(
-    missing_debug_implementations,
-    missing_docs,
-    clippy::pedantic
-)]
+#![warn(missing_debug_implementations, missing_docs, clippy::pedantic)]
 
 use lazy_static::lazy_static;
 use std::collections::HashMap;

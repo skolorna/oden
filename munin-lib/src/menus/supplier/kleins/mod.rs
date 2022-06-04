@@ -23,7 +23,7 @@ struct KleinsSchool {
 }
 
 impl KleinsSchool {
-    pub fn into_menu(self) -> Menu {
+    pub fn normalize(self) -> Menu {
         let id = MenuSlug::new(Supplier::Kleins, self.slug);
 
         Menu::new(id, self.title)
@@ -53,7 +53,7 @@ async fn raw_list_schools() -> MuninResult<Vec<KleinsSchool>> {
 pub async fn list_menus() -> MuninResult<Vec<Menu>> {
     let schools = raw_list_schools().await?;
 
-    let menus = schools.into_iter().map(|s| s.into_menu()).collect();
+    let menus = schools.into_iter().map(KleinsSchool::normalize).collect();
 
     Ok(menus)
 }
@@ -84,7 +84,7 @@ async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse>
         .find(Name("h1").and(Class("page-title")))
         .next()
         .ok_or_else(|| MuninError::ScrapeError {
-            context: html.to_owned(),
+            context: html.clone(),
         })?
         .text();
     let school = KleinsSchool {
@@ -95,10 +95,9 @@ async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse>
     let menu_url = doc
         .find(Name("iframe"))
         .next()
-        .map(|n| extract_menu_url(&n))
-        .flatten()
+        .and_then(|n| extract_menu_url(&n))
         .ok_or_else(|| MuninError::ScrapeError {
-            context: html.to_owned(),
+            context: html.clone(),
         })?;
 
     Ok(QuerySchoolResponse { school, menu_url })
@@ -107,7 +106,7 @@ async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse>
 pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
     let res = raw_query_school(menu_slug).await?;
 
-    Ok(res.school.into_menu())
+    Ok(res.school.normalize())
 }
 
 pub async fn list_days(

@@ -11,7 +11,7 @@ use crate::errors::{MuninError, MuninResult};
 use crate::menus::meal::Meal;
 use crate::menus::supplier::Supplier;
 use crate::menus::Menu;
-use crate::types::{day::Day, slug::MenuSlug};
+use crate::types::{day::Day, menu_slug::MenuSlug};
 use crate::util::{extract_digits, last_path_segment, parse_weekday};
 
 pub async fn list_menus() -> MuninResult<Vec<Menu>> {
@@ -63,7 +63,7 @@ pub async fn list_days(
     );
     let client = Client::builder().redirect(Policy::none()).build()?;
     let res = client.get(&url).send().await?;
-    let http_date = res.headers().get(header::DATE).unwrap().to_str().unwrap();
+    let http_date = res.headers().get(header::DATE).unwrap().to_str().unwrap(); // the date header is always present
     let res_timestamp = DateTime::parse_from_rfc2822(http_date).unwrap();
 
     if res.status() == StatusCode::NOT_FOUND {

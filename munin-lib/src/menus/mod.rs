@@ -10,7 +10,7 @@ use tracing::{debug, instrument};
 
 use crate::{
     errors::MuninResult,
-    types::{day::Day, menu::Menu, slug::MenuSlug},
+    types::{day::Day, menu::Menu, menu_slug::MenuSlug},
 };
 
 use self::{meal::Meal, supplier::Supplier};

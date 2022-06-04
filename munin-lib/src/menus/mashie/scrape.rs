@@ -17,6 +17,7 @@ use crate::{menus::meal::Meal, types::day::Day};
 /// assert!(parse_month("may").is_none()); // maj is correct
 /// assert!(parse_month("Jan").is_none()); // case sensitive
 /// ```
+#[must_use]
 pub fn parse_month(m: &str) -> Option<u32> {
     match m {
         "jan" => Some(1),
@@ -44,8 +45,7 @@ fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
     // Accept None as year, but not Some(&str) that doesn't parse to i32.
     let y = segments
         .next()
-        .map(|y| y.parse::<i32>())
-        .unwrap_or_else(|| Ok(Local::now().year()))
+        .map_or_else(|| Ok(Local::now().year()), str::parse)
         .ok()?;
 
     NaiveDate::from_ymd_opt(y, m, d)
@@ -66,6 +66,7 @@ fn parse_day_node(node: &Node) -> Option<Day> {
     Day::new_opt(date, meals)
 }
 
+#[must_use]
 pub fn scrape_mashie_days(doc: &Document) -> Vec<Day> {
     let day_elems = doc.find(Class("panel-group").child(Class("panel")));
     day_elems
@@ -76,6 +77,7 @@ pub fn scrape_mashie_days(doc: &Document) -> Vec<Day> {
 #[cfg(test)]
 mod tests {
     use chrono::{Datelike, Local};
+    use std::convert::TryFrom;
 
     use crate::{menus::mashie::query_menu, util::is_sorted};
 
@@ -88,7 +90,7 @@ mod tests {
         ];
 
         for (i, month) in months.into_iter().enumerate() {
-            let n = i as u32 + 1;
+            let n = u32::try_from(i + 1).unwrap();
             assert_eq!(parse_month(month), Some(n));
         }
 
@@ -136,7 +138,7 @@ mod tests {
         assert!(is_sorted(&days));
 
         for day in days {
-            assert!(!day.meals().is_empty())
+            assert!(!day.meals().is_empty());
         }
 
         assert!(scrape_mashie_days(&Document::from("<h1>no days</h1>")).is_empty());

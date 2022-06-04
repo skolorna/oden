@@ -20,6 +20,7 @@ pub struct MenuSlug {
 }
 
 impl MenuSlug {
+    #[must_use]
     pub fn new(supplier: Supplier, local_id: String) -> Self {
         Self { supplier, local_id }
     }
@@ -42,7 +43,7 @@ impl FromStr for MenuSlug {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let (supplier_literal, local_id) =
-            s.split_once(".").ok_or(ParseMenuSlugError::NoDelimiter)?;
+            s.split_once('.').ok_or(ParseMenuSlugError::NoDelimiter)?;
 
         let supplier = Supplier::from_str(supplier_literal)?;
 

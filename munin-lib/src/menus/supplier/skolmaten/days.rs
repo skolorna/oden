@@ -33,7 +33,7 @@ struct SkolmatenMeal {
 }
 
 impl SkolmatenMeal {
-    fn into_meal(self) -> Option<Meal> {
+    fn normalize(self) -> Option<Meal> {
         Meal::from_str(&self.value).ok()
     }
 }
@@ -47,13 +47,13 @@ pub(super) struct SkolmatenDay {
 }
 
 impl SkolmatenDay {
-    /// Maps `NaiveDate::from_ymd_opt` and creates a Day; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
-    fn into_day(self) -> Option<Day> {
+    /// Maps `NaiveDate::from_ymd_opt` and creates a [`Day`]; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
+    fn normalize(self) -> Option<Day> {
         let date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)?;
         let meals: Vec<Meal> = self
             .meals?
             .into_iter()
-            .filter_map(|meal| meal.into_meal())
+            .filter_map(SkolmatenMeal::normalize)
             .collect();
 
         Day::new_opt(date, meals)
@@ -89,13 +89,12 @@ pub(super) struct SkolmatenMenuResponse {
 }
 
 impl SkolmatenMenuResponse {
-    pub(crate) fn into_days(self) -> Vec<Day> {
+    pub(crate) fn into_days_iter(self) -> impl Iterator<Item = Day> {
         self.menu
             .weeks
             .into_iter()
             .flat_map(|week| week.days)
-            .filter_map(|day| day.into_day())
-            .collect::<Vec<Day>>()
+            .filter_map(SkolmatenDay::normalize)
     }
 }
 
@@ -185,7 +184,7 @@ pub(crate) async fn list_days(
             async move {
                 raw_fetch_menu(client, station_id, &span)
                     .await
-                    .map(|res| res.into_days())
+                    .map(SkolmatenMenuResponse::into_days_iter)
             }
         })
         .buffer_unordered(4)
@@ -247,7 +246,7 @@ mod tests {
                     count: 9,
                 }
             ]
-        )
+        );
     }
 
     #[test]
@@ -263,7 +262,7 @@ mod tests {
                 month: 1,
                 day: 1,
             }
-            .into_day()
+            .normalize()
             .unwrap()
             .meals()
             .len(),
@@ -275,7 +274,7 @@ mod tests {
             month: 2,
             day: 29
         }
-        .into_day()
+        .normalize()
         .is_none());
     }
 

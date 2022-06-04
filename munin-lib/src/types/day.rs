@@ -5,6 +5,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::{menus::meal::Meal, util::retain_unique};
 
+/// A day is localized to a single menu and contains
+/// a list of the meals served there on a particular
+/// date.
 #[derive(Serialize, Deserialize, Debug, PartialEq, Eq, PartialOrd, Ord)]
 pub struct Day {
     /// Date of the day. (Time zones aren't really relevant here.)
@@ -23,6 +26,7 @@ impl Day {
     /// assert!(Day::new_opt(date, vec![]).is_none());
     /// assert!(Day::new_opt(date, vec![Meal::from_str("Fisk Björkeby").unwrap()]).is_some());
     /// ```
+    #[must_use]
     pub fn new_opt(date: NaiveDate, mut meals: Vec<Meal>) -> Option<Self> {
         if meals.is_empty() {
             None
@@ -33,11 +37,15 @@ impl Day {
         }
     }
 
+    /// Date, in any timezone.
+    #[must_use]
     pub fn date(&self) -> &NaiveDate {
         &self.date
     }
 
-    pub fn meals(&self) -> &Vec<Meal> {
+    /// Get the meals served.
+    #[must_use]
+    pub fn meals(&self) -> &[Meal] {
         &self.meals
     }
 
@@ -56,6 +64,7 @@ impl Day {
     /// ```
     /// # Panics
     /// Panics if `lower > upper` in debug mode.
+    #[must_use]
     pub fn is_between(&self, lower: NaiveDate, upper: NaiveDate) -> bool {
         debug_assert!(lower <= upper);
 
@@ -126,6 +135,6 @@ mod tests {
                     meals: vec![Meal::from_str("Pizza").unwrap()],
                 },
             ]
-        )
+        );
     }
 }

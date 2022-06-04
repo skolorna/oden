@@ -1,9 +1,9 @@
-pub mod kleins;
-pub mod matilda;
-pub mod mpi;
-pub mod sabis;
-pub mod skolmaten;
-pub mod sodexo;
+mod kleins;
+mod matilda;
+mod mpi;
+mod sabis;
+mod skolmaten;
+mod sodexo;
 
 use std::str::FromStr;
 
@@ -30,16 +30,18 @@ pub enum Supplier {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SupplierInfo {
+pub struct Info {
     pub id: String,
     pub name: String,
 }
 
 impl Supplier {
+    #[must_use]
     pub fn id(&self) -> String {
         self.to_string()
     }
 
+    #[must_use]
     pub fn name(&self) -> String {
         match *self {
             Supplier::Skolmaten => "Skolmaten",
@@ -52,8 +54,9 @@ impl Supplier {
         .to_owned()
     }
 
-    pub fn info(&self) -> SupplierInfo {
-        SupplierInfo {
+    #[must_use]
+    pub fn info(&self) -> Info {
+        Info {
             name: self.name(),
             id: self.id(),
         }
@@ -61,9 +64,9 @@ impl Supplier {
 
     #[instrument]
     pub async fn list_menus(&self) -> MuninResult<Vec<Menu>> {
-        debug!("listing menus");
+        use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
-        use Supplier::*;
+        debug!("listing menus");
 
         match *self {
             Skolmaten => skolmaten::list_menus().await,
@@ -76,7 +79,7 @@ impl Supplier {
     }
 
     pub async fn query_menu(&self, menu_slug: &str) -> MuninResult<Menu> {
-        use Supplier::*;
+        use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
         match *self {
             Skolmaten => {
@@ -98,9 +101,9 @@ impl Supplier {
         first: NaiveDate,
         last: NaiveDate,
     ) -> MuninResult<Vec<Day>> {
-        debug!("listing days");
+        use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
-        use Supplier::*;
+        debug!("listing days");
 
         match *self {
             Skolmaten => {
