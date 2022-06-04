@@ -21,6 +21,11 @@ impl Day {
     /// Construct a day, but disallow empty meals.
     ///
     /// ```
+    /// # use chrono::NaiveDate;
+    /// # use munin_lib::types::day::Day;
+    /// # use munin_lib::menus::meal::Meal;
+    /// # use std::str::FromStr;
+    /// #
     /// let date = NaiveDate::from_ymd(1789, 7, 14);
     ///
     /// assert!(Day::new_opt(date, vec![]).is_none());
