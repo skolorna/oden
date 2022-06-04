@@ -1,7 +1,6 @@
 use std::str::FromStr;
 
 use chrono::{DateTime, Datelike, NaiveDate};
-use reqwest::redirect::Policy;
 use reqwest::{header, Client, StatusCode};
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate};
@@ -15,7 +14,7 @@ use crate::types::{day::Day, menu_slug::MenuSlug};
 use crate::util::{extract_digits, last_path_segment, parse_weekday};
 
 pub async fn list_menus() -> MuninResult<Vec<Menu>> {
-    let html = reqwest::get("https://beta.sabis.se/restaurang-service/vara-restauranger/")
+    let html = reqwest::get("https://www.sabis.se/restauranger-cafeer/vara-foretagsrestauranger/")
         .await?
         .text()
         .await?;
@@ -61,7 +60,7 @@ pub async fn list_days(
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_slug)
     );
-    let client = Client::builder().redirect(Policy::none()).build()?;
+    let client = Client::new();
     let res = client.get(&url).send().await?;
     let http_date = res.headers().get(header::DATE).unwrap().to_str().unwrap(); // the date header is always present
     let res_timestamp = DateTime::parse_from_rfc2822(http_date).unwrap();
@@ -73,10 +72,10 @@ pub async fn list_days(
     let html = res.text().await?;
     let doc = Document::from(html.as_str());
 
-    let entry_title = match doc.find(Class("entry-title")).next() {
+    let entry_title = match doc.find(Class("menu-block__title")).next() {
         Some(elem) => elem.text(),
         None => {
-            error!("No title found for Sabis menu \"{}\"!", menu_slug);
+            error!("no title found for Sabis menu \"{}\"!", menu_slug);
             return Err(MuninError::ScrapeError { context: html });
         }
     };
@@ -84,9 +83,9 @@ pub async fn list_days(
     let week_num = extract_digits(entry_title.chars(), 10);
 
     let days = doc
-        .find(Class("lunch-day-container"))
+        .find(Class("menu-block__days").child(Name("li")))
         .filter_map(|n| {
-            let weekday_literal = n.find(Class("lunch-day")).next()?.text();
+            let weekday_literal = n.find(Class("menu-block__day-title")).next()?.text();
             let weekday = parse_weekday(weekday_literal.as_str())?;
             let date = NaiveDate::from_isoywd_opt(res_timestamp.year(), week_num, weekday)?;
 
@@ -95,7 +94,7 @@ pub async fn list_days(
             }
 
             let meals = n
-                .find(Class("lunch-dish"))
+                .find(Class("menu-block__dish"))
                 .filter_map(|n| Meal::from_str(&n.text()).ok())
                 .collect::<Vec<_>>();
 
@@ -114,7 +113,7 @@ mod tests {
     async fn test_list_menus() {
         let menus = list_menus().await.unwrap();
 
-        assert!(menus.len() > 15);
+        assert!(menus.len() >= 10);
     }
 
     #[tokio::test]
