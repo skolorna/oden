@@ -42,15 +42,6 @@ pub async fn list_menus() -> MuninResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
-    let menus = list_menus().await?;
-
-    menus
-        .into_iter()
-        .find(|m| m.slug().local_id == menu_slug)
-        .ok_or(MuninError::MenuNotFound)
-}
-
 pub async fn list_days(
     menu_slug: &str,
     first: NaiveDate,
@@ -114,15 +105,6 @@ mod tests {
         let menus = list_menus().await.unwrap();
 
         assert!(menus.len() >= 10);
-    }
-
-    #[tokio::test]
-    async fn test_query_menu() {
-        let menu = query_menu("carnegie").await.unwrap();
-
-        assert_eq!(menu.title(), "Carnegie");
-
-        assert!(query_menu("om-oss").await.is_err());
     }
 
     #[tokio::test]

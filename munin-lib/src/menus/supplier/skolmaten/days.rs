@@ -8,24 +8,11 @@ use tracing::error;
 
 use crate::{
     errors::{MuninError, MuninResult},
-    menus::{Day, Meal, Menu},
+    menus::{Day, Meal},
     types::day::dedup_day_dates,
 };
 
-use super::{fetch::fetch, District, Station};
-
-#[derive(Deserialize, Debug, Clone)]
-pub(super) struct DetailedStation {
-    district: District,
-    #[serde(flatten)]
-    station: Station,
-}
-
-impl DetailedStation {
-    pub(crate) fn to_menu(&self) -> Option<Menu> {
-        self.station.to_menu(&self.district.name)
-    }
-}
+use super::fetch::fetch;
 
 #[derive(Deserialize, Debug, Clone)]
 struct SkolmatenMeal {
@@ -78,7 +65,7 @@ pub(super) struct Week {
 pub(super) struct SkolmatenMenu {
     // is_feedback_allowed: bool,
     weeks: Vec<Week>,
-    station: DetailedStation,
+    // station: DetailedStation,
     // id: u64,
     // bulletins: Vec<Bulletin>,
 }
@@ -205,23 +192,6 @@ pub(crate) async fn list_days(
     Ok(days)
 }
 
-pub(super) async fn query_station(
-    client: &Client,
-    station_id: u64,
-) -> MuninResult<DetailedStation> {
-    let now = chrono::offset::Utc::now();
-
-    let span = SkolmatenWeekSpan {
-        year: now.year(),
-        week_of_year: now.iso_week().week(),
-        count: 1,
-    };
-
-    let res = raw_fetch_menu(client, station_id, &span).await?;
-
-    Ok(res.menu.station)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -276,14 +246,5 @@ mod tests {
         }
         .normalize()
         .is_none());
-    }
-
-    #[tokio::test]
-    async fn query() {
-        let client = Client::new();
-        let station = query_station(&client, 6362776414978048).await.unwrap();
-
-        assert_eq!(station.station.name, "Information - Sandvikens kommun");
-        assert!(station.to_menu().is_none());
     }
 }

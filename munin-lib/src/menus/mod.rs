@@ -36,10 +36,6 @@ pub async fn list_menus(concurrent: usize) -> MuninResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(menu_slug: &MenuSlug) -> MuninResult<Menu> {
-    menu_slug.supplier.query_menu(&menu_slug.local_id).await
-}
-
 pub async fn list_days(
     menu_slug: &MenuSlug,
     first: NaiveDate,

@@ -96,14 +96,6 @@ macro_rules! mashie_impl {
             Ok(menus)
         }
 
-        pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
-            let menu = mashie::query_menu(HOST, menu_slug)
-                .await?
-                .normalize($supplier);
-
-            Ok(menu)
-        }
-
         pub async fn list_days(
             menu_slug: &str,
             first: NaiveDate,
@@ -157,15 +149,6 @@ mod tests {
         async fn list_menus_test() {
             let menus = list_menus().await.unwrap();
             assert!(menus.len() > 100);
-        }
-
-        #[tokio::test]
-        async fn query_menu_test() {
-            let menu = query_menu(MENU_SLUG).await.unwrap();
-            assert_eq!(menu.title(), "Loket, Pysslingen");
-            assert_eq!(menu.slug().local_id, MENU_SLUG);
-
-            assert!(query_menu("unexisting").await.is_err());
         }
 
         #[tokio::test]
