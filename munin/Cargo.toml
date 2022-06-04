@@ -12,7 +12,7 @@ chrono = "0.4.19"
 chrono-tz = "0.6.1"
 diesel = { version = "1.4.8", features = ["postgres", "chrono"] }
 dotenv = "0.15.0"
-futures = "0.3.19"
+futures = "0.3.21"
 meilisearch-sdk = "0.17.0"
 serde = { version = "1.0.136", features = ["derive"] }
 structopt = "0.3.26"
