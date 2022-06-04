@@ -1,10 +1,5 @@
-//! This is a fork of Dmitriy Sokolov's [Smaz](https://crates.io/crates/smaz) library.
-
-#![warn(
-    missing_copy_implementations,
-    missing_debug_implementations,
-    missing_docs
-)]
+#![doc = include_str!("../README.md")]
+#![warn(missing_debug_implementations, missing_docs, clippy::pedantic)]
 
 use lazy_static::lazy_static;
 use std::collections::HashMap;
@@ -274,6 +269,7 @@ lazy_static! {
     static ref LONGEST_CODE: usize = CODEBOOK.iter().map(|c| c.len()).max().unwrap();
     static ref CODEBOOK_MAP: HashMap<Vec<u8>, u8> = {
         let mut map: HashMap<Vec<u8>, u8> = HashMap::new();
+        #[allow(clippy::cast_possible_truncation)]
         for (i, code) in CODEBOOK.iter().enumerate() {
             map.insert(code.to_vec(), i as u8);
         }
@@ -299,16 +295,18 @@ impl Error for DecompressError {
     }
 }
 
+/// `verbatim` must not be longer than 256.
 fn flush_verbatim(verbatim: &[u8]) -> Vec<u8> {
     let mut chunk: Vec<u8> = Vec::new();
     if verbatim.len() > 1 {
         chunk.push(255);
+        #[allow(clippy::cast_possible_truncation)]
         chunk.push((verbatim.len() - 1) as u8);
     } else {
         chunk.push(254);
     }
     for c in verbatim {
-        chunk.push(*c)
+        chunk.push(*c);
     }
     chunk
 }
@@ -324,6 +322,7 @@ fn flush_verbatim(verbatim: &[u8]) -> Vec<u8> {
 /// let compressed = compress(&s.as_bytes());
 /// assert_eq!(vec![243, 120, 0, 254, 66, 121, 247, 151, 33, 55], compressed);
 /// ```
+#[must_use]
 pub fn compress(input: &[u8]) -> Vec<u8> {
     let mut out: Vec<u8> = Vec::with_capacity(input.len() / 2);
     let mut verbatim: Vec<u8> = Vec::new();
@@ -395,9 +394,9 @@ pub fn decompress(input: &[u8]) -> Result<Vec<u8>, DecompressError> {
                 return Err(DecompressError);
             }
             for j in 0..=input[i + 1] {
-                out.push(input[i + 2 + j as usize])
+                out.push(input[i + 2 + j as usize]);
             }
-            i += 3 + input[i + 1] as usize
+            i += 3 + input[i + 1] as usize;
         } else {
             for c in CODEBOOK[input[i] as usize].iter() {
                 out.push(*c);
@@ -414,13 +413,13 @@ mod tests {
     use crate::{compress, decompress};
 
     #[test]
-    pub fn unicode() {
+    fn unicode() {
         let plaintext = "Fisk Björkeby";
         assert!(compress(plaintext.as_bytes()).len() < plaintext.len());
     }
 
     #[test]
-    pub fn old_fuzz_failures() {
+    fn old_fuzz_failures() {
         assert!(decompress(&[254]).is_err());
         assert!(decompress(&[255]).is_err());
     }

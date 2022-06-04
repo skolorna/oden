@@ -10,7 +10,7 @@ use tracing::{debug, instrument};
 
 use crate::{
     errors::MuninResult,
-    types::{day::Day, menu::Menu, slug::MenuSlug},
+    types::{day::Day, menu::Menu, menu_slug::MenuSlug},
 };
 
 use self::{meal::Meal, supplier::Supplier};
@@ -34,10 +34,6 @@ pub async fn list_menus(concurrent: usize) -> MuninResult<Vec<Menu>> {
     menus.sort_by(|a, b| a.title().cmp(b.title()));
 
     Ok(menus)
-}
-
-pub async fn query_menu(menu_slug: &MenuSlug) -> MuninResult<Menu> {
-    menu_slug.supplier.query_menu(&menu_slug.local_id).await
 }
 
 pub async fn list_days(

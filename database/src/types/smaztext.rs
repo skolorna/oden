@@ -8,7 +8,7 @@ use diesel::{
 use munin_lib::menus::meal::Meal;
 use serde::{Deserialize, Serialize};
 
-/// A text type that is compressed with [Smaz](https://github.com/antirez/smaz)
+/// A text type that is compressed with [Smaz](smaz)
 /// in the database.
 #[derive(
     Debug,

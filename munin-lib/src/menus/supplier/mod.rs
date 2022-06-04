@@ -1,9 +1,9 @@
-pub mod kleins;
-pub mod matilda;
-pub mod mpi;
-pub mod sabis;
-pub mod skolmaten;
-pub mod sodexo;
+mod kleins;
+mod matilda;
+mod mpi;
+mod sabis;
+mod skolmaten;
+mod sodexo;
 
 use std::str::FromStr;
 
@@ -30,16 +30,18 @@ pub enum Supplier {
 }
 
 #[derive(Serialize, Deserialize, Debug, Clone)]
-pub struct SupplierInfo {
+pub struct Info {
     pub id: String,
     pub name: String,
 }
 
 impl Supplier {
+    #[must_use]
     pub fn id(&self) -> String {
         self.to_string()
     }
 
+    #[must_use]
     pub fn name(&self) -> String {
         match *self {
             Supplier::Skolmaten => "Skolmaten",
@@ -52,8 +54,9 @@ impl Supplier {
         .to_owned()
     }
 
-    pub fn info(&self) -> SupplierInfo {
-        SupplierInfo {
+    #[must_use]
+    pub fn info(&self) -> Info {
+        Info {
             name: self.name(),
             id: self.id(),
         }
@@ -61,9 +64,9 @@ impl Supplier {
 
     #[instrument]
     pub async fn list_menus(&self) -> MuninResult<Vec<Menu>> {
-        debug!("listing menus");
+        use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
-        use Supplier::*;
+        debug!("listing menus");
 
         match *self {
             Skolmaten => skolmaten::list_menus().await,
@@ -75,22 +78,6 @@ impl Supplier {
         }
     }
 
-    pub async fn query_menu(&self, menu_slug: &str) -> MuninResult<Menu> {
-        use Supplier::*;
-
-        match *self {
-            Skolmaten => {
-                skolmaten::query_menu(menu_slug.parse().map_err(|_| MuninError::InvalidMenuSlug)?)
-                    .await
-            }
-            Sodexo => sodexo::query_menu(menu_slug).await,
-            MPI => mpi::query_menu(menu_slug).await,
-            Kleins => kleins::query_menu(menu_slug).await,
-            Sabis => sabis::query_menu(menu_slug).await,
-            Matilda => todo!(),
-        }
-    }
-
     #[instrument]
     pub async fn list_days(
         &self,
@@ -98,9 +85,9 @@ impl Supplier {
         first: NaiveDate,
         last: NaiveDate,
     ) -> MuninResult<Vec<Day>> {
-        debug!("listing days");
+        use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
-        use Supplier::*;
+        debug!("listing days");
 
         match *self {
             Skolmaten => {
@@ -167,28 +154,5 @@ mod tests {
             Supplier::Skolmaten
         );
         assert!(serde_json::from_str::<Supplier>("\"bruh\"").is_err());
-    }
-
-    #[tokio::test]
-    async fn sodexo_query_menu() {
-        assert_eq!(
-            Supplier::Sodexo
-                .query_menu("e8851c61-013b-4617-93d9-adab00820bcd")
-                .await
-                .unwrap()
-                .title(),
-            "Södermalmsskolan, Södermalmsskolan"
-        );
-        assert!(Supplier::Sodexo.query_menu("bruh").await.is_err());
-    }
-
-    #[tokio::test]
-    async fn kleins_query_menu() {
-        let menu = Supplier::Kleins
-            .query_menu("viktor-rydberg-grundskola-jarlaplan")
-            .await
-            .unwrap();
-        assert_eq!(menu.title(), "Viktor Rydberg Gymnasium Jarlaplan");
-        assert!(Supplier::Kleins.query_menu("nonexistent").await.is_err());
     }
 }

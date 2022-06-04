@@ -1,3 +1,3 @@
 pub mod day;
 pub mod menu;
-pub mod slug;
+pub mod menu_slug;

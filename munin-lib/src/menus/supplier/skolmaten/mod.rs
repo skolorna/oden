@@ -1,5 +1,5 @@
-pub mod days;
-pub mod fetch;
+mod days;
+mod fetch;
 
 use chrono::NaiveDate;
 use futures::stream::{self, StreamExt};
@@ -7,15 +7,16 @@ use reqwest::Client;
 use serde::Deserialize;
 
 use crate::{
-    errors::{MuninError, MuninResult},
+    errors::MuninResult,
     menus::{supplier::Supplier, Day, Menu, MenuSlug},
 };
 
-use self::{days::query_station, fetch::fetch};
+use fetch::fetch;
 
 /// Maximum number of concurrent HTTP requests when crawling. For comparison,
 /// Firefox allows 7 concurrent requests. There is virtually no improvement for
-/// values above 64, and 32 is just marginally slower.
+/// values above 64, and 32 is just marginally slower (and half the memory
+/// usage).
 const CONCURRENT_REQUESTS: usize = 32;
 
 #[derive(Deserialize, Debug)]
@@ -140,15 +141,6 @@ pub(super) async fn list_menus() -> MuninResult<Vec<Menu>> {
     Ok(menus)
 }
 
-pub(super) async fn query_menu(menu_slug: u64) -> MuninResult<Menu> {
-    let client = Client::new();
-
-    let station = query_station(&client, menu_slug).await?;
-    let menu = station.to_menu().ok_or(MuninError::MenuNotFound)?;
-
-    Ok(menu)
-}
-
 pub(super) async fn list_days(
     menu_slug: u64,
     first: NaiveDate,
@@ -173,14 +165,6 @@ mod tests {
         for menu in menus {
             assert!(!menu.title().to_lowercase().contains("info"));
         }
-    }
-
-    #[tokio::test]
-    async fn query_menu_test() {
-        let menu = query_menu(4791333780717568).await.unwrap();
-        assert_eq!(menu.title(), "Stråtjära förskola, Söderhamns kommun");
-        assert!(query_menu(0).await.is_err());
-        assert!(query_menu(5236876508135424).await.is_err()); // Invalid station name
     }
 
     #[tokio::test]
