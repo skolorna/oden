@@ -12,7 +12,7 @@ jobs:
         with:
           toolchain: nightly
           override: true
-      - uses: Swatinem/rust-cache@v1.3.0
+      - uses: Swatinem/rust-cache@v1.4.0
       - run: curl -L https://github.com/mozilla/grcov/releases/download/v0.8.7/grcov-x86_64-unknown-linux-gnu.tar.bz2 | tar -xzf -
       - run: rustup component add llvm-tools-preview
       - uses: actions-rs/cargo@v1
@@ -39,7 +39,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v1.3.0
+      - uses: Swatinem/rust-cache@v1.4.0
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -54,7 +54,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v1.3.0
+      - uses: Swatinem/rust-cache@v1.4.0
       - uses: actions-rs/cargo@v1
         with:
           command: test
@@ -69,7 +69,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v1.3.0
+      - uses: Swatinem/rust-cache@v1.4.0
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
         with:
@@ -86,7 +86,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v1.3.0
+      - uses: Swatinem/rust-cache@v1.4.0
       - run: rustup component add clippy
       - uses: actions-rs/cargo@v1
         with:
