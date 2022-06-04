@@ -45,16 +45,16 @@ impl TryFrom<Day> for ExportedDay {
 #[derive(Debug, Error)]
 pub enum ExporterError {
     #[error("sql error: {0}")]
-    DieselError(#[from] diesel::result::Error),
+    Diesel(#[from] diesel::result::Error),
 
     #[error("io error: {0}")]
-    IoError(#[from] std::io::Error),
+    Io(#[from] std::io::Error),
 
     #[error("csv error: {0}")]
-    CsvError(#[from] csv::Error),
+    Csv(#[from] csv::Error),
 
     #[error("json error: {0}")]
-    JsonError(#[from] serde_json::Error),
+    Json(#[from] serde_json::Error),
 }
 
 type ExporterResult<T> = Result<T, ExporterError>;

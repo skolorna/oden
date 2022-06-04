@@ -13,6 +13,8 @@ use diesel::PgConnection;
 use futures::stream;
 use futures::StreamExt;
 use meilisearch_sdk::client::Client;
+use meilisearch_sdk::errors::MeilisearchError;
+use meilisearch_sdk::tasks::Task;
 use munin_lib::errors::MuninResult;
 use munin_lib::menus::list_days;
 use munin_lib::menus::list_menus;
@@ -97,29 +99,43 @@ pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult
         use database::schema::menus::dsl::*;
 
         let client = Client::new(meili_url, &opt.meili_key);
-        let index = client.get_or_create(&opt.meili_index).await?;
+        let index = if let Ok(index) = client.get_index(&opt.meili_index).await {
+            index
+        } else {
+            let task = client.create_index(&opt.meili_index, Some("id")).await?;
+            let task = task.wait_for_completion(&client, None, None).await?;
+            match task {
+                Task::Enqueued { .. } | Task::Processing { .. } => {
+                    return Err(IndexerError::Timeout {
+                        action: "waiting for index creation".into(),
+                    })
+                }
+                Task::Failed { content } => return Err(content.error.into()),
+                Task::Succeeded { .. } => task.try_make_index(&client).unwrap(),
+            }
+        };
 
         let documents: Vec<Menu> = menus.load(connection)?;
 
-        let progress = index.add_documents(&documents, None).await?;
+        let task = index.add_documents(&documents, None).await?;
 
         info!(
             "Queued {} documents for MeiliSearch indexing",
             documents.len()
         );
 
-        match progress.wait_for_pending_update(None, None).await {
-            Some(Ok(meilisearch_sdk::progress::UpdateStatus::Processed { content })) => {
+        match task.wait_for_completion(&client, None, None).await? {
+            Task::Succeeded { content } => {
                 info!(
-                    "Indexed {} documents in {} seconds",
+                    "Indexed {} documents in {:.02} seconds",
                     documents.len(),
-                    content.duration
+                    content.duration.as_secs_f64(),
                 );
 
                 Ok(())
             }
-            Some(Err(e)) => Err(e.into()),
-            _ => Err(IndexerError::Timeout {
+            Task::Failed { content } => Err(content.error.into()),
+            Task::Enqueued { .. } | Task::Processing { .. } => Err(IndexerError::Timeout {
                 action: "documents to be indexed".into(),
             }),
         }
@@ -131,16 +147,22 @@ pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult
 #[derive(Debug, Error)]
 pub enum IndexerError {
     #[error("{0}")]
-    DieselError(#[from] diesel::result::Error),
+    Diesel(#[from] diesel::result::Error),
 
     #[error("{0}")]
-    MuninError(#[from] munin_lib::errors::MuninError),
+    Munin(#[from] munin_lib::errors::MuninError),
 
     #[error("{0}")]
-    MeiliError(#[from] meilisearch_sdk::errors::Error),
+    Meilisearch(#[from] meilisearch_sdk::errors::Error),
 
     #[error("timeout waiting for {action}")]
     Timeout { action: String },
+}
+
+impl From<MeilisearchError> for IndexerError {
+    fn from(e: MeilisearchError) -> Self {
+        Self::Meilisearch(e.into())
+    }
 }
 
 pub type IndexerResult<T> = Result<T, IndexerError>;

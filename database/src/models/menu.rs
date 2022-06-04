@@ -17,15 +17,6 @@ pub struct Menu {
 }
 
 #[cfg(feature = "meilisearch-sdk")]
-impl meilisearch_sdk::document::Document for Menu {
-    type UIDType = MenuId;
-
-    fn get_uid(&self) -> &Self::UIDType {
-        &self.id
-    }
-}
-
-#[cfg(feature = "meilisearch-sdk")]
 impl crate::MeiliIndexable for Menu {
     const MEILI_INDEX: &'static str = "menus";
 }
