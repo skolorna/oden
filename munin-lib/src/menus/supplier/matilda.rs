@@ -162,7 +162,7 @@ async fn get_doc<T: Serialize + std::fmt::Debug>(
         .query(query)
         .send()
         .await?;
-    dbg!("GET {}", res.url());
+    trace!("GET {}", res.url());
     let html = res.text().await?;
     Ok(Document::from(html.as_str()))
 }
@@ -345,7 +345,8 @@ async fn days_by_week(
 
     let year = doc
         .find(Attr("id", "Year"))
-        .next().and_then(|n| n.attr("value")?.parse().ok())
+        .next()
+        .and_then(|n| n.attr("value")?.parse().ok())
         .ok_or(MuninError::ScrapeError {
             context: "couldn't get year".into(),
         })?;

@@ -67,6 +67,7 @@ fn parse_day_node(node: &Node) -> Option<Day> {
 }
 
 #[must_use]
+#[allow(clippy::module_name_repetitions)]
 pub fn scrape_mashie_days(doc: &Document) -> Vec<Day> {
     let day_elems = doc.find(Class("panel-group").child(Class("panel")));
     day_elems
