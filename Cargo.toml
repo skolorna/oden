@@ -1,2 +1,2 @@
 [workspace]
-members = ["database", "euphemism", "munin", "munin-lib", "oden-http", "smaz"]
+members = ["database", "euphemism", "hugin", "munin", "oden-http", "smaz"]

@@ -6,10 +6,10 @@ use std::{
 };
 
 use chrono::NaiveDate;
-use database::models::{day::Day, menu::MenuId};
+use database::models::{Day, MenuId};
 use database::schema::days::table as days_table;
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
-use munin_lib::menus::meal::Meal;
+use hugin::Meal;
 use serde::Serialize;
 use structopt::StructOpt;
 use thiserror::Error;

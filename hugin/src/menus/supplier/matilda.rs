@@ -13,10 +13,9 @@ use serde::{Deserialize, Serialize};
 use tracing::{error, instrument, trace};
 
 use crate::{
-    errors::{MuninError, MuninResult},
-    menus::meal::Meal,
-    types::{day::Day, menu::Menu, menu_slug::MenuSlug},
+    errors::{Error, Result},
     util::parse_weekday,
+    Day, Meal, Menu, MenuSlug,
 };
 
 use super::Supplier;
@@ -69,7 +68,7 @@ struct Customer<'p> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MatildaMenuIdentifier {
+pub struct MenuQuery {
     #[serde(rename = "c", skip_serializing_if = "Option::is_none")]
     pub customer: Option<u32>,
 
@@ -83,7 +82,7 @@ pub struct MatildaMenuIdentifier {
     pub region: u32,
 }
 
-impl Display for MatildaMenuIdentifier {
+impl Display for MenuQuery {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -96,16 +95,17 @@ impl Display for MatildaMenuIdentifier {
     }
 }
 
-impl FromStr for MatildaMenuIdentifier {
+impl FromStr for MenuQuery {
     type Err = serde::de::value::Error;
 
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
+    fn from_str(s: &str) -> core::result::Result<Self, Self::Err> {
         serde_urlencoded::from_str(s)
     }
 }
 
-pub trait MatildaMenu {
-    fn query(&self) -> MatildaMenuIdentifier;
+#[allow(clippy::module_name_repetitions)]
+trait MatildaMenu {
+    fn query(&self) -> MenuQuery;
 
     fn title(&self) -> Cow<str>;
 }
@@ -127,8 +127,8 @@ impl MatildaMenu for Part<'_> {
         Cow::Borrowed(&self.name)
     }
 
-    fn query(&self) -> MatildaMenuIdentifier {
-        MatildaMenuIdentifier {
+    fn query(&self) -> MenuQuery {
+        MenuQuery {
             customer: None,
             part: self.id,
             municipality: self.municipality.id,
@@ -142,8 +142,8 @@ impl MatildaMenu for Customer<'_> {
         format!("{} ({})", self.name, self.part.name).into()
     }
 
-    fn query(&self) -> MatildaMenuIdentifier {
-        MatildaMenuIdentifier {
+    fn query(&self) -> MenuQuery {
+        MenuQuery {
             customer: Some(self.id),
             part: self.part.id,
             municipality: self.part.municipality.id,
@@ -153,10 +153,7 @@ impl MatildaMenu for Customer<'_> {
 }
 
 #[instrument(skip(client))]
-async fn get_doc<T: Serialize + std::fmt::Debug>(
-    client: &Client,
-    query: &T,
-) -> MuninResult<Document> {
+async fn get_doc<T: Serialize + std::fmt::Debug>(client: &Client, query: &T) -> Result<Document> {
     let res = client
         .get("https://webmenu.foodit.se/")
         .query(query)
@@ -181,7 +178,7 @@ fn scrape_options<'a>(
 }
 
 #[instrument(skip(client))]
-async fn list_regions(client: &Client) -> MuninResult<Vec<Region>> {
+async fn list_regions(client: &Client) -> Result<Vec<Region>> {
     #[derive(Debug, Serialize)]
     struct Query {}
 
@@ -197,7 +194,7 @@ async fn list_regions(client: &Client) -> MuninResult<Vec<Region>> {
 async fn list_municipalities<'r>(
     client: &Client,
     region: &'r Region,
-) -> MuninResult<Vec<Municipality<'r>>> {
+) -> Result<Vec<Municipality<'r>>> {
     let doc = get_doc(client, &region).await?;
     let municipalities = scrape_options(&doc, "MunicipalityList")
         .map(|(id, name)| Municipality { id, region, name })
@@ -210,7 +207,7 @@ async fn list_municipalities<'r>(
 async fn list_parts<'m>(
     client: &Client,
     municipality: &'m Municipality<'m>,
-) -> MuninResult<Vec<Part<'m>>> {
+) -> Result<Vec<Part<'m>>> {
     let doc = get_doc(client, municipality).await?;
     let parts = scrape_options(&doc, "PartList")
         .map(|(id, name)| Part {
@@ -224,7 +221,7 @@ async fn list_parts<'m>(
 }
 
 #[instrument(skip(client))]
-async fn list_customers<'p>(client: &Client, part: &'p Part<'p>) -> MuninResult<Vec<Customer<'p>>> {
+async fn list_customers<'p>(client: &Client, part: &'p Part<'p>) -> Result<Vec<Customer<'p>>> {
     let doc = get_doc(client, part).await?;
     let customers = scrape_options(&doc, "CustomerList")
         .map(|(id, name)| Customer { id, part, name })
@@ -236,7 +233,7 @@ async fn list_customers<'p>(client: &Client, part: &'p Part<'p>) -> MuninResult<
 const CONCURRENT_REQUESTS: usize = 16;
 
 #[instrument]
-async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> MuninResult<Vec<Menu>> {
+async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> Result<Vec<Menu>> {
     let customers = list_customers(client, &part).await?;
 
     if customers.is_empty() {
@@ -250,7 +247,7 @@ async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> MuninResult<Vec<M
 async fn menus_in_municipality<'m>(
     client: &Client,
     municipality: &'m Municipality<'m>,
-) -> MuninResult<Vec<Menu>> {
+) -> Result<Vec<Menu>> {
     let mut menus = vec![];
     let parts = list_parts(client, municipality).await?;
 
@@ -266,7 +263,7 @@ async fn menus_in_municipality<'m>(
 }
 
 #[instrument(skip(client))]
-async fn menus_in_region(client: &Client, region: &Region) -> MuninResult<Vec<Menu>> {
+async fn menus_in_region(client: &Client, region: &Region) -> Result<Vec<Menu>> {
     let mut menus = vec![];
     let municipalities = list_municipalities(client, region).await?;
 
@@ -282,7 +279,7 @@ async fn menus_in_region(client: &Client, region: &Region) -> MuninResult<Vec<Me
 }
 
 #[instrument]
-pub async fn list_menus() -> MuninResult<Vec<Menu>> {
+pub async fn list_menus() -> Result<Vec<Menu>> {
     let client = Client::new();
     let mut menus = vec![];
 
@@ -307,7 +304,7 @@ enum View {
 #[derive(Debug, Serialize)]
 struct ListDaysQuery<'m> {
     #[serde(flatten)]
-    menu: &'m MatildaMenuIdentifier,
+    menu: &'m MenuQuery,
 
     #[serde(rename = "v")]
     view: View,
@@ -330,11 +327,7 @@ fn parse_day_node_opt(node: &Node, year: i32, week_num: u32) -> Option<Day> {
     Day::new_opt(date, meals)
 }
 
-async fn days_by_week(
-    client: &Client,
-    menu: &MatildaMenuIdentifier,
-    week_offset: i64,
-) -> MuninResult<Vec<Day>> {
+async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Result<Vec<Day>> {
     let q = ListDaysQuery {
         menu,
         view: View::Week,
@@ -347,14 +340,14 @@ async fn days_by_week(
         .find(Attr("id", "Year"))
         .next()
         .and_then(|n| n.attr("value")?.parse().ok())
-        .ok_or(MuninError::ScrapeError {
+        .ok_or(Error::ScrapeError {
             context: "couldn't get year".into(),
         })?;
     let week_num = doc
         .find(Attr("id", "WeekPageWeekNo"))
         .next()
         .and_then(|n| n.attr("value")?.parse().ok())
-        .ok_or(MuninError::ScrapeError {
+        .ok_or(Error::ScrapeError {
             context: "couldn't get week number".into(),
         })?;
 
@@ -368,11 +361,7 @@ async fn days_by_week(
 
 /// List days.
 #[instrument]
-pub async fn list_days(
-    menu: &MatildaMenuIdentifier,
-    first: NaiveDate,
-    last: NaiveDate,
-) -> MuninResult<Vec<Day>> {
+pub async fn list_days(menu: &MenuQuery, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let utc = Utc::now().naive_utc();
     let now = Stockholm.from_utc_datetime(&utc).date().naive_local();
 
@@ -417,7 +406,7 @@ mod tests {
 
     use chrono::{Datelike, Duration, NaiveDate, Utc};
 
-    use crate::menus::supplier::matilda::{list_days, week_offsets, MatildaMenuIdentifier};
+    use crate::menus::supplier::matilda::{list_days, week_offsets, MenuQuery};
 
     use super::list_menus;
 
@@ -430,7 +419,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_list_days() {
-        let menu = MatildaMenuIdentifier {
+        let menu = MenuQuery {
             customer: Some(10242),
             part: 1594,
             municipality: 2161,

@@ -6,14 +6,12 @@ use select::document::Document;
 use select::predicate::{Class, Name, Predicate};
 use tracing::error;
 
-use crate::errors::{MuninError, MuninResult};
-use crate::menus::meal::Meal;
+use crate::errors::{Error, Result};
 use crate::menus::supplier::Supplier;
-use crate::menus::Menu;
-use crate::types::{day::Day, menu_slug::MenuSlug};
 use crate::util::{extract_digits, last_path_segment, parse_weekday};
+use crate::{Day, Meal, Menu, MenuSlug};
 
-pub async fn list_menus() -> MuninResult<Vec<Menu>> {
+pub async fn list_menus() -> Result<Vec<Menu>> {
     let html = reqwest::get("https://www.sabis.se/restauranger-cafeer/vara-foretagsrestauranger/")
         .await?
         .text()
@@ -32,21 +30,14 @@ pub async fn list_menus() -> MuninResult<Vec<Menu>> {
 
             debug_assert!(local_id.is_some());
 
-            Some(Menu::new(
-                MenuSlug::new(Supplier::Sabis, local_id?.into()),
-                title,
-            ))
+            Some(Menu::new(MenuSlug::new(Supplier::Sabis, local_id?), title))
         })
         .collect::<Vec<_>>();
 
     Ok(menus)
 }
 
-pub async fn list_days(
-    menu_slug: &str,
-    first: NaiveDate,
-    last: NaiveDate,
-) -> MuninResult<Vec<Day>> {
+pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_slug)
@@ -57,7 +48,7 @@ pub async fn list_days(
     let res_timestamp = DateTime::parse_from_rfc2822(http_date).unwrap();
 
     if res.status() == StatusCode::NOT_FOUND {
-        return Err(MuninError::MenuNotFound);
+        return Err(Error::MenuNotFound);
     }
 
     let html = res.text().await?;
@@ -67,7 +58,7 @@ pub async fn list_days(
         Some(elem) => elem.text(),
         None => {
             error!("no title found for Sabis menu \"{}\"!", menu_slug);
-            return Err(MuninError::ScrapeError { context: html });
+            return Err(Error::ScrapeError { context: html });
         }
     };
 
