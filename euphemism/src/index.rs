@@ -2,7 +2,6 @@ use std::{
     borrow::Cow,
     cmp::Reverse,
     collections::{BTreeMap, BTreeSet, HashMap},
-    iter::FromIterator,
     time::Instant,
 };
 
@@ -32,23 +31,27 @@ impl<T> std::fmt::Debug for Index<'_, T> {
 /// An immutable index.
 #[allow(clippy::new_without_default)]
 impl<'a, T> Index<'a, T> {
+    #[must_use]
     pub fn docs(&self) -> &HashMap<DocId, T> {
         &self.documents
     }
 
+    #[must_use]
     pub fn get_doc(&self, id: &DocId) -> Option<&T> {
         self.documents.get(id)
     }
 
+    #[must_use]
     pub fn words_fst(&self) -> &fst::Set<Cow<'a, [u8]>> {
         &self.words_fst
     }
 
+    #[must_use]
     pub fn word_pair_proximity(&self, doc: &DocId, a: &str, b: &str) -> Option<u64> {
         let key = if a > b {
-            docid_word_pair_to_bytes(doc, b, a)
+            docid_word_pair_to_bytes(*doc, b, a)
         } else {
-            docid_word_pair_to_bytes(doc, a, b)
+            docid_word_pair_to_bytes(*doc, a, b)
         };
 
         self.docid_word_pair_proximity.get(key).map(|v| v as _)
@@ -56,7 +59,7 @@ impl<'a, T> Index<'a, T> {
 }
 
 /// Some kind of serialization for using FSTs with multiple levels of keys.
-fn docid_word_pair_to_bytes(doc: &DocId, a: &str, b: &str) -> Vec<u8> {
+fn docid_word_pair_to_bytes(doc: DocId, a: &str, b: &str) -> Vec<u8> {
     const SEPARATOR: u8 = b' ';
 
     debug_assert!(a <= b);
@@ -71,11 +74,21 @@ fn docid_word_pair_to_bytes(doc: &DocId, a: &str, b: &str) -> Vec<u8> {
     bytes
 }
 
+#[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct IndexBuilder<T> {
     pub documents: Vec<T>,
 }
 
+impl<T: ToString> Default for IndexBuilder<T> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+#[allow(clippy::new_without_default)]
 impl<T: ToString> IndexBuilder<T> {
+    #[must_use]
     pub fn new() -> Self {
         Self {
             documents: Vec::new(),
@@ -86,6 +99,7 @@ impl<T: ToString> IndexBuilder<T> {
         self.documents.push(doc);
     }
 
+    #[must_use]
     pub fn build(self) -> Index<'static, T> {
         let before = Instant::now();
         let mut word_docids = BTreeMap::<String, Vec<DocId>>::new(); // `BTreeSet` automatically sorts
@@ -102,18 +116,16 @@ impl<T: ToString> IndexBuilder<T> {
             let word_pair_proximities = extract_word_pair_proximities(analyzed.iter(), 16);
 
             for ((lword, rword), proximity) in word_pair_proximities {
-                docid_word_pair_proximity.insert(
-                    docid_word_pair_to_bytes(&id, &lword, &rword),
-                    proximity as _,
-                );
+                docid_word_pair_proximity
+                    .insert(docid_word_pair_to_bytes(id, &lword, &rword), proximity as _);
             }
 
             for token in analyzed {
                 words.insert(token.text().to_string());
             }
 
-            for word in words.iter() {
-                word_docids.entry(word.to_owned()).or_default().push(id);
+            for word in &words {
+                word_docids.entry(word.clone()).or_default().push(id);
             }
 
             docid_words.insert(id, words.into_iter().collect());
@@ -134,14 +146,14 @@ impl<T: ToString> IndexBuilder<T> {
             println!("\"{}\":\t{}", w, f);
         }
 
-        let words_fst = fst::Set::from_iter(word_docids.keys().map(|k| k.as_str()))
+        let words_fst = fst::Set::from_iter(word_docids.keys().map(String::as_str))
             .unwrap()
             .map_data(Cow::Owned)
             .unwrap();
         let docid_word_pair_proximity_fst =
             fst::Map::from_iter(docid_word_pair_proximity.into_iter()).unwrap();
 
-        let word_docids = HashMap::from_iter(word_docids.into_iter());
+        let word_docids = word_docids.into_iter().collect::<HashMap<_, _>>();
 
         debug!("built index in {:.02?}", before.elapsed());
         dbg!(docid_word_pair_proximity_fst.len());

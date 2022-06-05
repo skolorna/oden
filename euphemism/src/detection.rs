@@ -14,6 +14,7 @@ use crate::tokenizer::{SeparatorKind, Token, TokenKind};
 /// assert_eq!(classify_separator('!'), Some(SeparatorKind::Hard));
 /// assert_eq!(classify_separator('Å'), None);
 /// ```
+#[must_use]
 pub fn classify_separator(ch: char) -> Option<SeparatorKind> {
     match deunicode_char(ch)?.chars().next()? {
         '\u{00a0}' => None, // nbsp,
@@ -34,6 +35,7 @@ pub enum CharCategory {
     Other,
 }
 
+#[must_use]
 pub fn categorize_char(ch: char) -> CharCategory {
     if let Some(kind) = classify_separator(ch) {
         CharCategory::Separator(kind)
@@ -47,6 +49,7 @@ const STOP_WORDS: &[&str] = &[
     "mellan", "framför", "ovanför",
 ];
 
+#[must_use]
 pub fn classify(token: &Token<'_>) -> TokenKind {
     if STOP_WORDS.contains(&token.text()) {
         return TokenKind::StopWord;

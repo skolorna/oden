@@ -1,7 +1,7 @@
 use std::{
     borrow::Cow,
     collections::{BTreeSet, HashMap},
-    time::Instant, any::Any,
+    time::Instant,
 };
 
 use fst::{IntoStreamer, Streamer};
@@ -11,7 +11,7 @@ use tracing::{debug, instrument};
 
 use crate::{
     index::{DocId, Index},
-    tokenizer::analyze,
+    tokenizer::{analyze, Token},
 };
 
 #[derive(Debug)]
@@ -26,11 +26,12 @@ where
     T: ToString + std::fmt::Debug,
 {
     /// Construct a new search query.
+    #[must_use]
     pub fn new(index: &'a Index<T>, query: &'a str, limit: usize) -> Self {
         Self {
             query,
-            index,
             limit,
+            index,
         }
     }
 
@@ -41,7 +42,7 @@ where
         let mut docids = Vec::new();
         let words_fst = self.index.words_fst();
 
-        for token in analyze(self.query).filter(|t| t.is_word()) {
+        for token in analyze(self.query).filter(Token::is_word) {
             let derivations = word_derivations(token.text(), words_fst);
 
             terms.extend(derivations.into_iter());

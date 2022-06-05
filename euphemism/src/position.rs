@@ -52,8 +52,8 @@ pub fn extract_word_pair_proximities<'a>(
 /// use euphemism::tokenizer::analyze;
 /// use euphemism::position::relative_token_offsets;
 ///
-/// let analyzed = analyze("Fisk Björkeby serveras med kokt potatis");
-/// let tokens = relative_token_offsets(analyzed);
+/// let analyzed = analyze("Fisk Björkeby serveras med kokt potatis").collect::<Vec<_>>();
+/// let tokens = relative_token_offsets(analyzed.iter());
 /// let mut words = tokens.map(|(o, t)| (o, t.text().to_string()));
 ///
 /// assert_eq!(words.next(), Some((0, "fisk".to_string())));
@@ -66,7 +66,7 @@ pub fn extract_word_pair_proximities<'a>(
 pub fn relative_token_offsets<'a>(
     token_stream: impl Iterator<Item = &'a Token<'a>>,
 ) -> impl Iterator<Item = (usize, &'a Token<'a>)> {
-    use TokenKind::*;
+    use TokenKind::{Separator, StopWord, Unknown, Word};
 
     token_stream
         .skip_while(|t| t.is_separator())
@@ -78,11 +78,11 @@ pub fn relative_token_offsets<'a>(
                         Some(_) => 1,
                         None => 0,
                     };
-                    *prev_kind = Some(t.kind)
+                    *prev_kind = Some(t.kind);
                 }
                 Separator(_) => {
                     if !matches!(prev_kind, Some(Separator(SeparatorKind::Hard))) {
-                        *prev_kind = Some(t.kind)
+                        *prev_kind = Some(t.kind);
                     }
                 }
             }

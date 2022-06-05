@@ -3,6 +3,7 @@ use select::{document::Document, node::Node, predicate::Name};
 use thiserror::Error;
 
 #[derive(Error, Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub enum RecipeError {
     #[error("{0}")]
     HttpError(#[from] reqwest::Error),
@@ -61,6 +62,10 @@ async fn recipes_on_page(client: &Client, page: u32) -> Result<Vec<Recipe>, Reci
 /// assert!(recipes.len() > 100);
 /// # })
 /// ```
+///
+/// # Errors
+///
+/// Failing to connect or unexpected HTML will result in an error.
 pub async fn scrape_recipes() -> Result<Vec<Recipe>, RecipeError> {
     let client = Client::new();
     let mut recipes: Vec<Recipe> = Vec::new();
@@ -78,10 +83,10 @@ pub async fn scrape_recipes() -> Result<Vec<Recipe>, RecipeError> {
             }
 
             return Ok(recipes);
-        } else {
-            recipes.append(&mut res);
-            page += 1;
         }
+
+        recipes.append(&mut res);
+        page += 1;
     }
 }
 

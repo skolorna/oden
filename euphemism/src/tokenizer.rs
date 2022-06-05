@@ -1,4 +1,4 @@
-use std::borrow::Cow;
+use std::{borrow::Cow, fmt::Debug};
 
 use cow_utils::CowUtils;
 
@@ -34,18 +34,22 @@ pub struct Token<'a> {
 }
 
 impl<'a> Token<'a> {
+    #[must_use]
     pub fn text(&'a self) -> &str {
         self.word.as_ref()
     }
 
+    #[must_use]
     pub fn is_stop_word(&self) -> bool {
         matches!(self.kind, TokenKind::StopWord)
     }
 
+    #[must_use]
     pub fn is_word(&self) -> bool {
         matches!(self.kind, TokenKind::Word)
     }
 
+    #[must_use]
     pub fn is_separator(&self) -> bool {
         matches!(self.kind, TokenKind::Separator(_))
     }
@@ -61,6 +65,7 @@ impl<'a> Token<'a> {
 /// assert_eq!(s, ["Fisk"," ", "Björkeby", " ", "med", " ", "hemlagat", " ", "potatismos"])
 /// ```
 #[derive(Debug)]
+#[allow(clippy::module_name_repetitions)]
 pub struct LatinTokenizer<'a> {
     inner: &'a str,
     /// [`CharCategory`] of the next character.
@@ -68,8 +73,15 @@ pub struct LatinTokenizer<'a> {
 }
 
 impl<'a> LatinTokenizer<'a> {
+    /// Create a new latin-based tokenizer.
+    ///
+    /// # Panics
+    ///
+    /// If `s` is empty, there is no `next_char` which results
+    /// in a panic.
+    #[must_use]
     pub fn new(s: &'a str) -> Self {
-        let next_char = s.chars().next().unwrap();
+        let next_char = s.chars().next().expect("input string must be nonempty");
 
         Self {
             inner: s,
@@ -109,6 +121,7 @@ impl<'a> Iterator for LatinTokenizer<'a> {
     }
 }
 
+#[allow(missing_debug_implementations)]
 pub struct TokenStream<'a> {
     inner: Box<dyn Iterator<Item = Token<'a>> + 'a>,
 }
@@ -121,6 +134,7 @@ impl<'a> Iterator for TokenStream<'a> {
     }
 }
 
+#[must_use]
 pub fn analyze(text: &str) -> TokenStream<'_> {
     let iter = LatinTokenizer::new(text)
         .map(|token| LowercaseFilter::default().filter(token))
