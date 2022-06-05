@@ -1,6 +1,6 @@
 use chrono::{DateTime, Utc};
 use diesel::{Identifiable, Insertable, Queryable};
-use munin_lib::types::slug::MenuSlug;
+use munin_lib::types::menu_slug::MenuSlug;
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
@@ -14,15 +14,6 @@ pub struct Menu {
     pub title: String,
     pub slug: MenuSlug,
     pub updated_at: Option<DateTime<Utc>>,
-}
-
-#[cfg(feature = "meilisearch-sdk")]
-impl meilisearch_sdk::document::Document for Menu {
-    type UIDType = MenuId;
-
-    fn get_uid(&self) -> &Self::UIDType {
-        &self.id
-    }
 }
 
 #[cfg(feature = "meilisearch-sdk")]

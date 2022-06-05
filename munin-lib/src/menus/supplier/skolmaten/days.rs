@@ -8,24 +8,11 @@ use tracing::error;
 
 use crate::{
     errors::{MuninError, MuninResult},
-    menus::{Day, Meal, Menu},
+    menus::{Day, Meal},
     types::day::dedup_day_dates,
 };
 
-use super::{fetch::fetch, District, Station};
-
-#[derive(Deserialize, Debug, Clone)]
-pub(super) struct DetailedStation {
-    district: District,
-    #[serde(flatten)]
-    station: Station,
-}
-
-impl DetailedStation {
-    pub(crate) fn to_menu(&self) -> Option<Menu> {
-        self.station.to_menu(&self.district.name)
-    }
-}
+use super::fetch::fetch;
 
 #[derive(Deserialize, Debug, Clone)]
 struct SkolmatenMeal {
@@ -33,7 +20,7 @@ struct SkolmatenMeal {
 }
 
 impl SkolmatenMeal {
-    fn into_meal(self) -> Option<Meal> {
+    fn normalize(self) -> Option<Meal> {
         Meal::from_str(&self.value).ok()
     }
 }
@@ -47,13 +34,13 @@ pub(super) struct SkolmatenDay {
 }
 
 impl SkolmatenDay {
-    /// Maps `NaiveDate::from_ymd_opt` and creates a Day; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
-    fn into_day(self) -> Option<Day> {
+    /// Maps `NaiveDate::from_ymd_opt` and creates a [`Day`]; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
+    fn normalize(self) -> Option<Day> {
         let date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)?;
         let meals: Vec<Meal> = self
             .meals?
             .into_iter()
-            .filter_map(|meal| meal.into_meal())
+            .filter_map(SkolmatenMeal::normalize)
             .collect();
 
         Day::new_opt(date, meals)
@@ -78,7 +65,7 @@ pub(super) struct Week {
 pub(super) struct SkolmatenMenu {
     // is_feedback_allowed: bool,
     weeks: Vec<Week>,
-    station: DetailedStation,
+    // station: DetailedStation,
     // id: u64,
     // bulletins: Vec<Bulletin>,
 }
@@ -89,13 +76,12 @@ pub(super) struct SkolmatenMenuResponse {
 }
 
 impl SkolmatenMenuResponse {
-    pub(crate) fn into_days(self) -> Vec<Day> {
+    pub(crate) fn into_days_iter(self) -> impl Iterator<Item = Day> {
         self.menu
             .weeks
             .into_iter()
             .flat_map(|week| week.days)
-            .filter_map(|day| day.into_day())
-            .collect::<Vec<Day>>()
+            .filter_map(SkolmatenDay::normalize)
     }
 }
 
@@ -185,7 +171,7 @@ pub(crate) async fn list_days(
             async move {
                 raw_fetch_menu(client, station_id, &span)
                     .await
-                    .map(|res| res.into_days())
+                    .map(SkolmatenMenuResponse::into_days_iter)
             }
         })
         .buffer_unordered(4)
@@ -204,23 +190,6 @@ pub(crate) async fn list_days(
     dedup_day_dates(&mut days);
 
     Ok(days)
-}
-
-pub(super) async fn query_station(
-    client: &Client,
-    station_id: u64,
-) -> MuninResult<DetailedStation> {
-    let now = chrono::offset::Utc::now();
-
-    let span = SkolmatenWeekSpan {
-        year: now.year(),
-        week_of_year: now.iso_week().week(),
-        count: 1,
-    };
-
-    let res = raw_fetch_menu(client, station_id, &span).await?;
-
-    Ok(res.menu.station)
 }
 
 #[cfg(test)]
@@ -247,7 +216,7 @@ mod tests {
                     count: 9,
                 }
             ]
-        )
+        );
     }
 
     #[test]
@@ -263,7 +232,7 @@ mod tests {
                 month: 1,
                 day: 1,
             }
-            .into_day()
+            .normalize()
             .unwrap()
             .meals()
             .len(),
@@ -275,16 +244,7 @@ mod tests {
             month: 2,
             day: 29
         }
-        .into_day()
+        .normalize()
         .is_none());
-    }
-
-    #[tokio::test]
-    async fn query() {
-        let client = Client::new();
-        let station = query_station(&client, 6362776414978048).await.unwrap();
-
-        assert_eq!(station.station.name, "Information - Sandvikens kommun");
-        assert!(station.to_menu().is_none());
     }
 }

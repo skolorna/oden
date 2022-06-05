@@ -6,12 +6,26 @@ use actix_web::{
     http::header::{CacheControl, CacheDirective, CONTENT_TYPE},
     web, HttpResponse, Responder,
 };
+use serde::Serialize;
+
+#[derive(Debug, Serialize)]
+struct HealthResponse {
+    version: &'static str,
+}
+
+impl Default for HealthResponse {
+    fn default() -> Self {
+        Self {
+            version: env!("CARGO_PKG_VERSION"),
+        }
+    }
+}
 
 pub async fn get_health() -> impl Responder {
     HttpResponse::Ok()
         .insert_header(CacheControl(vec![CacheDirective::NoStore]))
         .insert_header((CONTENT_TYPE, "text/plain; charset=utf-8"))
-        .body("\u{41f}\u{43e}\u{435}\u{445}\u{430}\u{43b}\u{438}!") // "Поехали!", russian for "Let's go!"
+        .json(HealthResponse::default())
 }
 
 /// Configure all the routes.

@@ -14,6 +14,7 @@ pub struct Meal {
 }
 
 impl Meal {
+    #[must_use]
     pub fn value(&self) -> &str {
         &self.value
     }

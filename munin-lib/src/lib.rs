@@ -1,11 +1,7 @@
 #![doc = include_str!("../README.md")]
-#![warn(
-    unreachable_pub,
-    missing_debug_implementations,
-    missing_docs,
-    clippy::pedantic
-)]
+#![warn(missing_debug_implementations, clippy::pedantic)]
+#![allow(clippy::missing_errors_doc)]
 pub mod errors;
 pub mod menus;
 pub mod types;
-pub mod util;
+mod util;

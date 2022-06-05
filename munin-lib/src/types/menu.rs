@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::slug::MenuSlug;
+use super::menu_slug::MenuSlug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Menu {
@@ -15,18 +15,22 @@ impl Menu {
         0x11,
     ]);
 
+    #[must_use]
     pub fn new(slug: MenuSlug, title: String) -> Self {
         Self { slug, title }
     }
 
+    #[must_use]
     pub fn slug(&self) -> &MenuSlug {
         &self.slug
     }
 
+    #[must_use]
     pub fn title(&self) -> &str {
         &self.title
     }
 
+    #[must_use]
     pub fn get_uuid(&self) -> Uuid {
         Uuid::new_v5(&Self::UUID_NAMESPACE, self.slug.to_string().as_bytes())
     }
@@ -34,7 +38,7 @@ impl Menu {
 
 #[cfg(test)]
 mod tests {
-    use crate::{menus::supplier::Supplier, types::slug::MenuSlug};
+    use crate::{menus::supplier::Supplier, types::menu_slug::MenuSlug};
 
     use super::Menu;
 

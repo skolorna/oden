@@ -15,7 +15,7 @@ use tracing::{error, instrument, trace};
 use crate::{
     errors::{MuninError, MuninResult},
     menus::meal::Meal,
-    types::{day::Day, menu::Menu, slug::MenuSlug},
+    types::{day::Day, menu::Menu, menu_slug::MenuSlug},
     util::parse_weekday,
 };
 
@@ -200,7 +200,7 @@ async fn list_municipalities<'r>(
 ) -> MuninResult<Vec<Municipality<'r>>> {
     let doc = get_doc(client, &region).await?;
     let municipalities = scrape_options(&doc, "MunicipalityList")
-        .map(|(id, name)| Municipality { id, name, region })
+        .map(|(id, name)| Municipality { id, region, name })
         .collect();
 
     Ok(municipalities)
@@ -215,8 +215,8 @@ async fn list_parts<'m>(
     let parts = scrape_options(&doc, "PartList")
         .map(|(id, name)| Part {
             id,
-            name,
             municipality,
+            name,
         })
         .collect();
 
@@ -227,7 +227,7 @@ async fn list_parts<'m>(
 async fn list_customers<'p>(client: &Client, part: &'p Part<'p>) -> MuninResult<Vec<Customer<'p>>> {
     let doc = get_doc(client, part).await?;
     let customers = scrape_options(&doc, "CustomerList")
-        .map(|(id, name)| Customer { id, name, part })
+        .map(|(id, name)| Customer { id, part, name })
         .collect();
 
     Ok(customers)
@@ -242,7 +242,7 @@ async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> MuninResult<Vec<M
     if customers.is_empty() {
         Ok(vec![part.into()])
     } else {
-        Ok(customers.into_iter().map(|c| c.into()).collect())
+        Ok(customers.into_iter().map(Into::into).collect())
     }
 }
 
@@ -275,7 +275,7 @@ async fn menus_in_region(client: &Client, region: &Region) -> MuninResult<Vec<Me
         .buffer_unordered(CONCURRENT_REQUESTS);
 
     while let Some(result) = parts_stream.next().await {
-        menus.append(&mut result?)
+        menus.append(&mut result?);
     }
 
     Ok(menus)
@@ -367,25 +367,6 @@ async fn days_by_week(
 }
 
 /// List days.
-///
-/// ```
-/// use munin_lib::menus::supplier::matilda::{list_days, MatildaMenuIdentifier};
-/// use chrono::{Utc, Duration};
-///
-/// # tokio_test::block_on(async {
-/// let menu = MatildaMenuIdentifier {
-/// customer: Some(12599),
-/// part: 2409,
-/// municipality: 5002,
-/// region: 100,
-/// };
-/// let first = Utc::now();
-///
-/// let days = list_days(&menu, first.date().naive_utc(), (first + Duration::days(30)).date().naive_local()).await.unwrap();
-///
-/// assert!(days.len() > 7);
-/// # })
-/// ```
 #[instrument]
 pub async fn list_days(
     menu: &MatildaMenuIdentifier,
@@ -416,20 +397,11 @@ pub async fn list_days(
 }
 
 /// Calculate week offsets.
-///
-/// ```
-/// use chrono::{NaiveDate, Datelike};
-/// use munin_lib::menus::supplier::matilda::week_offsets;
-///
-/// let around = NaiveDate::from_ymd(2022, 1, 4).iso_week();
-/// let first = NaiveDate::from_ymd(2021, 12, 12).iso_week();
-/// let last = NaiveDate::from_ymd(2022, 1, 12).iso_week();
-///
-/// let offsets: Vec<i64> = week_offsets(around, first, last).collect();
-///
-/// assert_eq!(offsets, &[-4, -3, -2, -1, 0, 1]);
-/// ```
-pub fn week_offsets(around: IsoWeek, first: IsoWeek, last: IsoWeek) -> impl Iterator<Item = i64> {
+pub(super) fn week_offsets(
+    around: IsoWeek,
+    first: IsoWeek,
+    last: IsoWeek,
+) -> impl Iterator<Item = i64> {
     let first = NaiveDate::from_isoywd(first.year(), first.week(), Weekday::Mon);
     let last = NaiveDate::from_isoywd(last.year(), last.week(), Weekday::Mon);
     let around = NaiveDate::from_isoywd(around.year(), around.week(), Weekday::Mon);
@@ -443,6 +415,10 @@ pub fn week_offsets(around: IsoWeek, first: IsoWeek, last: IsoWeek) -> impl Iter
 #[cfg(test)]
 mod tests {
 
+    use chrono::{Datelike, Duration, NaiveDate, Utc};
+
+    use crate::menus::supplier::matilda::{list_days, week_offsets, MatildaMenuIdentifier};
+
     use super::list_menus;
 
     #[tokio::test]
@@ -450,5 +426,37 @@ mod tests {
         let menus = list_menus().await.unwrap();
 
         assert!(menus.len() > 500);
+    }
+
+    #[tokio::test]
+    async fn should_list_days() {
+        let menu = MatildaMenuIdentifier {
+            customer: Some(10242),
+            part: 1594,
+            municipality: 2161,
+            region: 21,
+        };
+        let first = Utc::now() - Duration::weeks(1);
+
+        let days = list_days(
+            &menu,
+            first.date().naive_utc(),
+            (first + Duration::days(30)).date().naive_local(),
+        )
+        .await
+        .unwrap();
+
+        assert!(days.len() >= 7);
+    }
+
+    #[test]
+    fn calc_week_offsets() {
+        let around = NaiveDate::from_ymd(2022, 1, 4).iso_week();
+        let first = NaiveDate::from_ymd(2021, 12, 12).iso_week();
+        let last = NaiveDate::from_ymd(2022, 1, 12).iso_week();
+
+        let offsets: Vec<i64> = week_offsets(around, first, last).collect();
+
+        assert_eq!(offsets, &[-4, -3, -2, -1, 0, 1]);
     }
 }

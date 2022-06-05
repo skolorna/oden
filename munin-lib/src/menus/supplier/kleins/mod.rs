@@ -23,7 +23,7 @@ struct KleinsSchool {
 }
 
 impl KleinsSchool {
-    pub fn into_menu(self) -> Menu {
+    pub fn normalize(self) -> Menu {
         let id = MenuSlug::new(Supplier::Kleins, self.slug);
 
         Menu::new(id, self.title)
@@ -53,14 +53,14 @@ async fn raw_list_schools() -> MuninResult<Vec<KleinsSchool>> {
 pub async fn list_menus() -> MuninResult<Vec<Menu>> {
     let schools = raw_list_schools().await?;
 
-    let menus = schools.into_iter().map(|s| s.into_menu()).collect();
+    let menus = schools.into_iter().map(KleinsSchool::normalize).collect();
 
     Ok(menus)
 }
 
 #[derive(Debug)]
 struct QuerySchoolResponse {
-    school: KleinsSchool,
+    // school: KleinsSchool,
     menu_url: String,
 }
 
@@ -80,34 +80,15 @@ async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse>
     let html = fetch(&client, &url).await?.text().await?;
     let doc = Document::from(html.as_str());
 
-    let title = doc
-        .find(Name("h1").and(Class("page-title")))
-        .next()
-        .ok_or_else(|| MuninError::ScrapeError {
-            context: html.to_owned(),
-        })?
-        .text();
-    let school = KleinsSchool {
-        slug: school_slug.to_owned(),
-        title,
-    };
-
     let menu_url = doc
         .find(Name("iframe"))
         .next()
-        .map(|n| extract_menu_url(&n))
-        .flatten()
+        .and_then(|n| extract_menu_url(&n))
         .ok_or_else(|| MuninError::ScrapeError {
-            context: html.to_owned(),
+            context: html.clone(),
         })?;
 
-    Ok(QuerySchoolResponse { school, menu_url })
-}
-
-pub async fn query_menu(menu_slug: &str) -> MuninResult<Menu> {
-    let res = raw_query_school(menu_slug).await?;
-
-    Ok(res.school.into_menu())
+    Ok(QuerySchoolResponse { menu_url })
 }
 
 pub async fn list_days(
@@ -146,8 +127,10 @@ mod tests {
             .await
             .unwrap();
 
-        assert_eq!(res.school.title, "Viktor Rydberg Gymnasium Jarlaplan");
-        assert_eq!(res.school.slug, "viktor-rydberg-grundskola-jarlaplan");
+        assert_eq!(
+            res.menu_url,
+            "https://mpi.mashie.com/public/app/KK%20VRVasastan/4ad9e398"
+        );
 
         assert!(
             raw_query_school("viktor-rydberg-grundskola-jarlaplan?a=evil")
