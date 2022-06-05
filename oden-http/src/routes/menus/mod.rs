@@ -106,7 +106,7 @@ async fn list_days_route(
     })
     .await??;
 
-    let rows: Vec<munin_lib::Day> = rows.into_iter().map(|d| d.into()).collect();
+    let rows: Vec<hugin::Day> = rows.into_iter().map(|d| d.into()).collect();
 
     let res = HttpResponse::Ok()
         .insert_header(CacheControl(vec![CacheDirective::MaxAge(3600)]))

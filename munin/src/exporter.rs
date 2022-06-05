@@ -9,7 +9,7 @@ use chrono::NaiveDate;
 use database::models::{Day, MenuId};
 use database::schema::days::table as days_table;
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
-use munin_lib::Meal;
+use hugin::Meal;
 use serde::Serialize;
 use structopt::StructOpt;
 use thiserror::Error;

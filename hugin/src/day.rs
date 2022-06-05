@@ -22,7 +22,7 @@ impl Day {
     ///
     /// ```
     /// # use chrono::NaiveDate;
-    /// # use munin_lib::{Day, Meal};
+    /// # use hugin::{Day, Meal};
     /// # use std::str::FromStr;
     /// #
     /// let date = NaiveDate::from_ymd(1789, 7, 14);
@@ -57,7 +57,7 @@ impl Day {
     /// ```
     /// use chrono::NaiveDate;
     /// use std::str::FromStr;
-    /// use munin_lib::{Day, Meal};
+    /// use hugin::{Day, Meal};
     ///
     /// let meals = vec![Meal::from_str("Sushi").unwrap()];
     /// let day = Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), meals).unwrap();

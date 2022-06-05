@@ -24,7 +24,7 @@ pub struct NewDay {
 }
 
 impl NewDay {
-    pub fn from_day(day: munin_lib::Day, menu_id: MenuId) -> Self {
+    pub fn from_day(day: hugin::Day, menu_id: MenuId) -> Self {
         let meals = day
             .meals
             .into_iter()
@@ -40,7 +40,7 @@ impl NewDay {
     }
 }
 
-impl From<Day> for munin_lib::Day {
+impl From<Day> for hugin::Day {
     fn from(d: Day) -> Self {
         Self {
             date: d.date,
@@ -55,7 +55,7 @@ pub type MenuId = Uuid;
 pub struct Menu {
     pub id: MenuId,
     pub title: String,
-    pub slug: munin_lib::MenuSlug,
+    pub slug: hugin::MenuSlug,
     pub updated_at: Option<DateTime<Utc>>,
 }
 
@@ -68,12 +68,12 @@ impl crate::MeiliIndexable for Menu {
 #[table_name = "menus"]
 pub struct NewMenu {
     pub id: Uuid,
-    pub slug: munin_lib::MenuSlug,
+    pub slug: hugin::MenuSlug,
     pub title: String,
 }
 
-impl From<munin_lib::Menu> for NewMenu {
-    fn from(menu: munin_lib::Menu) -> Self {
+impl From<hugin::Menu> for NewMenu {
+    fn from(menu: hugin::Menu) -> Self {
         Self {
             id: menu.get_uuid(),
             slug: menu.slug,

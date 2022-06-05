@@ -8,7 +8,7 @@ use tracing::error;
 
 use crate::{
     day::dedup_day_dates,
-    errors::{MuninError, MuninResult},
+    errors::{Error, Result},
     menus::{Day, Meal},
 };
 
@@ -96,7 +96,7 @@ async fn raw_fetch_menu(
     client: &Client,
     station_id: u64,
     span: &SkolmatenWeekSpan,
-) -> MuninResult<SkolmatenMenuResponse> {
+) -> Result<SkolmatenMenuResponse> {
     let path = format!(
         "menu?station={}&year={}&weekOfYear={}&count={}",
         station_id, span.year, span.week_of_year, span.count
@@ -111,7 +111,7 @@ async fn raw_fetch_menu(
                 error!("{}", e);
             }
 
-            Err(MuninError::MenuNotFound)
+            Err(Error::MenuNotFound)
         }
     }
 }
@@ -162,7 +162,7 @@ pub(crate) async fn list_days(
     station_id: u64,
     first: NaiveDate,
     last: NaiveDate,
-) -> MuninResult<Vec<Day>> {
+) -> Result<Vec<Day>> {
     let spans = generate_week_spans(first, last);
 
     let results = stream::iter(spans)
@@ -178,7 +178,7 @@ pub(crate) async fn list_days(
         .collect::<Vec<_>>()
         .await;
 
-    let days_2d = results.into_iter().collect::<MuninResult<Vec<_>>>()?;
+    let days_2d = results.into_iter().collect::<Result<Vec<_>>>()?;
 
     let mut days = days_2d
         .into_iter()

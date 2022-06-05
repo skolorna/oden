@@ -27,7 +27,7 @@ impl FromStr for Meal {
     /// Some meal values are considered invalid and will result in `None` being
     /// returned.
     /// ```
-    /// use munin_lib::Meal;
+    /// use hugin::Meal;
     /// use std::str::FromStr;
     ///
     /// assert_eq!(Meal::from_str("\t  Fisk Björkeby   \n").unwrap().value(), "Fisk Björkeby");

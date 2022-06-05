@@ -6,7 +6,7 @@ use select::document::Document;
 use serde::Deserialize;
 
 use crate::{
-    errors::{MuninError, MuninResult},
+    errors::{Error, Result},
     menus::mashie::scrape::scrape_mashie_days,
     util::is_sorted,
     Day, Menu, MenuSlug,
@@ -31,7 +31,7 @@ impl MashieMenu {
     }
 }
 
-pub async fn list_menus(host: &str) -> MuninResult<Vec<MashieMenu>> {
+pub async fn list_menus(host: &str) -> Result<Vec<MashieMenu>> {
     let client = Client::new();
     let res = client
         .post(&format!(
@@ -47,12 +47,12 @@ pub async fn list_menus(host: &str) -> MuninResult<Vec<MashieMenu>> {
     Ok(menus)
 }
 
-pub async fn query_menu(host: &str, menu_slug: &str) -> MuninResult<MashieMenu> {
+pub async fn query_menu(host: &str, menu_slug: &str) -> Result<MashieMenu> {
     let menus = list_menus(host).await?;
     let menu = menus
         .into_iter()
         .find(|m| m.id == menu_slug)
-        .ok_or(MuninError::MenuNotFound)?;
+        .ok_or(Error::MenuNotFound)?;
 
     Ok(menu)
 }
@@ -62,7 +62,7 @@ pub async fn list_days(
     menu_slug: &str,
     first: NaiveDate,
     last: NaiveDate,
-) -> MuninResult<Vec<Day>> {
+) -> Result<Vec<Day>> {
     let menu = query_menu(host, menu_slug).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
@@ -80,14 +80,14 @@ pub async fn list_days(
 /// Automagically generate a Mashie client.
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
-        use crate::errors::MuninResult;
-        use crate::menus::{mashie, Menu};
-        use crate::Day;
         use chrono::NaiveDate;
+        use $crate::errors::Result;
+        use $crate::menus::{mashie, Menu};
+        use $crate::Day;
 
         const HOST: &str = $host;
 
-        pub async fn list_menus() -> MuninResult<Vec<Menu>> {
+        pub async fn list_menus() -> Result<Vec<Menu>> {
             let menus = mashie::list_menus(HOST)
                 .await?
                 .into_iter()
@@ -101,7 +101,7 @@ macro_rules! mashie_impl {
             menu_slug: &str,
             first: NaiveDate,
             last: NaiveDate,
-        ) -> MuninResult<Vec<Day>> {
+        ) -> Result<Vec<Day>> {
             mashie::list_days(HOST, menu_slug, first, last).await
         }
     };

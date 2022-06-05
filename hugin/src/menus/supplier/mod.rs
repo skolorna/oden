@@ -13,7 +13,7 @@ use strum::{EnumIter, EnumString};
 use tracing::{debug, instrument};
 
 use crate::{
-    errors::{MuninError, MuninResult},
+    errors::{Error, Result},
     menu::Menu,
     Day,
 };
@@ -64,7 +64,7 @@ impl Supplier {
     }
 
     #[instrument]
-    pub async fn list_menus(&self) -> MuninResult<Vec<Menu>> {
+    pub async fn list_menus(&self) -> Result<Vec<Menu>> {
         use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
         debug!("listing menus");
@@ -85,7 +85,7 @@ impl Supplier {
         menu_slug: &str,
         first: NaiveDate,
         last: NaiveDate,
-    ) -> MuninResult<Vec<Day>> {
+    ) -> Result<Vec<Day>> {
         use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
         debug!("listing days");
@@ -93,7 +93,7 @@ impl Supplier {
         match *self {
             Skolmaten => {
                 skolmaten::list_days(
-                    menu_slug.parse().map_err(|_| MuninError::InvalidMenuSlug)?,
+                    menu_slug.parse().map_err(|_| Error::InvalidMenuSlug)?,
                     first,
                     last,
                 )
@@ -105,7 +105,7 @@ impl Supplier {
             Sabis => sabis::list_days(menu_slug, first, last).await,
             Matilda => {
                 matilda::list_days(
-                    &menu_slug.parse().map_err(|_| MuninError::InvalidMenuSlug)?,
+                    &menu_slug.parse().map_err(|_| Error::InvalidMenuSlug)?,
                     first,
                     last,
                 )

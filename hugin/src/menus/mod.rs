@@ -7,13 +7,13 @@ use futures::{stream, StreamExt};
 use strum::IntoEnumIterator;
 use tracing::{debug, instrument};
 
-use crate::{errors::MuninResult, Day, Meal, Menu, MenuSlug};
+use crate::{errors::Result, Day, Meal, Menu, MenuSlug};
 
 use self::supplier::Supplier;
 
 /// List all the menus everywhere (from all suppliers).
 #[instrument]
-pub async fn list_menus(concurrent: usize) -> MuninResult<Vec<Menu>> {
+pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     debug!("listing menus");
 
     let mut menus = stream::iter(Supplier::iter())
@@ -22,7 +22,7 @@ pub async fn list_menus(concurrent: usize) -> MuninResult<Vec<Menu>> {
         .collect::<Vec<_>>()
         .await
         .into_iter()
-        .collect::<MuninResult<Vec<_>>>()?
+        .collect::<Result<Vec<_>>>()?
         .into_iter()
         .flatten()
         .collect::<Vec<Menu>>();
@@ -36,7 +36,7 @@ pub async fn list_days(
     menu_slug: &MenuSlug,
     first: NaiveDate,
     last: NaiveDate,
-) -> MuninResult<Vec<Day>> {
+) -> Result<Vec<Day>> {
     menu_slug
         .supplier
         .list_days(&menu_slug.local_id, first, last)

@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 database = { path = "../database", features = ["meilisearch-sdk"], version = "0.2.3" }
-munin-lib = { path = "../munin-lib", features = ["diesel"], version = "0.2.3" }
+hugin = { path = "../hugin", features = ["diesel"], version = "0.2.3" }
 chrono = "0.4.19"
 chrono-tz = "0.6.1"
 diesel = { version = "1.4.8", features = ["postgres", "chrono"] }

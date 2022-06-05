@@ -9,7 +9,7 @@ use select::{
 };
 
 use crate::{
-    errors::{MuninError, MuninResult},
+    errors::{Error, Result},
     menus::{mashie::scrape::scrape_mashie_days, supplier::Supplier},
     util::last_path_segment,
     Day, Menu, MenuSlug,
@@ -30,7 +30,7 @@ impl KleinsSchool {
     }
 }
 
-async fn raw_list_schools() -> MuninResult<Vec<KleinsSchool>> {
+async fn raw_list_schools() -> Result<Vec<KleinsSchool>> {
     let client = Client::new();
     let html = fetch(&client, "https://www.kleinskitchen.se/skolor/")
         .await?
@@ -50,7 +50,7 @@ async fn raw_list_schools() -> MuninResult<Vec<KleinsSchool>> {
     Ok(schools)
 }
 
-pub async fn list_menus() -> MuninResult<Vec<Menu>> {
+pub async fn list_menus() -> Result<Vec<Menu>> {
     let schools = raw_list_schools().await?;
 
     let menus = schools.into_iter().map(KleinsSchool::normalize).collect();
@@ -71,7 +71,7 @@ fn extract_menu_url(iframe_node: &Node) -> Option<String> {
     Some(menu_url)
 }
 
-async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse> {
+async fn raw_query_school(school_slug: &str) -> Result<QuerySchoolResponse> {
     let client = Client::new();
     let url = format!(
         "https://www.kleinskitchen.se/skolor/{}",
@@ -84,18 +84,14 @@ async fn raw_query_school(school_slug: &str) -> MuninResult<QuerySchoolResponse>
         .find(Name("iframe"))
         .next()
         .and_then(|n| extract_menu_url(&n))
-        .ok_or_else(|| MuninError::ScrapeError {
+        .ok_or_else(|| Error::ScrapeError {
             context: html.clone(),
         })?;
 
     Ok(QuerySchoolResponse { menu_url })
 }
 
-pub async fn list_days(
-    menu_slug: &str,
-    first: NaiveDate,
-    last: NaiveDate,
-) -> MuninResult<Vec<Day>> {
+pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let menu_url = {
         let res = raw_query_school(menu_slug).await?;
         res.menu_url

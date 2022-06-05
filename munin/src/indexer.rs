@@ -11,12 +11,11 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use futures::stream;
 use futures::StreamExt;
+use hugin::menus::list_days;
+use hugin::menus::list_menus;
 use meilisearch_sdk::client::Client;
 use meilisearch_sdk::errors::MeilisearchError;
 use meilisearch_sdk::tasks::Task;
-use munin_lib::errors::MuninResult;
-use munin_lib::menus::list_days;
-use munin_lib::menus::list_menus;
 use structopt::StructOpt;
 use thiserror::Error;
 use tracing::info;
@@ -147,7 +146,7 @@ pub enum IndexerError {
     Diesel(#[from] diesel::result::Error),
 
     #[error("{0}")]
-    Munin(#[from] munin_lib::errors::MuninError),
+    Hugin(#[from] hugin::Error),
 
     #[error("{0}")]
     Meilisearch(#[from] meilisearch_sdk::errors::Error),
@@ -195,7 +194,7 @@ pub fn get_candidates(
     connection: &PgConnection,
     max_age: Duration,
     limit: Option<i64>,
-) -> QueryResult<Vec<(MenuId, munin_lib::MenuSlug)>> {
+) -> QueryResult<Vec<(MenuId, hugin::MenuSlug)>> {
     use database::schema::menus::dsl::*;
 
     let q = menus
@@ -211,7 +210,7 @@ pub fn get_candidates(
 
 pub fn submit_days(
     connection: &PgConnection,
-    results: Vec<(MenuId, MuninResult<Vec<munin_lib::Day>>)>,
+    results: Vec<(MenuId, Result<Vec<hugin::Day>, hugin::Error>)>,
 ) -> QueryResult<()> {
     use database::schema::days::{columns as days_columns, table as days_table};
     use database::schema::menus::{columns as menus_columns, table as menus_table};
