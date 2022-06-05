@@ -6,9 +6,8 @@ use actix_web::{
 };
 use chrono::{Duration, NaiveDate, TimeZone, Utc};
 use chrono_tz::Europe::Stockholm;
-use database::models::{self, menu::MenuId};
+use database::models::{self, MenuId};
 use diesel::prelude::*;
-use munin_lib::types;
 use serde::Deserialize;
 
 use crate::{
@@ -22,7 +21,7 @@ async fn list_menus_route(pool: PgPoolData) -> AppResult<HttpResponse> {
     use database::schema::menus::dsl::*;
 
     let connection = pool.get()?;
-    let rows = web::block(move || menus.load::<models::menu::Menu>(&connection)).await??;
+    let rows = web::block(move || menus.load::<models::Menu>(&connection)).await??;
 
     let res = HttpResponse::Ok()
         .insert_header(CacheControl(vec![
@@ -39,7 +38,7 @@ async fn query_menu_route(menu_id: web::Path<MenuId>, pool: PgPoolData) -> AppRe
     use database::schema::menus::dsl::*;
 
     let connection = pool.get()?;
-    let row: Option<models::menu::Menu> = web::block(move || {
+    let row: Option<models::Menu> = web::block(move || {
         menus
             .find(menu_id.into_inner())
             .first(&connection)
@@ -101,13 +100,13 @@ async fn list_days_route(
 
     let connection = pool.get()?;
 
-    let rows: Vec<models::day::Day> = web::block(move || {
+    let rows: Vec<models::Day> = web::block(move || {
         days.filter(menu_id.eq(menu.into_inner()).and(date.between(first, last)))
-            .load::<models::day::Day>(&connection)
+            .load::<models::Day>(&connection)
     })
     .await??;
 
-    let rows: Vec<types::day::Day> = rows.into_iter().map(|d| d.into()).collect();
+    let rows: Vec<hugin::Day> = rows.into_iter().map(|d| d.into()).collect();
 
     let res = HttpResponse::Ok()
         .insert_header(CacheControl(vec![CacheDirective::MaxAge(3600)]))

@@ -3,7 +3,7 @@ use std::collections::HashSet;
 use chrono::NaiveDate;
 use serde::{Deserialize, Serialize};
 
-use crate::{menus::meal::Meal, util::retain_unique};
+use crate::{util::retain_unique, Meal};
 
 /// A day is localized to a single menu and contains
 /// a list of the meals served there on a particular
@@ -22,8 +22,7 @@ impl Day {
     ///
     /// ```
     /// # use chrono::NaiveDate;
-    /// # use munin_lib::types::day::Day;
-    /// # use munin_lib::menus::meal::Meal;
+    /// # use hugin::{Day, Meal};
     /// # use std::str::FromStr;
     /// #
     /// let date = NaiveDate::from_ymd(1789, 7, 14);
@@ -58,8 +57,7 @@ impl Day {
     /// ```
     /// use chrono::NaiveDate;
     /// use std::str::FromStr;
-    /// use munin_lib::types::day::Day;
-    /// use munin_lib::menus::meal::Meal;
+    /// use hugin::{Day, Meal};
     ///
     /// let meals = vec![Meal::from_str("Sushi").unwrap()];
     /// let day = Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), meals).unwrap();
@@ -78,33 +76,14 @@ impl Day {
 }
 
 /// Remove duplicate dates from a vector.
-/// ```
-/// use chrono::NaiveDate;
-/// use std::str::FromStr;
-/// use munin_lib::menus::meal::Meal;
-/// use munin_lib::types::day::{Day, dedup_day_dates};
-///
-/// let mut days = vec![
-///     Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), vec![Meal::from_str("Tacos").unwrap()]).unwrap(),
-///     Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), vec![Meal::from_str("Sushi").unwrap()]).unwrap(),
-/// ];
-///
-/// dedup_day_dates(&mut days);
-///
-/// assert_eq!(
-/// days,
-/// [
-///     Day::new_opt(NaiveDate::from_ymd(1789, 7, 14), vec![Meal::from_str("Tacos").unwrap()]).unwrap(),
-/// ]
-/// );
-/// ```
-pub fn dedup_day_dates(days: &mut Vec<Day>) {
+pub(crate) fn dedup_day_dates(days: &mut Vec<Day>) {
     let mut seen_dates = HashSet::<NaiveDate>::new();
     days.retain(|day| seen_dates.insert(day.date));
 }
 
 #[cfg(test)]
 mod tests {
+    use chrono::NaiveDate;
     use std::str::FromStr;
 
     use super::*;
@@ -140,6 +119,33 @@ mod tests {
                     meals: vec![Meal::from_str("Pizza").unwrap()],
                 },
             ]
+        );
+    }
+
+    #[test]
+    fn dedup_dates() {
+        let mut days = vec![
+            Day::new_opt(
+                NaiveDate::from_ymd(1789, 7, 14),
+                vec![Meal::from_str("Tacos").unwrap()],
+            )
+            .unwrap(),
+            Day::new_opt(
+                NaiveDate::from_ymd(1789, 7, 14),
+                vec![Meal::from_str("Sushi").unwrap()],
+            )
+            .unwrap(),
+        ];
+
+        dedup_day_dates(&mut days);
+
+        assert_eq!(
+            days,
+            [Day::new_opt(
+                NaiveDate::from_ymd(1789, 7, 14),
+                vec![Meal::from_str("Tacos").unwrap()]
+            )
+            .unwrap(),]
         );
     }
 }

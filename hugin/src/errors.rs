@@ -1,7 +1,7 @@
 use thiserror::Error;
 
 #[derive(Debug, Error)]
-pub enum MuninError {
+pub enum Error {
     #[error("menu not found")]
     MenuNotFound,
 
@@ -15,4 +15,4 @@ pub enum MuninError {
     InvalidMenuSlug,
 }
 
-pub type MuninResult<T> = Result<T, MuninError>;
+pub(crate) type Result<T> = core::result::Result<T, Error>;

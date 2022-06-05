@@ -1,11 +1,14 @@
 use diesel::prelude::*;
 use diesel::PgConnection;
 use dotenv::dotenv;
-use munin::exporter::export;
-use munin::exporter::ExporterOpt;
-use munin::indexer::index;
-use munin::indexer::IndexerOpt;
+use exporter::export;
+use exporter::ExporterOpt;
+use indexer::index;
+use indexer::IndexerOpt;
 use structopt::StructOpt;
+
+mod exporter;
+mod indexer;
 
 #[derive(Debug, StructOpt)]
 struct Opt {

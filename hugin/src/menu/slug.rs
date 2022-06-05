@@ -14,15 +14,18 @@ use crate::menus::supplier::Supplier;
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 #[cfg_attr(feature = "diesel", derive(AsExpression, FromSqlRow))]
 #[cfg_attr(feature = "diesel", sql_type = "diesel::sql_types::Text")]
-pub struct MenuSlug {
+pub struct Slug {
     pub supplier: Supplier,
     pub local_id: String,
 }
 
-impl MenuSlug {
+impl Slug {
     #[must_use]
-    pub fn new(supplier: Supplier, local_id: String) -> Self {
-        Self { supplier, local_id }
+    pub fn new(supplier: Supplier, local_id: impl Into<String>) -> Self {
+        Self {
+            supplier,
+            local_id: local_id.into(),
+        }
     }
 }
 
@@ -38,7 +41,7 @@ pub enum ParseMenuSlugError {
     ParseSupplierError(#[from] strum::ParseError),
 }
 
-impl FromStr for MenuSlug {
+impl FromStr for Slug {
     type Err = ParseMenuSlugError;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -55,13 +58,13 @@ impl FromStr for MenuSlug {
     }
 }
 
-impl Display for MenuSlug {
+impl Display for Slug {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(f, "{}.{}", self.supplier, self.local_id)
     }
 }
 
-impl Serialize for MenuSlug {
+impl Serialize for Slug {
     fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
     where
         S: serde::Serializer,
@@ -70,7 +73,7 @@ impl Serialize for MenuSlug {
     }
 }
 
-impl<'de> Deserialize<'de> for MenuSlug {
+impl<'de> Deserialize<'de> for Slug {
     fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
     where
         D: Deserializer<'de>,
@@ -81,7 +84,7 @@ impl<'de> Deserialize<'de> for MenuSlug {
 }
 
 #[cfg(feature = "diesel")]
-impl<DB> ToSql<sql_types::Text, DB> for MenuSlug
+impl<DB> ToSql<sql_types::Text, DB> for Slug
 where
     DB: Backend,
     String: ToSql<sql_types::Text, DB>,
@@ -95,7 +98,7 @@ where
 }
 
 #[cfg(feature = "diesel")]
-impl<DB> FromSql<sql_types::Text, DB> for MenuSlug
+impl<DB> FromSql<sql_types::Text, DB> for Slug
 where
     DB: Backend,
     String: FromSql<sql_types::Text, DB>,
@@ -112,25 +115,25 @@ mod tests {
 
     #[test]
     fn menu_slug_eq() {
-        let a = MenuSlug::new(Supplier::Skolmaten, "foo".to_owned());
-        let b = MenuSlug::new(Supplier::Skolmaten, "bar".to_owned());
+        let a = Slug::new(Supplier::Skolmaten, "foo".to_owned());
+        let b = Slug::new(Supplier::Skolmaten, "bar".to_owned());
         assert_ne!(a, b);
-        let c = MenuSlug::new(Supplier::Skolmaten, "foo".to_owned());
+        let c = Slug::new(Supplier::Skolmaten, "foo".to_owned());
         assert_eq!(a, c);
     }
 
     #[test]
     fn menu_slug_roundtrip() {
-        let original = MenuSlug::new(Supplier::Skolmaten, "local-id".to_owned());
+        let original = Slug::new(Supplier::Skolmaten, "local-id".to_owned());
         let serialized = original.to_string();
         assert_eq!(serialized, "skolmaten.local-id");
-        let parsed = MenuSlug::from_str(&serialized).unwrap();
+        let parsed = Slug::from_str(&serialized).unwrap();
         assert_eq!(original, parsed);
     }
 
     #[test]
     fn menu_slug_ser() {
-        let id = MenuSlug::new(Supplier::Skolmaten, "local".to_owned());
+        let id = Slug::new(Supplier::Skolmaten, "local".to_owned());
         let s = serde_json::to_string(&id).unwrap();
         assert_eq!(s, "\"skolmaten.local\"");
     }
@@ -139,10 +142,10 @@ mod tests {
     fn menu_slug_de() {
         let s = "\"skolmaten.local\"";
         assert_eq!(
-            serde_json::from_str::<MenuSlug>(s).unwrap(),
-            MenuSlug::new(Supplier::Skolmaten, "local".to_owned())
+            serde_json::from_str::<Slug>(s).unwrap(),
+            Slug::new(Supplier::Skolmaten, "local".to_owned())
         );
 
-        assert!(serde_json::from_str::<MenuSlug>("\"bruh\"").is_err());
+        assert!(serde_json::from_str::<Slug>("\"bruh\"").is_err());
     }
 }

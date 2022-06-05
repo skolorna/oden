@@ -5,7 +5,7 @@ use diesel::{
     sql_types,
     types::{FromSql, ToSql},
 };
-use munin_lib::menus::meal::Meal;
+use hugin::Meal;
 use serde::{Deserialize, Serialize};
 
 /// A text type that is compressed with [Smaz](smaz)

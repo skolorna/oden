@@ -6,10 +6,7 @@ use futures::stream::{self, StreamExt};
 use reqwest::Client;
 use serde::Deserialize;
 
-use crate::{
-    errors::MuninResult,
-    menus::{supplier::Supplier, Day, Menu, MenuSlug},
-};
+use crate::{errors::Result, menus::supplier::Supplier, Day, Menu, MenuSlug};
 
 use fetch::fetch;
 
@@ -65,7 +62,7 @@ impl Station {
     }
 }
 
-async fn list_provinces(client: &Client) -> MuninResult<Vec<Province>> {
+async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
     let res = fetch(client, "provinces")
         .await?
         .json::<ProvincesResponse>()
@@ -74,10 +71,7 @@ async fn list_provinces(client: &Client) -> MuninResult<Vec<Province>> {
     Ok(res.provinces)
 }
 
-async fn list_districts_in_province(
-    client: &Client,
-    province_id: u64,
-) -> MuninResult<Vec<District>> {
+async fn list_districts_in_province(client: &Client, province_id: u64) -> Result<Vec<District>> {
     let res = fetch(client, &format!("districts?province={}", province_id))
         .await?
         .json::<DistrictsResponse>()
@@ -86,7 +80,7 @@ async fn list_districts_in_province(
     Ok(res.districts)
 }
 
-async fn list_stations_in_district(client: &Client, district_id: u64) -> MuninResult<Vec<Station>> {
+async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<Vec<Station>> {
     let res = fetch(client, &format!("stations?district={}", district_id))
         .await?
         .json::<StationsResponse>()
@@ -95,7 +89,7 @@ async fn list_stations_in_district(client: &Client, district_id: u64) -> MuninRe
     Ok(res.stations)
 }
 
-pub(super) async fn list_menus() -> MuninResult<Vec<Menu>> {
+pub(super) async fn list_menus() -> Result<Vec<Menu>> {
     let client = Client::new();
 
     let provinces = list_provinces(&client).await?;
@@ -145,7 +139,7 @@ pub(super) async fn list_days(
     menu_slug: u64,
     first: NaiveDate,
     last: NaiveDate,
-) -> MuninResult<Vec<Day>> {
+) -> Result<Vec<Day>> {
     let client = Client::new();
     days::list_days(&client, menu_slug, first, last).await
 }

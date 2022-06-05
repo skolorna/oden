@@ -1,5 +1,4 @@
 use actix_web::{http::StatusCode, ResponseError};
-use munin_lib::errors::MuninError;
 use thiserror::Error;
 use tracing::error;
 
@@ -25,13 +24,13 @@ impl ResponseError for AppError {
     }
 }
 
-impl From<MuninError> for AppError {
-    fn from(e: MuninError) -> Self {
+impl From<hugin::Error> for AppError {
+    fn from(e: hugin::Error) -> Self {
         match e {
-            MuninError::MenuNotFound => Self::MenuNotFound,
-            MuninError::HttpError(_) => Self::InternalError,
-            MuninError::ScrapeError { .. } => Self::InternalError,
-            MuninError::InvalidMenuSlug => Self::BadRequest("invalid menu id".into()),
+            hugin::Error::MenuNotFound => Self::MenuNotFound,
+            hugin::Error::HttpError(_) => Self::InternalError,
+            hugin::Error::ScrapeError { .. } => Self::InternalError,
+            hugin::Error::InvalidMenuSlug => Self::BadRequest("invalid menu id".into()),
         }
     }
 }

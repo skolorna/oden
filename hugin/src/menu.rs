@@ -1,7 +1,10 @@
+#![allow(clippy::module_name_repetitions)]
 use serde::{Deserialize, Serialize};
 use uuid::Uuid;
 
-use super::menu_slug::MenuSlug;
+mod slug;
+
+pub use slug::Slug as MenuSlug;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Menu {
@@ -16,8 +19,11 @@ impl Menu {
     ]);
 
     #[must_use]
-    pub fn new(slug: MenuSlug, title: String) -> Self {
-        Self { slug, title }
+    pub fn new(slug: MenuSlug, title: impl Into<String>) -> Self {
+        Self {
+            slug,
+            title: title.into(),
+        }
     }
 
     #[must_use]
@@ -38,16 +44,16 @@ impl Menu {
 
 #[cfg(test)]
 mod tests {
-    use crate::{menus::supplier::Supplier, types::menu_slug::MenuSlug};
+    use crate::{menus::supplier::Supplier, MenuSlug};
 
     use super::Menu;
 
     #[test]
     fn uuid_gen() {
-        let slug = MenuSlug::new(Supplier::Sodexo, "skool".to_string());
+        let slug = MenuSlug::new(Supplier::Sodexo, "skool");
 
-        let a = Menu::new(slug.clone(), "Skool 1".to_string());
-        let b = Menu::new(slug, "Rebranded skool".to_string());
+        let a = Menu::new(slug.clone(), "Skool 1");
+        let b = Menu::new(slug, "Rebranded skool");
 
         assert_eq!(a.get_uuid(), b.get_uuid());
     }
