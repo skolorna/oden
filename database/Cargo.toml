@@ -14,4 +14,4 @@ serde = { version = "1.0.137", features = ["derive"] }
 smaz = { path = "../smaz", version = "0.1.0" }
 diesel_migrations = "1.4.0"
 tracing = "0.1.34"
-uuid = { version = "0.8.2", features = ["serde"] }
+uuid = { version = "1.1.1", features = ["serde"] }
