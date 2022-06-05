@@ -10,9 +10,9 @@ use select::{
 
 use crate::{
     errors::{MuninError, MuninResult},
-    menus::{mashie::scrape::scrape_mashie_days, supplier::Supplier, Menu, MenuSlug},
-    types::day::Day,
+    menus::{mashie::scrape::scrape_mashie_days, supplier::Supplier},
     util::last_path_segment,
+    Day, Menu, MenuSlug,
 };
 use fetch::fetch;
 

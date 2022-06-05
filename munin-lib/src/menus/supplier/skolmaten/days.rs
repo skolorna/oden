@@ -7,9 +7,9 @@ use serde::Deserialize;
 use tracing::error;
 
 use crate::{
+    day::dedup_day_dates,
     errors::{MuninError, MuninResult},
     menus::{Day, Meal},
-    types::day::dedup_day_dates,
 };
 
 use super::fetch::fetch;

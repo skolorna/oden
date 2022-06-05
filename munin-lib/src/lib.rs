@@ -3,5 +3,12 @@
 #![allow(clippy::missing_errors_doc)]
 pub mod errors;
 pub mod menus;
-pub mod types;
 mod util;
+
+mod day;
+mod meal;
+mod menu;
+
+pub use day::*;
+pub use meal::*;
+pub use menu::*;

@@ -8,12 +8,13 @@ use serde::Deserialize;
 use crate::{
     errors::{MuninError, MuninResult},
     menus::mashie::scrape::scrape_mashie_days,
-    types::day::Day,
     util::is_sorted,
+    Day, Menu, MenuSlug,
 };
 
-use super::{supplier::Supplier, Menu, MenuSlug};
+use super::supplier::Supplier;
 
+#[allow(clippy::module_name_repetitions)]
 #[derive(Deserialize, Debug)]
 pub struct MashieMenu {
     id: String,
@@ -81,7 +82,7 @@ macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
         use crate::errors::MuninResult;
         use crate::menus::{mashie, Menu};
-        use crate::types::day::Day;
+        use crate::Day;
         use chrono::NaiveDate;
 
         const HOST: &str = $host;

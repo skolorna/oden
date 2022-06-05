@@ -14,7 +14,8 @@ use tracing::{debug, instrument};
 
 use crate::{
     errors::{MuninError, MuninResult},
-    types::{day::Day, menu::Menu},
+    menu::Menu,
+    Day,
 };
 
 /// A provider of menus.

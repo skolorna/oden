@@ -7,7 +7,7 @@ use select::{
     predicate::{Class, Predicate},
 };
 
-use crate::{menus::meal::Meal, types::day::Day};
+use crate::{Day, Meal};
 
 /// Parse a month literal in Swedish. Returns the month, starting from 1 with January.
 /// ```

@@ -14,9 +14,8 @@ use tracing::{error, instrument, trace};
 
 use crate::{
     errors::{MuninError, MuninResult},
-    menus::meal::Meal,
-    types::{day::Day, menu::Menu, menu_slug::MenuSlug},
     util::parse_weekday,
+    Day, Meal, Menu, MenuSlug,
 };
 
 use super::Supplier;
@@ -69,7 +68,7 @@ struct Customer<'p> {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
-pub struct MatildaMenuIdentifier {
+pub struct MenuQuery {
     #[serde(rename = "c", skip_serializing_if = "Option::is_none")]
     pub customer: Option<u32>,
 
@@ -83,7 +82,7 @@ pub struct MatildaMenuIdentifier {
     pub region: u32,
 }
 
-impl Display for MatildaMenuIdentifier {
+impl Display for MenuQuery {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
@@ -96,7 +95,7 @@ impl Display for MatildaMenuIdentifier {
     }
 }
 
-impl FromStr for MatildaMenuIdentifier {
+impl FromStr for MenuQuery {
     type Err = serde::de::value::Error;
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
@@ -104,8 +103,9 @@ impl FromStr for MatildaMenuIdentifier {
     }
 }
 
-pub trait MatildaMenu {
-    fn query(&self) -> MatildaMenuIdentifier;
+#[allow(clippy::module_name_repetitions)]
+trait MatildaMenu {
+    fn query(&self) -> MenuQuery;
 
     fn title(&self) -> Cow<str>;
 }
@@ -127,8 +127,8 @@ impl MatildaMenu for Part<'_> {
         Cow::Borrowed(&self.name)
     }
 
-    fn query(&self) -> MatildaMenuIdentifier {
-        MatildaMenuIdentifier {
+    fn query(&self) -> MenuQuery {
+        MenuQuery {
             customer: None,
             part: self.id,
             municipality: self.municipality.id,
@@ -142,8 +142,8 @@ impl MatildaMenu for Customer<'_> {
         format!("{} ({})", self.name, self.part.name).into()
     }
 
-    fn query(&self) -> MatildaMenuIdentifier {
-        MatildaMenuIdentifier {
+    fn query(&self) -> MenuQuery {
+        MenuQuery {
             customer: Some(self.id),
             part: self.part.id,
             municipality: self.part.municipality.id,
@@ -307,7 +307,7 @@ enum View {
 #[derive(Debug, Serialize)]
 struct ListDaysQuery<'m> {
     #[serde(flatten)]
-    menu: &'m MatildaMenuIdentifier,
+    menu: &'m MenuQuery,
 
     #[serde(rename = "v")]
     view: View,
@@ -332,7 +332,7 @@ fn parse_day_node_opt(node: &Node, year: i32, week_num: u32) -> Option<Day> {
 
 async fn days_by_week(
     client: &Client,
-    menu: &MatildaMenuIdentifier,
+    menu: &MenuQuery,
     week_offset: i64,
 ) -> MuninResult<Vec<Day>> {
     let q = ListDaysQuery {
@@ -369,7 +369,7 @@ async fn days_by_week(
 /// List days.
 #[instrument]
 pub async fn list_days(
-    menu: &MatildaMenuIdentifier,
+    menu: &MenuQuery,
     first: NaiveDate,
     last: NaiveDate,
 ) -> MuninResult<Vec<Day>> {
@@ -417,7 +417,7 @@ mod tests {
 
     use chrono::{Datelike, Duration, NaiveDate, Utc};
 
-    use crate::menus::supplier::matilda::{list_days, week_offsets, MatildaMenuIdentifier};
+    use crate::menus::supplier::matilda::{list_days, week_offsets, MenuQuery};
 
     use super::list_menus;
 
@@ -430,7 +430,7 @@ mod tests {
 
     #[tokio::test]
     async fn should_list_days() {
-        let menu = MatildaMenuIdentifier {
+        let menu = MenuQuery {
             customer: Some(10242),
             part: 1594,
             municipality: 2161,

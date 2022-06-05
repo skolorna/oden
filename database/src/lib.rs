@@ -3,7 +3,7 @@ use tracing::info;
 
 pub mod models;
 pub mod schema;
-pub mod types;
+pub mod smaztext;
 
 #[macro_use]
 extern crate diesel;

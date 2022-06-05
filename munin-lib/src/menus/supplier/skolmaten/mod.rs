@@ -6,10 +6,7 @@ use futures::stream::{self, StreamExt};
 use reqwest::Client;
 use serde::Deserialize;
 
-use crate::{
-    errors::MuninResult,
-    menus::{supplier::Supplier, Day, Menu, MenuSlug},
-};
+use crate::{errors::MuninResult, menus::supplier::Supplier, Day, Menu, MenuSlug};
 
 use fetch::fetch;
 

@@ -1,6 +1,5 @@
 #[macro_use]
 pub mod mashie;
-pub mod meal;
 pub mod supplier;
 
 use chrono::NaiveDate;
@@ -8,12 +7,9 @@ use futures::{stream, StreamExt};
 use strum::IntoEnumIterator;
 use tracing::{debug, instrument};
 
-use crate::{
-    errors::MuninResult,
-    types::{day::Day, menu::Menu, menu_slug::MenuSlug},
-};
+use crate::{errors::MuninResult, Day, Meal, Menu, MenuSlug};
 
-use self::{meal::Meal, supplier::Supplier};
+use self::supplier::Supplier;
 
 /// List all the menus everywhere (from all suppliers).
 #[instrument]
