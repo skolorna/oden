@@ -2,11 +2,19 @@
 
 pub mod menus;
 
+use std::iter::FromIterator;
+
 use actix_web::{
-    http::header::{CacheControl, CacheDirective, CONTENT_TYPE},
+    http::header::{CacheControl, CacheDirective},
     web, HttpResponse, Responder,
 };
+use diesel::{sql_query, sql_types, Queryable, QueryableByName, RunQueryDsl};
 use serde::Serialize;
+
+use crate::{
+    errors::{AppError, AppResult},
+    PgPoolData,
+};
 
 #[derive(Debug, Serialize)]
 struct HealthResponse {
@@ -24,13 +32,73 @@ impl Default for HealthResponse {
 pub async fn get_health() -> impl Responder {
     HttpResponse::Ok()
         .insert_header(CacheControl(vec![CacheDirective::NoStore]))
-        .insert_header((CONTENT_TYPE, "text/plain; charset=utf-8"))
         .json(HealthResponse::default())
+}
+
+#[derive(Debug, Serialize)]
+struct Stats {
+    menus: i64,
+    days: i64,
+}
+
+impl FromIterator<CatalogRow> for Option<Stats> {
+    fn from_iter<T: IntoIterator<Item = CatalogRow>>(iter: T) -> Self {
+        use database::schema;
+
+        let mut menus = None;
+        let mut days = None;
+
+        for CatalogRow { reltuples, relname } in iter {
+            match relname.as_str() {
+                schema::DAYS_TABLE => days = Some(reltuples),
+                schema::MENUS_TABLE => menus = Some(reltuples),
+                _ => {}
+            }
+        }
+
+        match (menus, days) {
+            (Some(menus), Some(days)) => Some(Stats { menus, days }),
+            _ => None,
+        }
+    }
+}
+
+#[derive(Debug, Queryable, QueryableByName)]
+#[diesel(table_name = "pg_class")]
+struct CatalogRow {
+    #[sql_type = "sql_types::BigInt"]
+    reltuples: i64,
+    #[sql_type = "sql_types::Text"]
+    relname: String,
+}
+
+pub async fn get_stats(pool: PgPoolData) -> AppResult<HttpResponse> {
+    use database::schema;
+
+    let conn = pool.get()?;
+
+    let rows = web::block(move || {
+        sql_query("SELECT reltuples::bigint, relname FROM pg_class where relname IN ($1, $2)")
+            .bind::<sql_types::Text, _>(schema::DAYS_TABLE)
+            .bind::<sql_types::Text, _>(schema::MENUS_TABLE)
+            .load::<CatalogRow>(&conn)
+    })
+    .await??;
+
+    let stats: Stats = match rows.into_iter().collect() {
+        Some(stats) => stats,
+        None => return Err(AppError::InternalError),
+    };
+
+    Ok(HttpResponse::Ok()
+        .insert_header(CacheControl(vec![CacheDirective::MaxAge(600)]))
+        .json(stats))
 }
 
 /// Configure all the routes.
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/health").route(web::get().to(get_health)))
+        .service(web::resource("/stats").route(web::get().to(get_stats)))
         .service(web::scope("/menus").configure(menus::configure));
 }
 

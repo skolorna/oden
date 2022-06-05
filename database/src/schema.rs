@@ -6,6 +6,8 @@ table! {
     }
 }
 
+pub const DAYS_TABLE: &str = "days";
+
 table! {
     menus (id) {
         id -> Uuid,
@@ -14,6 +16,8 @@ table! {
         updated_at -> Nullable<Timestamptz>,
     }
 }
+
+pub const MENUS_TABLE: &str = "menus";
 
 joinable!(days -> menus (menu_id));
 
