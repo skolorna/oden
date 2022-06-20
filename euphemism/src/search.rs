@@ -15,7 +15,7 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Search<'a, T> {
+pub struct Search<'a, T: ToString> {
     query: &'a str,
     limit: usize,
     index: &'a Index<'a, T>,
@@ -55,8 +55,6 @@ where
         );
 
         for term in terms {
-            println!("{:?}", term);
-
             if let Some(docs) = self.index.word_docids.get(&term.word) {
                 docids.extend(docs.iter().map(|d| (*d, term.typos)));
             }
@@ -64,24 +62,22 @@ where
 
         let mut docid_typos = HashMap::<DocId, usize>::new();
 
-        dbg!(docids.len());
-
         for (doc, typos) in docids {
             *docid_typos.entry(doc).or_default() += typos as usize;
         }
 
-        let mut doc_frequencies: Vec<_> = docid_typos.into_iter().collect();
-        let i = doc_frequencies.len().saturating_sub(self.limit + 1);
+        let mut docid_typos: Vec<_> = docid_typos.into_iter().collect();
 
-        let candidates = if i >= doc_frequencies.len() {
-            doc_frequencies.as_mut()
+        let candidates = if docid_typos.len() > self.limit {
+            let mid = docid_typos.len() - self.limit - 1;
+            let (_highest, _, lowest) =
+                docid_typos.select_nth_unstable_by_key(mid, |(_id, typos)| *typos);
+            lowest
         } else {
-            let (_, _, top) = doc_frequencies.select_nth_unstable_by_key(i, |(_id, freq)| *freq);
-
-            top
+            docid_typos.as_mut()
         };
 
-        candidates.sort_by_key(|(_id, freq)| *freq);
+        candidates.sort_unstable_by_key(|(_id, freq)| *freq);
 
         debug!(
             "found {} candidates after {:.02?}",

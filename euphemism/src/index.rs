@@ -1,6 +1,5 @@
 use std::{
     borrow::Cow,
-    cmp::Reverse,
     collections::{BTreeMap, BTreeSet, HashMap},
     time::Instant,
 };
@@ -11,7 +10,8 @@ use crate::{position::extract_word_pair_proximities, tokenizer::analyze};
 
 pub type DocId = u32;
 
-pub struct Index<'a, T> {
+#[derive(Clone)]
+pub struct Index<'a, T: ToString> {
     pub word_docids: HashMap<String, Vec<DocId>>,
     pub docid_words: HashMap<DocId, Vec<String>>,
     pub docid_word_pair_proximity: fst::Map<Vec<u8>>,
@@ -19,7 +19,7 @@ pub struct Index<'a, T> {
     pub words_fst: fst::Set<Cow<'a, [u8]>>,
 }
 
-impl<T> std::fmt::Debug for Index<'_, T> {
+impl<T: ToString> std::fmt::Debug for Index<'_, T> {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.debug_struct("Index")
             .field("num_docs", &self.docs().len())
@@ -30,7 +30,7 @@ impl<T> std::fmt::Debug for Index<'_, T> {
 
 /// An immutable index.
 #[allow(clippy::new_without_default)]
-impl<'a, T> Index<'a, T> {
+impl<'a, T: ToString> Index<'a, T> {
     #[must_use]
     pub fn docs(&self) -> &HashMap<DocId, T> {
         &self.documents
@@ -56,6 +56,11 @@ impl<'a, T> Index<'a, T> {
 
         self.docid_word_pair_proximity.get(key).map(|v| v as _)
     }
+
+    #[must_use]
+    pub fn builder() -> IndexBuilder<T> {
+        IndexBuilder::new()
+    }
 }
 
 /// Some kind of serialization for using FSTs with multiple levels of keys.
@@ -66,7 +71,7 @@ fn docid_word_pair_to_bytes(doc: DocId, a: &str, b: &str) -> Vec<u8> {
 
     let mut bytes = Vec::with_capacity(std::mem::size_of::<DocId>() + a.len() + 1 + b.len());
 
-    bytes.extend_from_slice(&doc.to_be_bytes());
+    bytes.extend(&doc.to_be_bytes());
     bytes.extend(a.as_bytes());
     bytes.push(SEPARATOR);
     bytes.extend(b.as_bytes());
@@ -102,7 +107,7 @@ impl<T: ToString> IndexBuilder<T> {
     #[must_use]
     pub fn build(self) -> Index<'static, T> {
         let before = Instant::now();
-        let mut word_docids = BTreeMap::<String, Vec<DocId>>::new(); // `BTreeSet` automatically sorts
+        let mut word_docids = BTreeMap::<String, Vec<DocId>>::new(); // `BTreeMap` automatically sorts
         let mut docid_words = HashMap::<DocId, Vec<String>>::new();
         let mut docid_word_pair_proximity = BTreeMap::<Vec<u8>, u64>::new();
         let mut documents = HashMap::new();
@@ -133,19 +138,6 @@ impl<T: ToString> IndexBuilder<T> {
             documents.insert(id, doc);
         }
 
-        let mut freqs = word_docids
-            .iter()
-            .map(|(word, docs)| (word, docs.len()))
-            .collect::<Vec<_>>();
-        freqs.sort_by_key(|(_w, f)| Reverse(*f));
-        for (w, f) in freqs
-            .iter()
-            .take(10)
-            .map(|(w, f)| (w, *f as f32 / documents.len() as f32))
-        {
-            println!("\"{}\":\t{}", w, f);
-        }
-
         let words_fst = fst::Set::from_iter(word_docids.keys().map(String::as_str))
             .unwrap()
             .map_data(Cow::Owned)
@@ -156,7 +148,6 @@ impl<T: ToString> IndexBuilder<T> {
         let word_docids = word_docids.into_iter().collect::<HashMap<_, _>>();
 
         debug!("built index in {:.02?}", before.elapsed());
-        dbg!(docid_word_pair_proximity_fst.len());
 
         Index {
             word_docids,

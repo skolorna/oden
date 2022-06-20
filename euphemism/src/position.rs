@@ -1,4 +1,4 @@
-use std::collections::{btree_map::Entry, BTreeMap};
+use std::collections::BTreeMap;
 
 use crate::tokenizer::{SeparatorKind, Token, TokenKind};
 
@@ -20,26 +20,16 @@ pub fn extract_word_pair_proximities<'a>(
                 continue;
             }
 
-            let proximity = if loffset > roffset {
-                loffset - roffset
-            } else {
-                roffset - loffset
-            };
+            let proximity = loffset.abs_diff(*roffset);
 
             if proximity > max {
                 continue;
             }
 
-            match proximities.entry((lword.to_string(), rword.to_string())) {
-                Entry::Vacant(e) => {
-                    e.insert(proximity);
-                }
-                Entry::Occupied(mut o) => {
-                    if *o.get() > proximity {
-                        o.insert(proximity);
-                    }
-                }
-            }
+            proximities
+                .entry((lword.to_string(), rword.to_string()))
+                .and_modify(|p| *p = proximity.min(*p))
+                .or_insert(proximity);
         }
     }
 

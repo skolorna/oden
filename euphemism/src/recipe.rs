@@ -72,10 +72,7 @@ pub async fn scrape_recipes() -> Result<Vec<Recipe>, RecipeError> {
     let mut page = 1;
 
     loop {
-        // println!("scraping page {}", page);
         let mut res = recipes_on_page(&client, page).await?;
-
-        // println!("{}", recipes.len());
 
         if res.is_empty() {
             for recipe in &recipes {
