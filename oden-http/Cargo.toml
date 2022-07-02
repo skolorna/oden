@@ -7,7 +7,7 @@ edition = "2018"
 
 [dependencies]
 actix-rt = "2.7.0"
-actix-web = "4.0.1"
+actix-web = "4.1.0"
 hugin = { path = "../hugin", version = "0.2.3" }
 chrono = "0.4.19"
 chrono-tz = "0.6.1"
@@ -19,5 +19,5 @@ database = { path = "../database", version = "0.2.3" }
 diesel = { version = "1.4.8", features = ["r2d2"] }
 structopt = "0.3.26"
 dotenv = "0.15.0"
-r2d2 = "0.8.9"
+r2d2 = "0.8.10"
 tracing = "0.1.34"
