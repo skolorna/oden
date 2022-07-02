@@ -14,7 +14,7 @@ diesel = { version = "1.4.8", features = ["postgres", "chrono"] }
 dotenv = "0.15.0"
 futures = "0.3.21"
 meilisearch-sdk = "0.17.0"
-serde = { version = "1.0.137", features = ["derive"] }
+serde = { version = "1.0.138", features = ["derive"] }
 structopt = "0.3.26"
 thiserror = "1.0.31"
 tokio = { version = "1.16.1", features = ["rt-multi-thread", "macros"] }
