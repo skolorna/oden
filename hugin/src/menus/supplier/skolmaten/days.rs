@@ -4,7 +4,7 @@ use chrono::{Datelike, NaiveDate};
 use futures::stream::{self, StreamExt};
 use reqwest::{Client, StatusCode};
 use serde::Deserialize;
-use tracing::error;
+use tracing::{error, instrument};
 
 use crate::{
     day::dedup_day_dates,
@@ -92,6 +92,7 @@ struct SkolmatenWeekSpan {
     count: u8,
 }
 
+#[instrument(err, skip(client))]
 async fn raw_fetch_menu(
     client: &Client,
     station_id: u64,
@@ -157,6 +158,7 @@ fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Vec<SkolmatenWeekSp
 }
 
 /// List days of a particular Skolmaten menu.
+#[instrument(err, skip(client), fields(%first, %last))]
 pub(crate) async fn list_days(
     client: &Client,
     station_id: u64,

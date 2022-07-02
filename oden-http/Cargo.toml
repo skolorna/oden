@@ -8,7 +8,7 @@ edition = "2018"
 [dependencies]
 actix-rt = "2.7.0"
 actix-web = "4.0.1"
-hugin = { path = "../hugin", version = "0.2.3" }
+hugin = { path = "../hugin", version = "0.2.4" }
 chrono = "0.4.19"
 chrono-tz = "0.6.1"
 futures = "0.3.21"

@@ -1,5 +1,7 @@
 use reqwest::{Client, Response};
+use tracing::instrument;
 
+#[instrument(err)]
 pub(super) async fn fetch(client: &Client, path: &str) -> reqwest::Result<Response> {
     let url = format!("https://skolmaten.se/api/4/{}", path);
 

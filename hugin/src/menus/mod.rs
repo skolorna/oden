@@ -12,7 +12,7 @@ use crate::{errors::Result, Day, Meal, Menu, MenuSlug};
 use self::supplier::Supplier;
 
 /// List all the menus everywhere (from all suppliers).
-#[instrument]
+#[instrument(err)]
 pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     debug!("listing menus");
 
@@ -32,6 +32,7 @@ pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
+#[instrument(err, fields(%first, %last))]
 pub async fn list_days(
     menu_slug: &MenuSlug,
     first: NaiveDate,

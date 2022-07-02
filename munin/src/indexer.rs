@@ -19,6 +19,7 @@ use meilisearch_sdk::tasks::Task;
 use structopt::StructOpt;
 use thiserror::Error;
 use tracing::info;
+use tracing::instrument;
 use tracing::warn;
 
 #[derive(Debug, StructOpt)]
@@ -166,6 +167,7 @@ pub type IndexerResult<T> = Result<T, IndexerError>;
 /// Indexes the menus from the suppliers, and stores them in the database. If
 /// the menu already exists, it won't be updated. Returns the number of menus
 /// inserted.
+#[instrument(err, skip(connection))]
 pub async fn load_menus(connection: &PgConnection) -> IndexerResult<usize> {
     use database::schema::menus::dsl::*;
 
@@ -190,6 +192,7 @@ pub async fn load_menus(connection: &PgConnection) -> IndexerResult<usize> {
     Ok(inserted_count)
 }
 
+#[instrument(err, skip(connection))]
 pub fn get_candidates(
     connection: &PgConnection,
     max_age: Duration,
@@ -208,6 +211,7 @@ pub fn get_candidates(
     }
 }
 
+#[instrument(err, skip_all)]
 pub fn submit_days(
     connection: &PgConnection,
     results: Vec<(MenuId, Result<Vec<hugin::Day>, hugin::Error>)>,
