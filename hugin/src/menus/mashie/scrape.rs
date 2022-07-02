@@ -6,7 +6,7 @@ use select::{
     node::Node,
     predicate::{Class, Predicate},
 };
-use tracing::{instrument, error};
+use tracing::{error, instrument};
 
 use crate::{Day, Meal};
 
@@ -37,7 +37,7 @@ pub fn parse_month(m: &str) -> Option<u32> {
         _ => {
             error!("unable to parse invalid month");
             None
-        },
+        }
     }
 }
 
