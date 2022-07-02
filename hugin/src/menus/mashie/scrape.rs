@@ -6,6 +6,7 @@ use select::{
     node::Node,
     predicate::{Class, Predicate},
 };
+use tracing::{error, instrument};
 
 use crate::{Day, Meal};
 
@@ -18,6 +19,7 @@ use crate::{Day, Meal};
 /// assert!(parse_month("Jan").is_none()); // case sensitive
 /// ```
 #[must_use]
+#[instrument]
 pub fn parse_month(m: &str) -> Option<u32> {
     match m {
         "jan" => Some(1),
@@ -32,10 +34,14 @@ pub fn parse_month(m: &str) -> Option<u32> {
         "okt" => Some(10),
         "nov" => Some(11),
         "dec" => Some(12),
-        _ => None,
+        _ => {
+            error!("unable to parse invalid month");
+            None
+        }
     }
 }
 
+#[instrument]
 fn parse_date_literal(literal: &str) -> Option<NaiveDate> {
     let mut segments = literal.split_whitespace();
 

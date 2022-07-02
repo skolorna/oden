@@ -7,6 +7,7 @@ use select::{
     node::Node,
     predicate::{Class, Name, Predicate},
 };
+use tracing::instrument;
 
 use crate::{
     errors::{Error, Result},
@@ -30,6 +31,7 @@ impl KleinsSchool {
     }
 }
 
+#[instrument(err)]
 async fn raw_list_schools() -> Result<Vec<KleinsSchool>> {
     let client = Client::new();
     let html = fetch(&client, "https://www.kleinskitchen.se/skolor/")
@@ -50,6 +52,7 @@ async fn raw_list_schools() -> Result<Vec<KleinsSchool>> {
     Ok(schools)
 }
 
+#[instrument(err)]
 pub async fn list_menus() -> Result<Vec<Menu>> {
     let schools = raw_list_schools().await?;
 
@@ -91,6 +94,7 @@ async fn raw_query_school(school_slug: &str) -> Result<QuerySchoolResponse> {
     Ok(QuerySchoolResponse { menu_url })
 }
 
+#[instrument(err, fields(%first, %last))]
 pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let menu_url = {
         let res = raw_query_school(menu_slug).await?;

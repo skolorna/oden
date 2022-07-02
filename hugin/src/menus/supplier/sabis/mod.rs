@@ -4,13 +4,14 @@ use chrono::{DateTime, Datelike, NaiveDate};
 use reqwest::{header, Client, StatusCode};
 use select::document::Document;
 use select::predicate::{Class, Name, Predicate};
-use tracing::error;
+use tracing::{error, instrument};
 
 use crate::errors::{Error, Result};
 use crate::menus::supplier::Supplier;
 use crate::util::{extract_digits, last_path_segment, parse_weekday};
 use crate::{Day, Meal, Menu, MenuSlug};
 
+#[instrument(err)]
 pub async fn list_menus() -> Result<Vec<Menu>> {
     let html = reqwest::get("https://www.sabis.se/restauranger-cafeer/vara-foretagsrestauranger/")
         .await?
@@ -37,6 +38,7 @@ pub async fn list_menus() -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
+#[instrument(err, fields(%first, %last))]
 pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",

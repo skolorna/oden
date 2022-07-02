@@ -4,6 +4,7 @@ use chrono::NaiveDate;
 use reqwest::{header::CONTENT_LENGTH, Client};
 use select::document::Document;
 use serde::Deserialize;
+use tracing::instrument;
 
 use crate::{
     errors::{Error, Result},
@@ -31,6 +32,7 @@ impl MashieMenu {
     }
 }
 
+#[instrument(err)]
 pub async fn list_menus(host: &str) -> Result<Vec<MashieMenu>> {
     let client = Client::new();
     let res = client
@@ -47,6 +49,7 @@ pub async fn list_menus(host: &str) -> Result<Vec<MashieMenu>> {
     Ok(menus)
 }
 
+#[instrument(err)]
 pub async fn query_menu(host: &str, menu_slug: &str) -> Result<MashieMenu> {
     let menus = list_menus(host).await?;
     let menu = menus
@@ -57,6 +60,7 @@ pub async fn query_menu(host: &str, menu_slug: &str) -> Result<MashieMenu> {
     Ok(menu)
 }
 
+#[instrument(err, fields(%first, %last))]
 pub async fn list_days(
     host: &str,
     menu_slug: &str,

@@ -5,6 +5,7 @@ use chrono::NaiveDate;
 use futures::stream::{self, StreamExt};
 use reqwest::Client;
 use serde::Deserialize;
+use tracing::instrument;
 
 use crate::{errors::Result, menus::supplier::Supplier, Day, Menu, MenuSlug};
 
@@ -62,6 +63,7 @@ impl Station {
     }
 }
 
+#[instrument(err, skip(client))]
 async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
     let res = fetch(client, "provinces")
         .await?
@@ -71,6 +73,7 @@ async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
     Ok(res.provinces)
 }
 
+#[instrument(err, skip(client))]
 async fn list_districts_in_province(client: &Client, province_id: u64) -> Result<Vec<District>> {
     let res = fetch(client, &format!("districts?province={}", province_id))
         .await?
@@ -80,6 +83,7 @@ async fn list_districts_in_province(client: &Client, province_id: u64) -> Result
     Ok(res.districts)
 }
 
+#[instrument(err, skip(client))]
 async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<Vec<Station>> {
     let res = fetch(client, &format!("stations?district={}", district_id))
         .await?
@@ -89,6 +93,7 @@ async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<
     Ok(res.stations)
 }
 
+#[instrument(err)]
 pub(super) async fn list_menus() -> Result<Vec<Menu>> {
     let client = Client::new();
 
@@ -135,6 +140,7 @@ pub(super) async fn list_menus() -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
+#[instrument(err, fields(%first, %last))]
 pub(super) async fn list_days(
     menu_slug: u64,
     first: NaiveDate,
