@@ -21,6 +21,9 @@ struct Opt {
     #[structopt(env)]
     sentry_dsn: Option<Dsn>,
 
+    #[structopt(env)]
+    sentry_environment: Option<String>,
+
     #[structopt(subcommand)]
     cmd: Command,
 }
@@ -40,6 +43,7 @@ async fn main() -> anyhow::Result<()> {
         // Set this a to lower value in production
         traces_sample_rate: 1.0,
         dsn: opt.sentry_dsn,
+        environment: opt.sentry_environment.map(Into::into),
         ..sentry::ClientOptions::default()
     });
 
