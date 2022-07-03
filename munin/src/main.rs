@@ -54,7 +54,7 @@ async fn main() -> anyhow::Result<()> {
         .with(sentry_tracing::layer())
         .init();
 
-    let connection = PgConnection::establish(&opt.postgres_url).unwrap();
+    let connection = PgConnection::establish(&opt.postgres_url)?;
 
     database::run_migrations(&connection).expect("migrations failed");
 

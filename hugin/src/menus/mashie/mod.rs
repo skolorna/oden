@@ -60,7 +60,7 @@ pub async fn query_menu(host: &str, menu_slug: &str) -> Result<MashieMenu> {
     Ok(menu)
 }
 
-#[instrument(err, fields(%first, %last))]
+#[instrument(fields(%first, %last))]
 pub async fn list_days(
     host: &str,
     menu_slug: &str,
