@@ -1,8 +1,6 @@
 use diesel::prelude::*;
 use diesel::PgConnection;
 use dotenv::dotenv;
-use exporter::export;
-use exporter::ExporterOpt;
 use indexer::index;
 use indexer::IndexerOpt;
 use sentry::types::Dsn;
@@ -10,7 +8,7 @@ use structopt::StructOpt;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
-mod exporter;
+mod export;
 mod indexer;
 
 #[derive(Debug, StructOpt)]
@@ -31,7 +29,7 @@ struct Opt {
 #[derive(Debug, StructOpt)]
 enum Command {
     Index(IndexerOpt),
-    Export(ExporterOpt),
+    Export(export::Opt),
 }
 
 #[tokio::main]
@@ -60,7 +58,7 @@ async fn main() -> anyhow::Result<()> {
 
     match opt.cmd {
         Command::Index(opt) => index(&connection, &opt).await?,
-        Command::Export(opt) => export(&connection, &opt)?,
+        Command::Export(opt) => export::export(&connection, &opt)?,
     }
 
     Ok(())
