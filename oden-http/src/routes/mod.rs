@@ -85,10 +85,10 @@ pub async fn get_stats(pool: PgPoolData) -> AppResult<HttpResponse> {
     })
     .await??;
 
-    let stats: Stats = match rows.into_iter().collect() {
-        Some(stats) => stats,
-        None => return Err(AppError::InternalError),
-    };
+    let stats = rows
+        .into_iter()
+        .collect::<Option<Stats>>()
+        .ok_or(AppError::InternalError)?;
 
     Ok(HttpResponse::Ok()
         .insert_header(CacheControl(vec![CacheDirective::MaxAge(600)]))
