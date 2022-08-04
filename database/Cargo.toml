@@ -10,7 +10,7 @@ hugin = { path = "../hugin", features = ["diesel"], version = "0.2.3" }
 chrono = "0.4.19"
 diesel = { version = "1.4.8", features = ["chrono", "postgres", "uuidv07"] }
 meilisearch-sdk = { version = "0.17.0", optional = true }
-serde = { version = "1.0.137", features = ["derive"] }
+serde = { version = "1.0.142", features = ["derive"] }
 smaz = { path = "../smaz", version = "0.1.0" }
 diesel_migrations = "1.4.0"
 tracing = "0.1.34"
