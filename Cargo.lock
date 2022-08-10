@@ -1680,7 +1680,7 @@ dependencies = [
 
 [[package]]
 name = "oden-http"
-version = "0.2.4"
+version = "0.2.5"
 dependencies = [
  "actix-rt",
  "actix-web",
@@ -1691,6 +1691,7 @@ dependencies = [
  "dotenv",
  "futures",
  "hugin",
+ "meilisearch-sdk",
  "r2d2",
  "serde",
  "structopt",

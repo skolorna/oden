@@ -56,4 +56,11 @@ impl From<diesel::result::Error> for AppError {
     }
 }
 
+impl From<meilisearch_sdk::errors::Error> for AppError {
+    fn from(e: meilisearch_sdk::errors::Error) -> Self {
+        error!("meilisearch error: {e}");
+        Self::InternalError
+    }
+}
+
 pub type AppResult<T> = Result<T, AppError>;
