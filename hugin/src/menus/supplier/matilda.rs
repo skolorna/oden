@@ -152,7 +152,7 @@ impl MatildaMenu for Customer<'_> {
     }
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn get_doc<T: Serialize + std::fmt::Debug>(client: &Client, query: &T) -> Result<Document> {
     let res = client
         .get("https://webmenu.foodit.se/")
@@ -177,7 +177,7 @@ fn scrape_options<'a>(
         })
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn list_regions(client: &Client) -> Result<Vec<Region>> {
     #[derive(Debug, Serialize)]
     struct Query {}
@@ -190,7 +190,7 @@ async fn list_regions(client: &Client) -> Result<Vec<Region>> {
     Ok(regions)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn list_municipalities<'r>(
     client: &Client,
     region: &'r Region,
@@ -203,7 +203,7 @@ async fn list_municipalities<'r>(
     Ok(municipalities)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn list_parts<'m>(
     client: &Client,
     municipality: &'m Municipality<'m>,
@@ -220,7 +220,7 @@ async fn list_parts<'m>(
     Ok(parts)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn list_customers<'p>(client: &Client, part: &'p Part<'p>) -> Result<Vec<Customer<'p>>> {
     let doc = get_doc(client, part).await?;
     let customers = scrape_options(&doc, "CustomerList")
@@ -232,7 +232,7 @@ async fn list_customers<'p>(client: &Client, part: &'p Part<'p>) -> Result<Vec<C
 
 const CONCURRENT_REQUESTS: usize = 16;
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> Result<Vec<Menu>> {
     let customers = list_customers(client, &part).await?;
 
@@ -243,7 +243,7 @@ async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> Result<Vec<Menu>>
     }
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn menus_in_municipality<'m>(
     client: &Client,
     municipality: &'m Municipality<'m>,
@@ -262,7 +262,7 @@ async fn menus_in_municipality<'m>(
     Ok(menus)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn menus_in_region(client: &Client, region: &Region) -> Result<Vec<Menu>> {
     let mut menus = vec![];
     let municipalities = list_municipalities(client, region).await?;
@@ -327,7 +327,7 @@ fn parse_day_node_opt(node: &Node, year: i32, week_num: u32) -> Option<Day> {
     Day::new_opt(date, meals)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Result<Vec<Day>> {
     let q = ListDaysQuery {
         menu,
@@ -361,7 +361,7 @@ async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Re
 }
 
 /// List days.
-#[instrument(err, fields(%first, %last))]
+#[instrument(fields(%first, %last))]
 pub async fn list_days(menu: &MenuQuery, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let utc = Utc::now().naive_utc();
     let now = Stockholm.from_utc_datetime(&utc).date().naive_local();

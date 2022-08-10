@@ -11,7 +11,7 @@ pub type PgPoolData = Data<Pool<ConnectionManager<PgConnection>>>;
 
 #[macro_export]
 macro_rules! create_app {
-    ($pool:expr) => {{
+    ($pool:expr, $meili_url:expr, $meili_key:expr) => {{
         use actix_web::dev::Service;
         use actix_web::http::header::{self, HeaderValue};
         use actix_web::middleware::{self, NormalizePath};
@@ -21,8 +21,11 @@ macro_rules! create_app {
 
         use oden_http::routes;
 
+        let meili_client = meilisearch_sdk::client::Client::new($meili_url, $meili_key);
+
         App::new()
             .app_data(Data::new($pool.clone()))
+            .app_data(Data::new(meili_client))
             .wrap(NormalizePath::trim())
             .configure(routes::configure)
             .wrap_fn(|req, srv| {

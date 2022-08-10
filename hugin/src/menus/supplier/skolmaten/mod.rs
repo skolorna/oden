@@ -2,7 +2,10 @@ mod days;
 mod fetch;
 
 use chrono::NaiveDate;
-use futures::stream::{self, StreamExt};
+use futures::{
+    stream::{self, StreamExt},
+    TryFutureExt,
+};
 use reqwest::Client;
 use serde::Deserialize;
 use tracing::instrument;
@@ -63,7 +66,7 @@ impl Station {
     }
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
     let res = fetch(client, "provinces")
         .await?
@@ -73,7 +76,7 @@ async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
     Ok(res.provinces)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn list_districts_in_province(client: &Client, province_id: u64) -> Result<Vec<District>> {
     let res = fetch(client, &format!("districts?province={}", province_id))
         .await?
@@ -83,7 +86,7 @@ async fn list_districts_in_province(client: &Client, province_id: u64) -> Result
     Ok(res.districts)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(skip(client))]
 async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<Vec<Station>> {
     let res = fetch(client, &format!("stations?district={}", district_id))
         .await?
@@ -99,48 +102,38 @@ pub(super) async fn list_menus() -> Result<Vec<Menu>> {
 
     let provinces = list_provinces(&client).await?;
 
-    let districts: Vec<District> = stream::iter(provinces)
-        .map(|province| {
-            let client = &client;
-            async move {
-                let districts = list_districts_in_province(client, province.id)
-                    .await
-                    .unwrap();
+    let mut districts = Vec::new();
 
-                districts
-            }
-        })
-        .buffer_unordered(CONCURRENT_REQUESTS)
-        .collect::<Vec<_>>()
-        .await
-        .into_iter()
-        .flatten()
-        .collect();
+    let mut districts_stream = stream::iter(provinces)
+        .map(|province| list_districts_in_province(&client, province.id))
+        .buffer_unordered(CONCURRENT_REQUESTS);
 
-    let menus: Vec<Menu> = stream::iter(districts)
+    while let Some(res) = districts_stream.next().await {
+        districts.extend(res?);
+    }
+
+    let mut menus = Vec::new();
+
+    let mut menus_stream = stream::iter(districts)
         .map(|district| {
-            let client = &client;
-            async move {
-                list_stations_in_district(client, district.id)
-                    .await
-                    .unwrap()
-                    .into_iter()
-                    .map(|station| station.to_menu(&district.name))
-                    .collect::<Vec<_>>()
-            }
+            list_stations_in_district(&client, district.id)
+                .map_ok(|stations| (district.name, stations))
         })
-        .buffer_unordered(CONCURRENT_REQUESTS)
-        .collect::<Vec<_>>()
-        .await
-        .into_iter()
-        .flatten()
-        .flatten()
-        .collect();
+        .buffer_unordered(CONCURRENT_REQUESTS);
+
+    while let Some(res) = menus_stream.next().await {
+        let (district_name, stations) = res?;
+        menus.extend(
+            stations
+                .into_iter()
+                .filter_map(|s| s.to_menu(&district_name)),
+        );
+    }
 
     Ok(menus)
 }
 
-#[instrument(err, fields(%first, %last))]
+#[instrument(fields(%first, %last))]
 pub(super) async fn list_days(
     menu_slug: u64,
     first: NaiveDate,
@@ -172,7 +165,7 @@ mod tests {
         let first_day = chrono::offset::Local::now().date().naive_local();
         let last_day = first_day + Duration::weeks(2);
 
-        let days = list_days(4791333780717568, first_day, last_day)
+        let days = list_days(4889403990212608, first_day, last_day)
             .await
             .unwrap();
 

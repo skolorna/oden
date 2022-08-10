@@ -12,7 +12,7 @@ use crate::{errors::Result, Day, Meal, Menu, MenuSlug};
 use self::supplier::Supplier;
 
 /// List all the menus everywhere (from all suppliers).
-#[instrument(err)]
+#[instrument(err, err)]
 pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     debug!("listing menus");
 

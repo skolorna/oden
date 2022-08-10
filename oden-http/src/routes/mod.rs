@@ -5,11 +5,12 @@ pub mod menus;
 use std::iter::FromIterator;
 
 use actix_web::{
-    http::header::{CacheControl, CacheDirective},
+    http::header::{CacheControl, CacheDirective, ContentType},
     web, HttpResponse, Responder,
 };
 use diesel::{sql_query, sql_types, Queryable, QueryableByName, RunQueryDsl};
 use serde::Serialize;
+use tracing::error;
 
 use crate::{
     errors::{AppError, AppResult},
@@ -85,20 +86,49 @@ pub async fn get_stats(pool: PgPoolData) -> AppResult<HttpResponse> {
     })
     .await??;
 
-    let stats: Stats = match rows.into_iter().collect() {
-        Some(stats) => stats,
-        None => return Err(AppError::InternalError),
-    };
+    let stats = rows
+        .into_iter()
+        .collect::<Option<Stats>>()
+        .ok_or(AppError::InternalError)?;
 
     Ok(HttpResponse::Ok()
-        .insert_header(CacheControl(vec![CacheDirective::MaxAge(600)]))
+        .insert_header(CacheControl(vec![
+            CacheDirective::Public,
+            CacheDirective::MaxAge(600),
+        ]))
         .json(stats))
+}
+
+pub async fn get_meili_key(
+    meili: web::Data<meilisearch_sdk::client::Client>,
+) -> AppResult<HttpResponse> {
+    use meilisearch_sdk::key::Action;
+
+    let key = meili
+        .get_keys()
+        .await?
+        .into_iter()
+        .find(|k| k.actions == vec![Action::Search]);
+
+    if let Some(key) = key {
+        Ok(HttpResponse::Ok()
+            .insert_header(CacheControl(vec![
+                CacheDirective::Public,
+                CacheDirective::MaxAge(60),
+            ]))
+            .content_type(ContentType::plaintext())
+            .body(key.key))
+    } else {
+        error!("no search key found");
+        Err(AppError::InternalError)
+    }
 }
 
 /// Configure all the routes.
 pub fn configure(cfg: &mut web::ServiceConfig) {
     cfg.service(web::resource("/health").route(web::get().to(get_health)))
         .service(web::resource("/stats").route(web::get().to(get_stats)))
+        .service(web::resource("/key").route(web::get().to(get_meili_key)))
         .service(web::scope("/menus").configure(menus::configure));
 }
 

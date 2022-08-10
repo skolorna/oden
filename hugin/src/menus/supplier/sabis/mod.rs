@@ -38,7 +38,7 @@ pub async fn list_menus() -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
-#[instrument(err, fields(%first, %last))]
+#[instrument(fields(%first, %last))]
 pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",

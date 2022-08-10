@@ -94,7 +94,7 @@ async fn raw_query_school(school_slug: &str) -> Result<QuerySchoolResponse> {
     Ok(QuerySchoolResponse { menu_url })
 }
 
-#[instrument(err, fields(%first, %last))]
+#[instrument(fields(%first, %last))]
 pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
     let menu_url = {
         let res = raw_query_school(menu_slug).await?;
