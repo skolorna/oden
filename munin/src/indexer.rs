@@ -112,19 +112,23 @@ pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult
             }
         };
 
-        let documents: Vec<Menu> = menus.load(connection)?;
+        index.set_sortable_attributes(&["updated_at"]).await?;
+        index
+            .set_filterable_attributes(&["slug", "updated_at"])
+            .await?;
 
+        let documents: Vec<Menu> = menus.load(connection)?;
         let task = index.add_documents(&documents, None).await?;
 
         info!(
-            "Queued {} documents for MeiliSearch indexing",
+            "queued {} documents for MeiliSearch indexing",
             documents.len()
         );
 
         match task.wait_for_completion(&client, None, None).await? {
             Task::Succeeded { content } => {
                 info!(
-                    "Indexed {} documents in {:.02} seconds",
+                    "indexed {} documents in {:.02} seconds",
                     documents.len(),
                     content.duration.as_secs_f64(),
                 );
@@ -143,13 +147,13 @@ pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult
 
 #[derive(Debug, Error)]
 pub enum IndexerError {
-    #[error("{0}")]
+    #[error("diesel error: {0}")]
     Diesel(#[from] diesel::result::Error),
 
-    #[error("{0}")]
+    #[error("hugin error: {0}")]
     Hugin(#[from] hugin::Error),
 
-    #[error("{0}")]
+    #[error("meilisearch error: {0}")]
     Meilisearch(#[from] meilisearch_sdk::errors::Error),
 
     #[error("timeout waiting for {action}")]
