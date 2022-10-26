@@ -56,13 +56,14 @@ pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Re
     let html = res.text().await?;
     let doc = Document::from(html.as_str());
 
-    let entry_title = match doc.find(Class("menu-block__title")).next() {
-        Some(elem) => elem.text(),
-        None => {
+    let entry_title = doc
+        .find(Class("menu-block__title"))
+        .next()
+        .map(|el| el.text())
+        .ok_or_else(|| {
             error!("no title found for Sabis menu \"{}\"!", menu_slug);
-            return Err(Error::ScrapeError { context: html });
-        }
-    };
+            Error::ScrapeError { context: html }
+        })?;
 
     let week_num = extract_digits(entry_title.chars(), 10);
 

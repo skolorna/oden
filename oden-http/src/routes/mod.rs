@@ -107,6 +107,7 @@ pub async fn get_meili_key(
     let key = meili
         .get_keys()
         .await?
+        .results
         .into_iter()
         .find(|k| k.actions == vec![Action::Search]);
 

@@ -5,7 +5,7 @@ use uuid::Uuid;
 use crate::schema::{days, menus};
 use crate::smaztext::SmazText;
 
-#[derive(Identifiable, Queryable, Associations, PartialEq, Debug)]
+#[derive(Identifiable, Queryable, Associations, PartialEq, Eq, Debug)]
 #[belongs_to(Menu)]
 #[table_name = "days"]
 #[primary_key(date, menu_id)]
