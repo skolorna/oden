@@ -723,7 +723,7 @@ dependencies = [
  "diesel",
  "diesel_migrations",
  "hugin",
- "meilisearch-sdk",
+ "meilisearch-sdk 0.17.0",
  "serde",
  "smaz",
  "tracing",
@@ -807,9 +807,12 @@ checksum = "77c90badedccf4105eca100756a0b1289e191f6fcbdadd3cee1d2f614f97da8f"
 
 [[package]]
 name = "either"
-version = "1.7.0"
+version = "1.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f107b87b6afc2a64fd13cac55fe06d6c8859f12d4b14cbcdd2c67d0976781be"
+checksum = "90e5c1c8368803113bf0c9584fc495a58b86dc8a29edbf8fe877d21d9507e797"
+dependencies = [
+ "serde",
+]
 
 [[package]]
 name = "encoding_rs"
@@ -1509,6 +1512,30 @@ dependencies = [
 ]
 
 [[package]]
+name = "meilisearch-sdk"
+version = "0.20.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5c0fab01f198149ac68362c48d2b332d3b0ce0a0241765fb430ea443c5d361e2"
+dependencies = [
+ "async-trait",
+ "either",
+ "futures",
+ "isahc",
+ "iso8601-duration",
+ "js-sys",
+ "jsonwebtoken",
+ "log",
+ "serde",
+ "serde_json",
+ "time 0.3.11",
+ "uuid 1.1.2",
+ "wasm-bindgen",
+ "wasm-bindgen-futures",
+ "web-sys",
+ "yaup",
+]
+
+[[package]]
 name = "memchr"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1584,7 +1611,7 @@ dependencies = [
  "dotenv",
  "futures",
  "hugin",
- "meilisearch-sdk",
+ "meilisearch-sdk 0.20.1",
  "sentry",
  "sentry-tracing",
  "serde",
@@ -1680,7 +1707,7 @@ dependencies = [
 
 [[package]]
 name = "oden-http"
-version = "0.2.5"
+version = "0.2.6"
 dependencies = [
  "actix-rt",
  "actix-web",
@@ -1691,7 +1718,7 @@ dependencies = [
  "dotenv",
  "futures",
  "hugin",
- "meilisearch-sdk",
+ "meilisearch-sdk 0.20.1",
  "r2d2",
  "serde",
  "structopt",
@@ -3312,6 +3339,16 @@ dependencies = [
  "mac",
  "markup5ever",
  "time 0.1.44",
+]
+
+[[package]]
+name = "yaup"
+version = "0.2.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a59e7d27bed43f7c37c25df5192ea9d435a8092a902e02203359ac9ce3e429d9"
+dependencies = [
+ "serde",
+ "url",
 ]
 
 [[package]]
