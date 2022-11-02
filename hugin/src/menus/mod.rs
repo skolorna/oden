@@ -12,12 +12,12 @@ use crate::{errors::Result, Day, Meal, Menu, MenuSlug};
 use self::supplier::Supplier;
 
 /// List all the menus everywhere (from all suppliers).
-#[instrument(err, err)]
+#[instrument]
 pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     debug!("listing menus");
 
     let mut menus = stream::iter(Supplier::iter())
-        .map(|p| async move { p.list_menus().await })
+        .map(|s| async move { s.list_menus().await })
         .buffer_unordered(concurrent)
         .collect::<Vec<_>>()
         .await
@@ -32,7 +32,7 @@ pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
-#[instrument(err, fields(%first, %last))]
+#[instrument(fields(%first, %last))]
 pub async fn list_days(
     menu_slug: &MenuSlug,
     first: NaiveDate,

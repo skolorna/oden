@@ -10,8 +10,6 @@ use database::schema::{days::table as days_table, menus::table as menus_table};
 use diesel::{PgConnection, QueryDsl, RunQueryDsl};
 use hugin::Meal;
 use serde::Serialize;
-use structopt::StructOpt;
-use thiserror::Error;
 use tracing::info;
 
 #[derive(Debug, Serialize)]
@@ -40,31 +38,16 @@ impl TryFrom<Day> for ExportedDay {
     }
 }
 
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("sql error: {0}")]
-    Diesel(#[from] diesel::result::Error),
-
-    #[error("io error: {0}")]
-    Io(#[from] std::io::Error),
-
-    #[error("csv error: {0}")]
-    Csv(#[from] csv::Error),
-
-    #[error("json error: {0}")]
-    Json(#[from] serde_json::Error),
-}
-
-#[derive(Debug, StructOpt)]
-pub struct Opt {
-    #[structopt(short, long)]
+#[derive(Debug, clap::Args)]
+pub struct Args {
+    #[arg(short, long)]
     output: PathBuf,
 
-    #[structopt(long, default_value = "100000")]
+    #[arg(long, default_value = "100000")]
     chunk_size: i64,
 }
 
-pub fn export(connection: &PgConnection, opt: &Opt) -> Result<(), Error> {
+pub fn export(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> {
     create_dir(&opt.output)?;
 
     let menus_file = OpenOptions::new()
@@ -83,7 +66,7 @@ pub fn export(connection: &PgConnection, opt: &Opt) -> Result<(), Error> {
         .build_transaction()
         .repeatable_read()
         .read_only()
-        .run::<_, Error, _>(|| {
+        .run::<_, anyhow::Error, _>(|| {
             let menus = menus_table.load::<Menu>(connection)?;
 
             for menu in menus {

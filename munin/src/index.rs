@@ -1,3 +1,4 @@
+use anyhow::bail;
 use chrono::Duration;
 use chrono::TimeZone;
 use chrono::Utc;
@@ -14,56 +15,47 @@ use futures::StreamExt;
 use hugin::menus::list_days;
 use hugin::menus::list_menus;
 use meilisearch_sdk::client::Client;
-use meilisearch_sdk::errors::MeilisearchError;
 use meilisearch_sdk::tasks::Task;
-use structopt::StructOpt;
-use thiserror::Error;
-use tracing::info;
-use tracing::instrument;
-use tracing::warn;
+use tracing::{info, instrument, warn};
 
-#[derive(Debug, StructOpt)]
-struct MeiliOpt {}
-
-#[derive(Debug, StructOpt)]
-#[structopt(about = "Download menu data for upcoming days")]
-pub struct IndexerOpt {
+#[derive(Debug, clap::Args)]
+pub struct Args {
     /// Download new menus and insert them, if not already present.
-    #[structopt(long)]
+    #[arg(long)]
     load_menus: bool,
 
     /// How many days to fetch for each menu
-    #[structopt(long, default_value = "90")]
+    #[arg(long, default_value = "90")]
     days: u32,
 
-    #[structopt(long, default_value = "50")]
+    #[arg(long, default_value = "50")]
     concurrent: usize,
 
     /// Download the data for a few menus at a time in order to limit
     /// memory usage.
-    #[structopt(long, default_value = "500")]
+    #[arg(long, default_value = "500")]
     menus_per_chunk: usize,
 
-    #[structopt(long, short = "l")]
+    #[arg(long, short = 'l')]
     menu_limit: Option<i64>,
 
     /// All menus that were updated earlier than this will be selected.
-    #[structopt(long, default_value = "86400")]
+    #[arg(long, default_value = "86400")]
     max_age_secs: i64,
 
     /// If provided, the menus will be inserted into the given
     /// MeiliSearch instance.
-    #[structopt(long, env)]
+    #[arg(long, env)]
     meili_url: Option<String>,
 
-    #[structopt(long, env, hide_env_values = true, default_value = "")]
+    #[arg(long, env, hide_env_values = true, default_value = "")]
     meili_key: String,
 
-    #[structopt(long, default_value = Menu::MEILI_INDEX)]
+    #[arg(long, default_value = Menu::MEILI_INDEX)]
     meili_index: String,
 }
 
-pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult<()> {
+pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> {
     if opt.load_menus {
         load_menus(connection).await?;
     }
@@ -74,7 +66,7 @@ pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult
         opt.menu_limit,
     )?;
 
-    info!("Updating {} menus ...", must_update.len());
+    info!("updating {} menus", must_update.len());
 
     let utc = Utc::now().naive_utc().date();
     let first = Stockholm.from_utc_date(&utc).naive_local();
@@ -100,14 +92,16 @@ pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult
             index
         } else {
             let task = client.create_index(&opt.meili_index, Some("id")).await?;
-            let task = task.wait_for_completion(&client, None, None).await?;
+            let task = task
+                .wait_for_completion(&client, None, Some(std::time::Duration::from_secs(10)))
+                .await?;
             match task {
                 Task::Enqueued { .. } | Task::Processing { .. } => {
-                    return Err(IndexerError::Timeout {
-                        action: "waiting for index creation".into(),
-                    })
+                    bail!("timeout waiting for index creation")
                 }
-                Task::Failed { content } => return Err(content.error.into()),
+                Task::Failed { content } => {
+                    bail!(meilisearch_sdk::errors::Error::from(content.error))
+                }
                 Task::Succeeded { .. } => task.try_make_index(&client).unwrap(),
             }
         };
@@ -135,44 +129,21 @@ pub async fn index(connection: &PgConnection, opt: &IndexerOpt) -> IndexerResult
 
                 Ok(())
             }
-            Task::Failed { content } => Err(content.error.into()),
-            Task::Enqueued { .. } | Task::Processing { .. } => Err(IndexerError::Timeout {
-                action: "documents to be indexed".into(),
-            }),
+            Task::Failed { content } => bail!(meilisearch_sdk::errors::Error::from(content.error)),
+            Task::Enqueued { .. } | Task::Processing { .. } => {
+                bail!("timeout waiting for documents to be indexed")
+            }
         }
     } else {
         Ok(())
     }
 }
 
-#[derive(Debug, Error)]
-pub enum IndexerError {
-    #[error("diesel error: {0}")]
-    Diesel(#[from] diesel::result::Error),
-
-    #[error("hugin error: {0}")]
-    Hugin(#[from] hugin::Error),
-
-    #[error("meilisearch error: {0}")]
-    Meilisearch(#[from] meilisearch_sdk::errors::Error),
-
-    #[error("timeout waiting for {action}")]
-    Timeout { action: String },
-}
-
-impl From<MeilisearchError> for IndexerError {
-    fn from(e: MeilisearchError) -> Self {
-        Self::Meilisearch(e.into())
-    }
-}
-
-pub type IndexerResult<T> = Result<T, IndexerError>;
-
 /// Indexes the menus from the suppliers, and stores them in the database. If
 /// the menu already exists, it won't be updated. Returns the number of menus
 /// inserted.
 #[instrument(err, skip(connection))]
-pub async fn load_menus(connection: &PgConnection) -> IndexerResult<usize> {
+pub async fn load_menus(connection: &PgConnection) -> anyhow::Result<usize> {
     use database::schema::menus::dsl::*;
 
     let records = list_menus(4)
@@ -231,7 +202,7 @@ pub fn submit_days(
     let failed = results.len() - successful.len();
 
     if failed > 0 {
-        warn!("{} out of {} downloads failed", failed, results.len());
+        warn!("{}/{} downloads failed", failed, results.len());
     }
 
     let records = results

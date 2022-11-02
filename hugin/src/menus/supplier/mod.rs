@@ -63,7 +63,6 @@ impl Supplier {
         }
     }
 
-    #[instrument(err)]
     pub async fn list_menus(&self) -> Result<Vec<Menu>> {
         use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
 
@@ -79,7 +78,7 @@ impl Supplier {
         }
     }
 
-    #[instrument(err)]
+    #[instrument(fields(self, menu_slug, %first, %last))]
     pub async fn list_days(
         &self,
         menu_slug: &str,

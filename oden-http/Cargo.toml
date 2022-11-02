@@ -3,11 +3,9 @@ name = "oden-http"
 version = "0.2.6"
 edition = "2018"
 
-# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
-
 [dependencies]
 actix-rt = "2.7.0"
-actix-web = "4.1.0"
+actix-web = "4.2.1"
 hugin = { path = "../hugin", version = "0.2.4" }
 chrono = "0.4.19"
 chrono-tz = "0.6.1"

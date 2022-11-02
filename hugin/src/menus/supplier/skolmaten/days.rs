@@ -34,7 +34,9 @@ pub(super) struct SkolmatenDay {
 }
 
 impl SkolmatenDay {
-    /// Maps `NaiveDate::from_ymd_opt` and creates a [`Day`]; thus, `None` is returned on invalid dates such as *February 29, 2021*. Also, `None` is returned if `meals` is `None`.
+    /// Maps `NaiveDate::from_ymd_opt` and creates a [`Day`]; thus, `None`
+    /// is returned on invalid dates such as *February 29, 2021*. Also,
+    /// `None` is returned if `meals` is `None`.
     fn normalize(self) -> Option<Day> {
         let date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)?;
         let meals: Vec<Meal> = self
@@ -140,7 +142,7 @@ fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Vec<SkolmatenWeekSp
 
         let mut week_of_year = segment_start.iso_week().week();
 
-        // Skolmaten.se cannot handle a week number above 53, for some reason.
+        // skolmaten.se cannot handle week numbers above 52 for some reason.
         if week_of_year > 52 {
             week_of_year = 1;
         }
