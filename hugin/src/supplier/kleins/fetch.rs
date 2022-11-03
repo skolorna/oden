@@ -14,8 +14,7 @@ mod tests {
 
     #[tokio::test]
     async fn ok() {
-        let client = Client::new();
-        let res = fetch(&client, "https://www.kleinskitchen.se/skolor/")
+        let res = fetch(&Client::new(), "https://www.kleinskitchen.se/skolor/")
             .await
             .unwrap();
 

@@ -1,4 +1,6 @@
-pub mod scrape;
+mod scrape;
+
+pub use scrape::*;
 
 use chrono::NaiveDate;
 use reqwest::{header::CONTENT_LENGTH, Client};
@@ -8,33 +10,30 @@ use tracing::instrument;
 
 use crate::{
     errors::{Error, Result},
-    menus::mashie::scrape::scrape_mashie_days,
     util::is_sorted,
-    Day, Menu, MenuSlug,
+    Day, MenuSlug,
 };
 
 use super::supplier::Supplier;
 
-#[allow(clippy::module_name_repetitions)]
 #[derive(Deserialize, Debug)]
-pub struct MashieMenu {
+pub struct Menu {
     id: String,
     title: String,
     #[serde(rename(deserialize = "url"))]
     path: String,
 }
 
-impl MashieMenu {
+impl Menu {
     #[must_use]
-    pub fn normalize(self, supplier: Supplier) -> Menu {
+    pub fn normalize(self, supplier: Supplier) -> crate::Menu {
         let id = MenuSlug::new(supplier, self.id);
-        Menu::new(id, self.title)
+        crate::Menu::new(id, self.title)
     }
 }
 
-#[instrument(err)]
-pub async fn list_menus(host: &str) -> Result<Vec<MashieMenu>> {
-    let client = Client::new();
+#[instrument(err, skip(client))]
+pub async fn list_menus(client: &Client, host: &str) -> Result<Vec<Menu>> {
     let res = client
         .post(&format!(
             "{}/public/app/internal/execute-query?country=se",
@@ -44,14 +43,14 @@ pub async fn list_menus(host: &str) -> Result<Vec<MashieMenu>> {
         .send()
         .await?;
 
-    let menus = res.json::<Vec<MashieMenu>>().await?;
+    let menus = res.json::<Vec<Menu>>().await?;
 
     Ok(menus)
 }
 
-#[instrument(err)]
-pub async fn query_menu(host: &str, menu_slug: &str) -> Result<MashieMenu> {
-    let menus = list_menus(host).await?;
+#[instrument(err, skip(client))]
+pub async fn query_menu(client: &Client, host: &str, menu_slug: &str) -> Result<Menu> {
+    let menus = list_menus(client, host).await?;
     let menu = menus
         .into_iter()
         .find(|m| m.id == menu_slug)
@@ -62,16 +61,17 @@ pub async fn query_menu(host: &str, menu_slug: &str) -> Result<MashieMenu> {
 
 #[instrument(fields(%first, %last))]
 pub async fn list_days(
+    client: &Client,
     host: &str,
     menu_slug: &str,
     first: NaiveDate,
     last: NaiveDate,
 ) -> Result<Vec<Day>> {
-    let menu = query_menu(host, menu_slug).await?;
+    let menu = query_menu(client, host, menu_slug).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
     let doc = Document::from(html.as_str());
-    let days: Vec<Day> = scrape_mashie_days(&doc)
+    let days: Vec<Day> = scrape_days(&doc)
         .into_iter()
         .filter(|day| day.is_between(first, last))
         .collect();
@@ -85,14 +85,15 @@ pub async fn list_days(
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
         use chrono::NaiveDate;
+        use reqwest::Client;
         use $crate::errors::Result;
-        use $crate::menus::{mashie, Menu};
         use $crate::Day;
+        use $crate::{mashie, Menu};
 
         const HOST: &str = $host;
 
-        pub async fn list_menus() -> Result<Vec<Menu>> {
-            let menus = mashie::list_menus(HOST)
+        pub async fn list_menus(client: &Client) -> Result<Vec<Menu>> {
+            let menus = mashie::list_menus(client, HOST)
                 .await?
                 .into_iter()
                 .map(|m| m.normalize($supplier))
@@ -102,14 +103,17 @@ macro_rules! mashie_impl {
         }
 
         pub async fn list_days(
+            client: &Client,
             menu_slug: &str,
             first: NaiveDate,
             last: NaiveDate,
         ) -> Result<Vec<Day>> {
-            mashie::list_days(HOST, menu_slug, first, last).await
+            mashie::list_days(client, HOST, menu_slug, first, last).await
         }
     };
 }
+
+pub(crate) use mashie_impl;
 
 #[cfg(test)]
 mod tests {
@@ -119,7 +123,9 @@ mod tests {
 
     #[tokio::test]
     async fn list_menus_test() {
-        let menus = list_menus("https://sodexo.mashie.com").await.unwrap();
+        let menus = list_menus(&Client::new(), "https://sodexo.mashie.com")
+            .await
+            .unwrap();
 
         assert!(menus.len() > 100);
     }
@@ -127,6 +133,7 @@ mod tests {
     #[tokio::test]
     async fn query_menu_test() {
         let menu = query_menu(
+            &Client::new(),
             "https://sodexo.mashie.com",
             "e8851c61-013b-4617-93d9-adab00820bcd",
         )
@@ -136,9 +143,11 @@ mod tests {
         assert_eq!(menu.title, "Södermalmsskolan, Södermalmsskolan");
         assert_eq!(menu.id, "e8851c61-013b-4617-93d9-adab00820bcd");
 
-        assert!(query_menu("https://sodexo.mashie.com", "invalid")
-            .await
-            .is_err());
+        assert!(
+            query_menu(&Client::new(), "https://sodexo.mashie.com", "invalid")
+                .await
+                .is_err()
+        );
     }
 
     mod impl_test {
@@ -152,7 +161,7 @@ mod tests {
 
         #[tokio::test]
         async fn list_menus_test() {
-            let menus = list_menus().await.unwrap();
+            let menus = list_menus(&Client::new()).await.unwrap();
             assert!(menus.len() > 100);
         }
 
@@ -161,7 +170,9 @@ mod tests {
             let first = offset::Utc::today().naive_utc();
             let last = first + Duration::days(365);
 
-            let days = list_days(MENU_SLUG, first, last).await.unwrap();
+            let days = list_days(&Client::new(), MENU_SLUG, first, last)
+                .await
+                .unwrap();
 
             assert!(days.len() > 5);
             assert!(is_sorted(&days));

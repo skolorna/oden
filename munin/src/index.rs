@@ -12,8 +12,8 @@ use diesel::prelude::*;
 use diesel::PgConnection;
 use futures::stream;
 use futures::StreamExt;
-use hugin::menus::list_days;
-use hugin::menus::list_menus;
+use hugin::list_days;
+use hugin::list_menus;
 use meilisearch_sdk::client::Client;
 use meilisearch_sdk::tasks::Task;
 use tracing::{info, instrument, warn};
@@ -56,6 +56,8 @@ pub struct Args {
 }
 
 pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> {
+    let client = reqwest::Client::new();
+
     if opt.load_menus {
         load_menus(connection).await?;
     }
@@ -73,9 +75,12 @@ pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> 
     let last = first + Duration::days(opt.days as i64);
 
     let mut stream = stream::iter(must_update)
-        .map(|(id, slug)| async move {
-            let res = list_days(&slug, first, last).await;
-            (id, res)
+        .map(|(id, slug)| {
+            let client = client.clone();
+            async move {
+                let res = list_days(&client, &slug, first, last).await;
+                (id, res)
+            }
         })
         .buffer_unordered(opt.concurrent)
         .chunks(opt.menus_per_chunk);

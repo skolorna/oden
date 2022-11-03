@@ -279,14 +279,13 @@ async fn menus_in_region(client: &Client, region: &Region) -> Result<Vec<Menu>> 
 }
 
 #[instrument(err)]
-pub async fn list_menus() -> Result<Vec<Menu>> {
-    let client = Client::new();
+pub async fn list_menus(client: &Client) -> Result<Vec<Menu>> {
     let mut menus = vec![];
 
-    let regions = list_regions(&client).await?;
+    let regions = list_regions(client).await?;
 
     let mut menus_stream = stream::iter(regions.iter())
-        .map(|region| menus_in_region(&client, region))
+        .map(|region| menus_in_region(client, region))
         .buffer_unordered(CONCURRENT_REQUESTS);
 
     while let Some(result) = menus_stream.next().await {
@@ -362,11 +361,14 @@ async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Re
 
 /// List days.
 #[instrument(fields(%first, %last))]
-pub async fn list_days(menu: &MenuQuery, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
+pub async fn list_days(
+    client: &Client,
+    menu: &MenuQuery,
+    first: NaiveDate,
+    last: NaiveDate,
+) -> Result<Vec<Day>> {
     let utc = Utc::now().naive_utc();
     let now = Stockholm.from_utc_datetime(&utc).date().naive_local();
-
-    let client = Client::new();
 
     let offsets = stream::iter(week_offsets(
         now.iso_week(),
@@ -374,7 +376,7 @@ pub async fn list_days(menu: &MenuQuery, first: NaiveDate, last: NaiveDate) -> R
         last.iso_week(),
     ));
     let mut days_stream = offsets
-        .map(|o| days_by_week(&client, menu, o))
+        .map(|o| days_by_week(client, menu, o))
         .buffer_unordered(CONCURRENT_REQUESTS);
 
     let mut days = vec![];
@@ -405,20 +407,19 @@ pub(super) fn week_offsets(
 #[cfg(test)]
 mod tests {
     use chrono::{Datelike, Duration, NaiveDate, Utc};
+    use reqwest::Client;
 
-    use crate::menus::supplier::matilda::{list_days, week_offsets, MenuQuery};
-
-    use super::list_menus;
+    use super::MenuQuery;
 
     #[tokio::test]
-    async fn should_list_menus() {
-        let menus = list_menus().await.unwrap();
+    async fn list_menus() {
+        let menus = super::list_menus(&Client::new()).await.unwrap();
 
         assert!(menus.len() > 500);
     }
 
     #[tokio::test]
-    async fn should_list_days() {
+    async fn list_days() {
         let menu = MenuQuery {
             customer: Some(10242),
             part: 1594,
@@ -427,7 +428,8 @@ mod tests {
         };
         let first = Utc::now() - Duration::weeks(1);
 
-        let days = list_days(
+        let days = super::list_days(
+            &Client::new(),
             &menu,
             first.date().naive_utc(),
             (first + Duration::days(30)).date().naive_local(),
@@ -444,7 +446,7 @@ mod tests {
         let first = NaiveDate::from_ymd(2021, 12, 12).iso_week();
         let last = NaiveDate::from_ymd(2022, 1, 12).iso_week();
 
-        let offsets: Vec<i64> = week_offsets(around, first, last).collect();
+        let offsets: Vec<i64> = super::week_offsets(around, first, last).collect();
 
         assert_eq!(offsets, &[-4, -3, -2, -1, 0, 1]);
     }

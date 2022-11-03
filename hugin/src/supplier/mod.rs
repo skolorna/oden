@@ -1,13 +1,14 @@
-mod kleins;
-mod matilda;
-mod mpi;
-mod sabis;
-mod skolmaten;
-mod sodexo;
+pub mod kleins;
+pub mod matilda;
+pub mod mpi;
+pub mod sabis;
+pub mod skolmaten;
+pub mod sodexo;
 
 use std::str::FromStr;
 
 use chrono::NaiveDate;
+use reqwest::Client;
 use serde::{de, Deserialize, Deserializer, Serialize};
 use strum::{EnumIter, EnumString};
 use tracing::{debug, instrument};
@@ -18,13 +19,13 @@ use crate::{
     Day,
 };
 
-/// A provider of menus.
+/// A supplier of menus.
 #[derive(PartialEq, Eq, Hash, Debug, Clone, Copy, EnumString, strum::Display, EnumIter)]
 #[strum(serialize_all = "lowercase")]
 pub enum Supplier {
     Skolmaten,
     Sodexo,
-    MPI,
+    Mpi,
     Kleins,
     Sabis,
     Matilda,
@@ -47,7 +48,7 @@ impl Supplier {
         match *self {
             Supplier::Skolmaten => "Skolmaten",
             Supplier::Sodexo => "Sodexo",
-            Supplier::MPI => "MPI",
+            Supplier::Mpi => "MPI",
             Supplier::Kleins => "Klein's Kitchen",
             Supplier::Sabis => "Sabis",
             Supplier::Matilda => "Matilda",
@@ -63,47 +64,51 @@ impl Supplier {
         }
     }
 
-    pub async fn list_menus(&self) -> Result<Vec<Menu>> {
-        use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
+    #[instrument(err, skip(client))]
+    pub async fn list_menus(&self, client: &Client) -> Result<Vec<Menu>> {
+        use Supplier::{Kleins, Matilda, Mpi, Sabis, Skolmaten, Sodexo};
 
         debug!("listing menus");
 
         match *self {
-            Skolmaten => skolmaten::list_menus().await,
-            Sodexo => sodexo::list_menus().await,
-            MPI => mpi::list_menus().await,
-            Kleins => kleins::list_menus().await,
+            Skolmaten => skolmaten::list_menus(client).await,
+            Sodexo => sodexo::list_menus(client).await,
+            Mpi => mpi::list_menus(client).await,
+            Kleins => kleins::list_menus(client).await,
             Sabis => sabis::list_menus().await,
-            Matilda => matilda::list_menus().await,
+            Matilda => matilda::list_menus(client).await,
         }
     }
 
-    #[instrument(fields(self, menu_slug, %first, %last))]
+    #[instrument(err, skip(client))]
     pub async fn list_days(
         &self,
+        client: &Client,
         menu_slug: &str,
         first: NaiveDate,
         last: NaiveDate,
     ) -> Result<Vec<Day>> {
-        use Supplier::{Kleins, Matilda, Sabis, Skolmaten, Sodexo, MPI};
+        use Supplier::{Kleins, Matilda, Mpi, Sabis, Skolmaten, Sodexo};
 
         debug!("listing days");
 
         match *self {
             Skolmaten => {
                 skolmaten::list_days(
+                    client,
                     menu_slug.parse().map_err(|_| Error::InvalidMenuSlug)?,
                     first,
                     last,
                 )
                 .await
             }
-            Sodexo => sodexo::list_days(menu_slug, first, last).await,
-            MPI => mpi::list_days(menu_slug, first, last).await,
-            Kleins => kleins::list_days(menu_slug, first, last).await,
-            Sabis => sabis::list_days(menu_slug, first, last).await,
+            Sodexo => sodexo::list_days(client, menu_slug, first, last).await,
+            Mpi => mpi::list_days(client, menu_slug, first, last).await,
+            Kleins => kleins::list_days(client, menu_slug, first, last).await,
+            Sabis => sabis::list_days(client, menu_slug, first, last).await,
             Matilda => {
                 matilda::list_days(
+                    client,
                     &menu_slug.parse().map_err(|_| Error::InvalidMenuSlug)?,
                     first,
                     last,

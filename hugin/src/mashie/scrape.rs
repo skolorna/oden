@@ -10,14 +10,7 @@ use tracing::{error, instrument};
 
 use crate::{Day, Meal};
 
-/// Parse a month literal in Swedish. Returns the month, starting from 1 with January.
-/// ```
-/// use hugin::menus::mashie::scrape::parse_month;
-///
-/// assert_eq!(parse_month("jun"), Some(6));
-/// assert!(parse_month("may").is_none()); // maj is correct
-/// assert!(parse_month("Jan").is_none()); // case sensitive
-/// ```
+/// Parse a month literal in Swedish. Returns the 1-indexed month.
 #[must_use]
 #[instrument]
 pub fn parse_month(m: &str) -> Option<u32> {
@@ -72,21 +65,19 @@ fn parse_day_node(node: &Node) -> Option<Day> {
     Day::new_opt(date, meals)
 }
 
-#[must_use]
 #[allow(clippy::module_name_repetitions)]
-pub fn scrape_mashie_days(doc: &Document) -> Vec<Day> {
+pub fn scrape_days(doc: &Document) -> impl Iterator<Item = Day> + '_ {
     let day_elems = doc.find(Class("panel-group").child(Class("panel")));
-    day_elems
-        .filter_map(|n| parse_day_node(&n))
-        .collect::<Vec<_>>()
+    day_elems.filter_map(|n| parse_day_node(&n))
 }
 
 #[cfg(test)]
 mod tests {
     use chrono::{Datelike, Local};
+    use reqwest::Client;
     use std::convert::TryFrom;
 
-    use crate::{menus::mashie::query_menu, util::is_sorted};
+    use crate::{mashie::query_menu, util::is_sorted};
 
     use super::*;
 
@@ -131,7 +122,7 @@ mod tests {
     #[tokio::test]
     async fn scrape_days_test() {
         let host = "https://sodexo.mashie.com";
-        let menu = query_menu(host, "4854efa1-29b3-4534-8820-abeb008ed759")
+        let menu = query_menu(&Client::new(), host, "4854efa1-29b3-4534-8820-abeb008ed759")
             .await
             .unwrap();
         assert_eq!(menu.title, "Karolina, Pysslingen");
@@ -139,7 +130,7 @@ mod tests {
         let url = format!("{}/{}", host, menu.path);
         let html = reqwest::get(&url).await.unwrap().text().await.unwrap();
         let doc = Document::from(html.as_str());
-        let days = scrape_mashie_days(&doc);
+        let days = scrape_days(&doc).collect::<Vec<_>>();
 
         assert!(!days.is_empty());
         assert!(is_sorted(&days));
@@ -148,6 +139,6 @@ mod tests {
             assert!(!day.meals().is_empty());
         }
 
-        assert!(scrape_mashie_days(&Document::from("<h1>no days</h1>")).is_empty());
+        assert_eq!(scrape_days(&Document::from("<h1>no days</h1>")).count(), 0);
     }
 }

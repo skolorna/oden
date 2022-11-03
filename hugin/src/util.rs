@@ -7,7 +7,6 @@ pub fn retain_unique<T: Eq + Hash + Clone>(v: &mut Vec<T>) {
     let mut seen = HashSet::new();
     v.retain(|e| seen.insert(e.clone()));
 }
-
 /// Check if a slice is sorted. **Deprecate when `slice::is_sorted` hits stable.**
 pub fn is_sorted<T: Ord>(data: &[T]) -> bool {
     data.windows(2).all(|w| w[0] <= w[1])

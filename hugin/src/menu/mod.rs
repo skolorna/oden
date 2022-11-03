@@ -44,7 +44,7 @@ impl Menu {
 
 #[cfg(test)]
 mod tests {
-    use crate::{menus::supplier::Supplier, MenuSlug};
+    use crate::{MenuSlug, Supplier};
 
     use super::Menu;
 

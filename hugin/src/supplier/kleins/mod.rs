@@ -11,9 +11,9 @@ use tracing::instrument;
 
 use crate::{
     errors::{Error, Result},
-    menus::{mashie::scrape::scrape_mashie_days, supplier::Supplier},
+    mashie,
     util::last_path_segment,
-    Day, Menu, MenuSlug,
+    Day, Menu, MenuSlug, Supplier,
 };
 use fetch::fetch;
 
@@ -32,9 +32,8 @@ impl KleinsSchool {
 }
 
 #[instrument(err)]
-async fn raw_list_schools() -> Result<Vec<KleinsSchool>> {
-    let client = Client::new();
-    let html = fetch(&client, "https://www.kleinskitchen.se/skolor/")
+async fn raw_list_schools(client: &Client) -> Result<Vec<KleinsSchool>> {
+    let html = fetch(client, "https://www.kleinskitchen.se/skolor/")
         .await?
         .text()
         .await?;
@@ -52,9 +51,9 @@ async fn raw_list_schools() -> Result<Vec<KleinsSchool>> {
     Ok(schools)
 }
 
-#[instrument(err)]
-pub async fn list_menus() -> Result<Vec<Menu>> {
-    let schools = raw_list_schools().await?;
+#[instrument(err, skip(client))]
+pub async fn list_menus(client: &Client) -> Result<Vec<Menu>> {
+    let schools = raw_list_schools(client).await?;
 
     let menus = schools.into_iter().map(KleinsSchool::normalize).collect();
 
@@ -74,13 +73,12 @@ fn extract_menu_url(iframe_node: &Node) -> Option<String> {
     Some(menu_url)
 }
 
-async fn raw_query_school(school_slug: &str) -> Result<QuerySchoolResponse> {
-    let client = Client::new();
+async fn raw_query_school(client: &Client, school_slug: &str) -> Result<QuerySchoolResponse> {
     let url = format!(
         "https://www.kleinskitchen.se/skolor/{}",
         urlencoding::encode(school_slug)
     );
-    let html = fetch(&client, &url).await?.text().await?;
+    let html = fetch(client, &url).await?.text().await?;
     let doc = Document::from(html.as_str());
 
     let menu_url = doc
@@ -95,15 +93,19 @@ async fn raw_query_school(school_slug: &str) -> Result<QuerySchoolResponse> {
 }
 
 #[instrument(fields(%first, %last))]
-pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
+pub async fn list_days(
+    client: &Client,
+    menu_slug: &str,
+    first: NaiveDate,
+    last: NaiveDate,
+) -> Result<Vec<Day>> {
     let menu_url = {
-        let res = raw_query_school(menu_slug).await?;
+        let res = raw_query_school(client, menu_slug).await?;
         res.menu_url
     };
     let html = reqwest::get(&menu_url).await?.text().await?;
     let doc = Document::from(html.as_str());
-    let days = scrape_mashie_days(&doc)
-        .into_iter()
+    let days = mashie::scrape_days(&doc)
         .filter(|day| day.is_between(first, last))
         .collect();
 
@@ -116,14 +118,14 @@ mod tests {
 
     #[tokio::test]
     async fn kleins_list_schools_raw() {
-        let schools = raw_list_schools().await.unwrap();
+        let schools = raw_list_schools(&Client::new()).await.unwrap();
 
         assert!(schools.len() > 50);
     }
 
     #[tokio::test]
     async fn kleins_query_school_raw() {
-        let res = raw_query_school("viktor-rydberg-grundskola-jarlaplan")
+        let res = raw_query_school(&Client::new(), "viktor-rydberg-grundskola-jarlaplan")
             .await
             .unwrap();
 
@@ -133,16 +135,19 @@ mod tests {
         );
 
         assert!(
-            raw_query_school("viktor-rydberg-grundskola-jarlaplan?a=evil")
+            raw_query_school(&Client::new(), "viktor-rydberg-grundskola-jarlaplan?a=evil")
                 .await
                 .is_err()
         );
-        assert!(raw_query_school("nonexistent").await.is_err());
+        assert!(raw_query_school(&Client::new(), "nonexistent")
+            .await
+            .is_err());
     }
 
     #[tokio::test]
     async fn kleins_list_days() {
         let days = list_days(
+            &Client::new(),
             "forskolan-pingvinen",
             NaiveDate::from_ymd(1970, 1, 1),
             NaiveDate::from_ymd(2077, 1, 1),
