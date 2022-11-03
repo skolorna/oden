@@ -166,7 +166,7 @@ mod tests {
         let first_day = chrono::offset::Local::now().date().naive_local();
         let last_day = first_day + Duration::weeks(2);
 
-        let days = list_days(4_791_333_780_717_568, first_day, last_day)
+        let days = list_days(4791333780717568, first_day, last_day)
             .await
             .unwrap();
 
