@@ -241,8 +241,6 @@ fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Vec<SkolmatenWeekSp
     let mut segment_start = first;
 
     while last > segment_start {
-        use std::convert::TryFrom;
-
         let year = segment_start.year();
 
         let segment_end = if last.year() == year {

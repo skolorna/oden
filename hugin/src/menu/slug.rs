@@ -9,7 +9,7 @@ use diesel::{
 };
 use serde::{de, Deserialize, Deserializer, Serialize};
 
-use crate::supplier::Supplier;
+use crate::Supplier;
 
 #[derive(PartialEq, Eq, Hash, Debug, Clone)]
 #[cfg_attr(feature = "diesel", derive(AsExpression, FromSqlRow))]

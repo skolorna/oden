@@ -154,7 +154,7 @@ pub async fn load_menus(connection: &PgConnection) -> anyhow::Result<usize> {
     let records = list_menus(4)
         .await?
         .into_iter()
-        .map(|m| m.into())
+        .map(Into::into)
         .collect::<Vec<NewMenu>>();
 
     info!("Fetched {} menus", records.len());
@@ -165,8 +165,8 @@ pub async fn load_menus(connection: &PgConnection) -> anyhow::Result<usize> {
         .execute(connection)?;
 
     match inserted_count {
-        0 => info!("No new menus were inserted"),
-        _ => info!("Inserted {} new menus", inserted_count),
+        0 => info!("no new menus were inserted"),
+        _ => info!("inserted {} new menus", inserted_count),
     }
 
     Ok(inserted_count)
@@ -224,7 +224,7 @@ pub fn submit_days(
         .flatten()
         .collect::<Vec<NewDay>>();
 
-    info!("Inserting {} days", records.len());
+    info!("inserting {} days", records.len());
 
     for chunk in records.chunks(10000) {
         diesel::insert_into(days_table)

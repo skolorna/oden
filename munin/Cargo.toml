@@ -5,13 +5,13 @@ edition = "2021"
 
 [dependencies]
 database = { path = "../database", features = ["meilisearch-sdk"], version = "0.2.3" }
-hugin = { path = "../hugin", features = ["diesel"], version = "0.2.4" }
-chrono = "0.4.19"
-chrono-tz = "0.6.1"
-diesel = { version = "1.4.8", features = ["postgres", "chrono"] }
+hugin = { workspace = true, features = ["diesel"] }
+chrono = { workspace = true }
+chrono-tz = { workspace = true }
+diesel = { workspace = true, features = ["postgres", "chrono"] }
 dotenv = "0.15.0"
 futures = "0.3.21"
-meilisearch-sdk = "0.20.1"
+meilisearch-sdk = { workspace = true }
 serde = { version = "1.0.147", features = ["derive"] }
 thiserror = "1.0.31"
 tokio = { version = "1.21.2", features = ["rt-multi-thread", "macros"] }
@@ -22,5 +22,5 @@ csv = "1.1.6"
 serde_json = "1.0.81"
 sentry-tracing = "0.27.0"
 sentry = "0.27.0"
-clap = { version = "4.0.18", features = ["derive", "env"] }
+clap = { workspace = true, features = ["derive", "env"] }
 reqwest = "0.11.12"

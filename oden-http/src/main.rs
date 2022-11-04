@@ -1,6 +1,7 @@
 use std::net::{Ipv4Addr, SocketAddr, SocketAddrV4};
 
 use actix_web::HttpServer;
+use clap::Parser;
 use database::run_migrations;
 use diesel::{
     r2d2::{ConnectionManager, Pool},
@@ -8,17 +9,16 @@ use diesel::{
 };
 use dotenv::dotenv;
 use oden_http::create_app;
-use structopt::StructOpt;
 
-#[derive(Debug, Clone, StructOpt)]
+#[derive(Debug, Clone, Parser)]
 struct Opt {
-    #[structopt(long, env, hide_env_values = true)]
+    #[arg(long, env, hide_env_values = true)]
     postgres_url: String,
 
-    #[structopt(long, env)]
+    #[arg(long, env)]
     meili_url: String,
 
-    #[structopt(long, env, hide_env_values = true, default_value = "")]
+    #[arg(long, env, hide_env_values = true, default_value = "")]
     meili_key: String,
 }
 
@@ -27,7 +27,7 @@ async fn main() -> std::io::Result<()> {
     dotenv().ok();
     tracing_subscriber::fmt::init();
 
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
 
     let manager = ConnectionManager::<PgConnection>::new(&opt.postgres_url);
     let pool = Pool::new(manager).expect("failed to build pool");
