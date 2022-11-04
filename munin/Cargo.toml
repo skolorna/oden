@@ -10,7 +10,7 @@ chrono = { workspace = true }
 chrono-tz = { workspace = true }
 diesel = { workspace = true, features = ["postgres", "chrono"] }
 dotenv = "0.15.0"
-futures = "0.3.21"
+futures = "0.3.25"
 meilisearch-sdk = { workspace = true }
 serde = { version = "1.0.147", features = ["derive"] }
 thiserror = "1.0.31"
