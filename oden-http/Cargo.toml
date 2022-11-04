@@ -10,7 +10,7 @@ clap = { workspace = true, features = ["derive", "env"] }
 hugin = { workspace = true }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }
-futures = "0.3.21"
+futures = "0.3.25"
 serde = { version = "1.0.147", features = ["derive"] }
 thiserror = "1.0.31"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }

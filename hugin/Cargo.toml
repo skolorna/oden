@@ -8,7 +8,7 @@ publish = false
 chrono = { workspace = true, features = ["serde"] }
 chrono-tz = { workspace = true }
 diesel = { workspace = true, features = ["chrono", "postgres"], optional = true }
-futures = "0.3.21"
+futures = "0.3.25"
 reqwest = { version = "0.11.11", features = ["json"] }
 select = "0.5.0"
 serde = { version = "1.0.147", features = ["derive"] }
