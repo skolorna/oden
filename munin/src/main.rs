@@ -1,41 +1,44 @@
+use clap::Parser;
+use clap::Subcommand;
 use diesel::prelude::*;
 use diesel::PgConnection;
 use dotenv::dotenv;
-use indexer::index;
-use indexer::IndexerOpt;
+use export::export;
+use index::index;
 use sentry::types::Dsn;
-use structopt::StructOpt;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
 mod export;
-mod indexer;
+mod index;
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Parser)]
 struct Opt {
     #[structopt(long, env)]
     postgres_url: String,
 
-    #[structopt(env)]
+    #[structopt(long, env)]
     sentry_dsn: Option<Dsn>,
 
-    #[structopt(env)]
+    #[structopt(long, env)]
     sentry_environment: Option<String>,
 
-    #[structopt(subcommand)]
+    #[command(subcommand)]
     cmd: Command,
 }
 
-#[derive(Debug, StructOpt)]
+#[derive(Debug, Subcommand)]
 enum Command {
-    Index(IndexerOpt),
-    Export(export::Opt),
+    /// Fetch new menus and load new days
+    Index(index::Args),
+    /// Export menus and days from the database
+    Export(export::Args),
 }
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv().ok();
-    let opt = Opt::from_args();
+    let opt = Opt::parse();
 
     let _guard = sentry::init(sentry::ClientOptions {
         // Set this a to lower value in production
@@ -58,7 +61,7 @@ async fn main() -> anyhow::Result<()> {
 
     match opt.cmd {
         Command::Index(opt) => index(&connection, &opt).await?,
-        Command::Export(opt) => export::export(&connection, &opt)?,
+        Command::Export(opt) => export(&connection, &opt)?,
     }
 
     Ok(())

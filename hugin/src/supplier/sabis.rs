@@ -7,9 +7,8 @@ use select::predicate::{Class, Name, Predicate};
 use tracing::{error, instrument};
 
 use crate::errors::{Error, Result};
-use crate::menus::supplier::Supplier;
 use crate::util::{extract_digits, last_path_segment, parse_weekday};
-use crate::{Day, Meal, Menu, MenuSlug};
+use crate::{Day, Meal, Menu, MenuSlug, Supplier};
 
 #[instrument(err)]
 pub async fn list_menus() -> Result<Vec<Menu>> {
@@ -39,12 +38,16 @@ pub async fn list_menus() -> Result<Vec<Menu>> {
 }
 
 #[instrument(fields(%first, %last))]
-pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Result<Vec<Day>> {
+pub async fn list_days(
+    client: &Client,
+    menu_slug: &str,
+    first: NaiveDate,
+    last: NaiveDate,
+) -> Result<Vec<Day>> {
     let url = format!(
         "https://www.sabis.se/{}/dagens-lunch/",
         urlencoding::encode(menu_slug)
     );
-    let client = Client::new();
     let res = client.get(&url).send().await?;
     let http_date = res.headers().get(header::DATE).unwrap().to_str().unwrap(); // the date header is always present
     let res_timestamp = DateTime::parse_from_rfc2822(http_date).unwrap();
@@ -92,18 +95,20 @@ pub async fn list_days(menu_slug: &str, first: NaiveDate, last: NaiveDate) -> Re
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use chrono::NaiveDate;
+    use reqwest::Client;
 
     #[tokio::test]
-    async fn test_list_menus() {
-        let menus = list_menus().await.unwrap();
+    async fn list_menus() {
+        let menus = super::list_menus().await.unwrap();
 
         assert!(menus.len() >= 10);
     }
 
     #[tokio::test]
-    async fn test_list_days() {
-        let days = list_days(
+    async fn list_days() {
+        let days = super::list_days(
+            &Client::new(),
             "carnegie",
             NaiveDate::from_ymd(2000, 1, 1),
             NaiveDate::from_ymd(2077, 1, 1),
@@ -112,7 +117,8 @@ mod tests {
         .unwrap();
 
         assert!(days.len() > 3);
-        assert!(list_days(
+        assert!(super::list_days(
+            &Client::new(),
             "carnegie",
             NaiveDate::from_ymd(2005, 1, 1),
             NaiveDate::from_ymd(2005, 12, 31)
@@ -120,7 +126,9 @@ mod tests {
         .await
         .unwrap()
         .is_empty());
-        assert!(list_days(
+
+        assert!(super::list_days(
+            &Client::new(),
             "om-oss",
             NaiveDate::from_ymd(2020, 1, 1),
             NaiveDate::from_ymd(2020, 1, 1)

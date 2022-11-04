@@ -7,7 +7,6 @@ pub fn retain_unique<T: Eq + Hash + Clone>(v: &mut Vec<T>) {
     let mut seen = HashSet::new();
     v.retain(|e| seen.insert(e.clone()));
 }
-
 /// Check if a slice is sorted. **Deprecate when `slice::is_sorted` hits stable.**
 pub fn is_sorted<T: Ord>(data: &[T]) -> bool {
     data.windows(2).all(|w| w[0] <= w[1])
@@ -47,12 +46,12 @@ pub fn parse_weekday(literal: &str) -> Option<Weekday> {
 mod tests {
     use chrono::Weekday;
 
-    use crate::util::{parse_weekday, retain_unique};
+    use crate::util::parse_weekday;
 
     #[test]
-    fn test_retain_unique() {
+    fn retain_unique() {
         let mut v = vec![1, 2, 3, 4, 5, 1];
-        retain_unique(&mut v);
+        super::retain_unique(&mut v);
         assert_eq!(v, [1, 2, 3, 4, 5]);
     }
 
