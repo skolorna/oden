@@ -95,18 +95,19 @@ pub async fn list_days(
 
 #[cfg(test)]
 mod tests {
-    use super::*;
+    use chrono::NaiveDate;
+    use reqwest::Client;
 
     #[tokio::test]
-    async fn test_list_menus() {
-        let menus = list_menus().await.unwrap();
+    async fn list_menus() {
+        let menus = super::list_menus().await.unwrap();
 
         assert!(menus.len() >= 10);
     }
 
     #[tokio::test]
-    async fn test_list_days() {
-        let days = list_days(
+    async fn list_days() {
+        let days = super::list_days(
             &Client::new(),
             "carnegie",
             NaiveDate::from_ymd(2000, 1, 1),
@@ -116,7 +117,7 @@ mod tests {
         .unwrap();
 
         assert!(days.len() > 3);
-        assert!(list_days(
+        assert!(super::list_days(
             &Client::new(),
             "carnegie",
             NaiveDate::from_ymd(2005, 1, 1),
@@ -125,7 +126,8 @@ mod tests {
         .await
         .unwrap()
         .is_empty());
-        assert!(list_days(
+
+        assert!(super::list_days(
             &Client::new(),
             "om-oss",
             NaiveDate::from_ymd(2020, 1, 1),

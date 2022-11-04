@@ -110,6 +110,18 @@ macro_rules! mashie_impl {
         ) -> Result<Vec<Day>> {
             mashie::list_days(client, HOST, menu_slug, first, last).await
         }
+
+        #[cfg(test)]
+        mod auto_tests {
+            use reqwest::Client;
+
+            #[tokio::test]
+            async fn nonempty() {
+                let menus = super::list_menus(&Client::new()).await.unwrap();
+                println!("{:?}", &menus);
+                assert!(!menus.is_empty());
+            }
+        }
     };
 }
 
@@ -117,13 +129,11 @@ pub(crate) use mashie_impl;
 
 #[cfg(test)]
 mod tests {
-    use chrono::{offset, Duration};
-
-    use super::*;
+    use reqwest::Client;
 
     #[tokio::test]
-    async fn list_menus_test() {
-        let menus = list_menus(&Client::new(), "https://sodexo.mashie.com")
+    async fn list_menus() {
+        let menus = super::list_menus(&Client::new(), "https://sodexo.mashie.com")
             .await
             .unwrap();
 
@@ -131,8 +141,8 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn query_menu_test() {
-        let menu = query_menu(
+    async fn query_menu() {
+        let menu = super::query_menu(
             &Client::new(),
             "https://sodexo.mashie.com",
             "e8851c61-013b-4617-93d9-adab00820bcd",
@@ -144,43 +154,9 @@ mod tests {
         assert_eq!(menu.id, "e8851c61-013b-4617-93d9-adab00820bcd");
 
         assert!(
-            query_menu(&Client::new(), "https://sodexo.mashie.com", "invalid")
+            super::query_menu(&Client::new(), "https://sodexo.mashie.com", "invalid")
                 .await
                 .is_err()
         );
-    }
-
-    mod impl_test {
-        use crate::util::is_sorted;
-
-        use super::*;
-
-        mashie_impl!("https://sodexo.mashie.com", Supplier::Sodexo);
-
-        const MENU_SLUG: &str = "312dd0ae-3ebd-49d9-870e-abeb008c0e4b";
-
-        #[tokio::test]
-        async fn list_menus_test() {
-            let menus = list_menus(&Client::new()).await.unwrap();
-            assert!(menus.len() > 100);
-        }
-
-        #[tokio::test]
-        async fn list_days_test() {
-            let first = offset::Utc::today().naive_utc();
-            let last = first + Duration::days(365);
-
-            let days = list_days(&Client::new(), MENU_SLUG, first, last)
-                .await
-                .unwrap();
-
-            assert!(days.len() > 5);
-            assert!(is_sorted(&days));
-
-            for day in days {
-                assert!(*day.date() >= first);
-                assert!(*day.date() <= last);
-            }
-        }
     }
 }

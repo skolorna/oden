@@ -46,12 +46,12 @@ pub fn parse_weekday(literal: &str) -> Option<Weekday> {
 mod tests {
     use chrono::Weekday;
 
-    use crate::util::{parse_weekday, retain_unique};
+    use crate::util::parse_weekday;
 
     #[test]
-    fn test_retain_unique() {
+    fn retain_unique() {
         let mut v = vec![1, 2, 3, 4, 5, 1];
-        retain_unique(&mut v);
+        super::retain_unique(&mut v);
         assert_eq!(v, [1, 2, 3, 4, 5]);
     }
 

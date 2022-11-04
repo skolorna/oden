@@ -1,3 +1,5 @@
+use std::iter;
+
 use chrono::{Datelike, NaiveDate};
 use futures::{
     stream::{self, StreamExt},
@@ -7,7 +9,7 @@ use reqwest::{Client, StatusCode};
 use serde::Deserialize;
 use tracing::{error, instrument};
 
-use crate::{dedup_day_dates, errors::Result, Error, Menu, MenuSlug};
+use crate::{dedup_day_dates, errors::Result, Error, MenuSlug};
 
 use super::Supplier;
 
@@ -51,11 +53,11 @@ struct StationsResponse {
 }
 
 impl Station {
-    fn to_menu(&self, district_name: &str) -> Option<Menu> {
+    fn to_menu(&self, district_name: &str) -> Option<crate::Menu> {
         if self.name.to_lowercase().contains("info") {
             None
         } else {
-            Some(Menu::new(
+            Some(crate::Menu::new(
                 MenuSlug::new(Supplier::Skolmaten, self.id.to_string()),
                 format!("{}, {}", self.name.trim(), district_name),
             ))
@@ -94,7 +96,7 @@ async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<
 }
 
 #[instrument(err, skip(client))]
-pub async fn list_menus(client: &Client) -> Result<Vec<Menu>> {
+pub async fn list_menus(client: &Client) -> Result<Vec<crate::Menu>> {
     let provinces = list_provinces(client).await?;
 
     let mut districts = Vec::new();
@@ -178,7 +180,7 @@ pub(super) struct Week {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct SkolmatenMenu {
+struct Menu {
     // is_feedback_allowed: bool,
     weeks: Vec<Week>,
     // station: DetailedStation,
@@ -187,12 +189,12 @@ pub(super) struct SkolmatenMenu {
 }
 
 #[derive(Deserialize, Debug)]
-pub(super) struct SkolmatenMenuResponse {
-    menu: SkolmatenMenu,
+struct MenuResponse {
+    menu: Menu,
 }
 
-impl SkolmatenMenuResponse {
-    pub(crate) fn into_days_iter(self) -> impl Iterator<Item = crate::Day> {
+impl MenuResponse {
+    fn into_days_iter(self) -> impl Iterator<Item = crate::Day> {
         self.menu
             .weeks
             .into_iter()
@@ -202,18 +204,14 @@ impl SkolmatenMenuResponse {
 }
 
 #[derive(PartialEq, Debug)]
-struct SkolmatenWeekSpan {
+struct WeekSpan {
     year: i32,
     week_of_year: u32,
     count: u8,
 }
 
 #[instrument(skip(client))]
-async fn raw_fetch_menu(
-    client: &Client,
-    station_id: u64,
-    span: &SkolmatenWeekSpan,
-) -> Result<SkolmatenMenuResponse> {
+async fn fetch_menu(client: &Client, station_id: u64, span: &WeekSpan) -> Result<MenuResponse> {
     let path = format!(
         "menu?station={}&year={}&weekOfYear={}&count={}",
         station_id, span.year, span.week_of_year, span.count
@@ -221,7 +219,7 @@ async fn raw_fetch_menu(
 
     let res = fetch(client, &path).await?;
     let status = res.status();
-    match res.json::<SkolmatenMenuResponse>().await {
+    match res.json::<MenuResponse>().await {
         Ok(res) => Ok(res),
         Err(e) => {
             if status != StatusCode::NOT_FOUND {
@@ -233,42 +231,45 @@ async fn raw_fetch_menu(
     }
 }
 
-/// Generate a series of queries because the Skolmaten API cannot handle more than one year per request.
-fn generate_week_spans(first: NaiveDate, last: NaiveDate) -> Vec<SkolmatenWeekSpan> {
-    assert!(first <= last, "First must not be after last.");
+/// Generate a series of queries because the Skolmaten API cannot handle
+/// more than one year per request.
+fn week_spans(first: NaiveDate, last: NaiveDate) -> impl Iterator<Item = WeekSpan> {
+    // in release mode, the iterator will yield None immediately
+    debug_assert!(first <= last, "first must not be after last");
 
-    let mut spans: Vec<SkolmatenWeekSpan> = Vec::new();
-    let mut segment_start = first;
+    let mut span_start = first;
 
-    while last > segment_start {
-        let year = segment_start.year();
+    iter::from_fn(move || {
+        if last <= span_start {
+            return None;
+        }
 
-        let segment_end = if last.year() == year {
+        let year = span_start.year();
+
+        let span_end = if last.year() == year {
             last
         } else {
             NaiveDate::from_ymd(year, 12, 31)
         };
 
-        let diff = segment_end - segment_start;
-        let weeks = u8::try_from((diff.num_days() + 6) / 7).unwrap(); // Round the number of weeks up, not down.
+        let diff = span_end - span_start;
+        let weeks = u8::try_from((diff.num_days() + 6) / 7).unwrap(); // round the number of weeks up
 
-        let mut week_of_year = segment_start.iso_week().week();
+        let mut week_of_year = span_start.iso_week().week();
 
-        // skolmaten.se cannot handle week numbers above 52 for some reason.
+        // skolmaten.se cannot handle week numbers above 52
         if week_of_year > 52 {
             week_of_year = 1;
         }
 
-        spans.push(SkolmatenWeekSpan {
+        span_start = NaiveDate::from_yo(year + 1, 1);
+
+        Some(WeekSpan {
             year,
             week_of_year,
             count: weeks,
-        });
-
-        segment_start = NaiveDate::from_yo(year + 1, 1);
-    }
-
-    spans
+        })
+    })
 }
 
 /// List days of a particular Skolmaten menu.
@@ -279,15 +280,13 @@ pub async fn list_days(
     first: NaiveDate,
     last: NaiveDate,
 ) -> Result<Vec<crate::Day>> {
-    let spans = generate_week_spans(first, last);
-
-    let results = stream::iter(spans)
+    let results = stream::iter(week_spans(first, last))
         .map(|span| {
             let client = &client;
             async move {
-                raw_fetch_menu(client, station, &span)
+                fetch_menu(client, station, &span)
                     .await
-                    .map(SkolmatenMenuResponse::into_days_iter)
+                    .map(MenuResponse::into_days_iter)
             }
         })
         .buffer_unordered(4)
@@ -324,13 +323,14 @@ async fn fetch(client: &Client, path: &str) -> reqwest::Result<reqwest::Response
 
 #[cfg(test)]
 mod tests {
-    use chrono::Duration;
+    use chrono::{Duration, NaiveDate};
+    use reqwest::Client;
 
-    use super::*;
+    use crate::skolmaten::WeekSpan;
 
     #[tokio::test]
-    async fn list_menus_test() {
-        let menus = list_menus(&Client::new()).await.unwrap();
+    async fn list_menus() {
+        let menus = super::list_menus(&Client::new()).await.unwrap();
 
         assert!(menus.len() > 5000);
 
@@ -340,11 +340,11 @@ mod tests {
     }
 
     #[tokio::test]
-    async fn list_days_test() {
+    async fn list_days() {
         let first_day = chrono::offset::Local::now().date().naive_local();
         let last_day = first_day + Duration::weeks(2);
 
-        let days = list_days(&Client::new(), 4889403990212608, first_day, last_day)
+        let days = super::list_days(&Client::new(), 4889403990212608, first_day, last_day)
             .await
             .unwrap();
 
@@ -353,25 +353,27 @@ mod tests {
 
     #[test]
     fn week_spans() {
-        let week_53 = super::generate_week_spans(
+        let mut it = super::week_spans(
             NaiveDate::from_ymd(2020, 8, 1),
             NaiveDate::from_ymd(2021, 3, 1),
         );
         assert_eq!(
-            week_53,
-            [
-                SkolmatenWeekSpan {
-                    year: 2020,
-                    week_of_year: 31,
-                    count: 22,
-                },
-                SkolmatenWeekSpan {
-                    year: 2021,
-                    week_of_year: 1, // Skolmaten.se doesn't care that 53 is the correct week number.
-                    count: 9,
-                }
-            ]
+            it.next(),
+            Some(WeekSpan {
+                year: 2020,
+                week_of_year: 31,
+                count: 22,
+            }),
         );
+        assert_eq!(
+            it.next(),
+            Some(WeekSpan {
+                year: 2021,
+                week_of_year: 1, // Skolmaten.se doesn't care that 53 is the correct week number.
+                count: 9,
+            })
+        );
+        assert!(it.next().is_none());
     }
 
     #[test]
