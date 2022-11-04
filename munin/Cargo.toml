@@ -1,10 +1,10 @@
 [package]
 name = "munin"
-version = "0.2.6"
+version = "0.2.7"
 edition = "2021"
 
 [dependencies]
-database = { path = "../database", features = ["meilisearch-sdk"], version = "0.2.3" }
+database = { workspace = true, features = ["meilisearch-sdk"] }
 hugin = { workspace = true, features = ["diesel"] }
 chrono = { workspace = true }
 chrono-tz = { workspace = true }

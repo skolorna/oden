@@ -847,7 +847,7 @@ dependencies = [
 
 [[package]]
 name = "database"
-version = "0.2.3"
+version = "0.2.4"
 dependencies = [
  "chrono",
  "diesel",
@@ -1287,7 +1287,7 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "hugin"
-version = "0.2.4"
+version = "0.3.0"
 dependencies = [
  "chrono",
  "chrono-tz",
@@ -1733,7 +1733,7 @@ dependencies = [
 
 [[package]]
 name = "munin"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "anyhow",
  "chrono",
@@ -1851,7 +1851,7 @@ dependencies = [
 
 [[package]]
 name = "oden-http"
-version = "0.2.6"
+version = "0.2.7"
 dependencies = [
  "actix-rt",
  "actix-web",
