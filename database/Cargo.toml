@@ -10,6 +10,6 @@ diesel = { workspace = true, features = ["chrono", "postgres", "uuidv07"] }
 meilisearch-sdk = { workspace = true, optional = true }
 serde = { version = "1.0.147", features = ["derive"] }
 smaz = { path = "../smaz", version = "0.1.0" }
-diesel_migrations = "1.4.0"
+diesel_migrations = "2.0.0"
 tracing = "0.1.34"
 uuid = { workspace = true, features = ["serde"] }
