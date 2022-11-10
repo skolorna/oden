@@ -37,7 +37,7 @@ pub async fn list_menus() -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
-#[instrument(fields(%first, %last))]
+#[instrument(skip(client), fields(%first, %last))]
 pub async fn list_days(
     client: &Client,
     menu_slug: &str,

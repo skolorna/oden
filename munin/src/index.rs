@@ -1,5 +1,7 @@
 use anyhow::bail;
+use chrono::DateTime;
 use chrono::Duration;
+use chrono::NaiveDate;
 use chrono::TimeZone;
 use chrono::Utc;
 use chrono_tz::Europe::Stockholm;
@@ -7,15 +9,20 @@ use database::models::MenuId;
 use database::models::NewDay;
 use database::models::NewMenu;
 use database::{models::Menu, MeiliIndexable};
+use diesel::dsl::sql;
 use diesel::pg::upsert::excluded;
 use diesel::prelude::*;
+use diesel::sql_types::Date;
 use diesel::PgConnection;
 use futures::stream;
 use futures::StreamExt;
 use hugin::list_days;
 use hugin::list_menus;
+use hugin::MenuSlug;
+use itertools::Itertools;
 use meilisearch_sdk::client::Client;
 use meilisearch_sdk::tasks::Task;
+use serde::Serialize;
 use tracing::{info, instrument, warn};
 
 #[derive(Debug, clap::Args)]
@@ -55,6 +62,15 @@ pub struct Args {
     meili_index: String,
 }
 
+#[derive(Debug, Serialize)]
+struct MeiliMenu {
+    id: MenuId,
+    updated_at: Option<DateTime<Utc>>,
+    slug: MenuSlug,
+    title: String,
+    last_day: Option<NaiveDate>,
+}
+
 pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> {
     let client = reqwest::Client::new();
 
@@ -90,7 +106,10 @@ pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> 
     }
 
     if let Some(meili_url) = &opt.meili_url {
-        use database::schema::menus::dsl::*;
+        use database::schema::{
+            days::{columns as days_cols, table as days_table},
+            menus::{columns as menus_cols, table as menus_table},
+        };
 
         let client = Client::new(meili_url, &opt.meili_key);
         let index = if let Ok(index) = client.get_index(&opt.meili_index).await {
@@ -111,24 +130,57 @@ pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> 
             }
         };
 
-        index.set_sortable_attributes(&["updated_at"]).await?;
+        let mut last_days = days_table
+            .group_by(days_cols::menu_id)
+            .order(days_cols::menu_id.asc())
+            .select((days_cols::menu_id, sql::<Date>("max(date)")))
+            .load::<(MenuId, NaiveDate)>(connection)?
+            .into_iter();
+
         index
-            .set_filterable_attributes(&["slug", "updated_at"])
+            .set_sortable_attributes(&["updated_at", "last_day"])
+            .await?;
+        index
+            .set_filterable_attributes(&["slug", "updated_at", "last_day"])
             .await?;
 
-        let documents: Vec<Menu> = menus.load(connection)?;
-        let task = index.add_documents(&documents, None).await?;
+        let menus = menus_table
+            .order(menus_cols::id.asc())
+            .load::<Menu>(connection)?
+            .into_iter();
 
-        info!(
-            "queued {} documents for MeiliSearch indexing",
-            documents.len()
-        );
+        let menus = menus
+            .map(|menu| {
+                let last_day = last_days
+                    .take_while_ref(|(id, _)| *id <= menu.id)
+                    .find(|(id, _)| *id == menu.id)
+                    .map(|(_, d)| d);
+
+                let Menu {
+                    id,
+                    title,
+                    slug,
+                    updated_at,
+                } = menu;
+
+                MeiliMenu {
+                    id,
+                    updated_at,
+                    slug,
+                    title,
+                    last_day,
+                }
+            })
+            .collect::<Vec<_>>();
+        let task = index.add_documents(&menus, None).await?;
+
+        info!("queued {} documents for MeiliSearch indexing", menus.len());
 
         match task.wait_for_completion(&client, None, None).await? {
             Task::Succeeded { content } => {
                 info!(
                     "indexed {} documents in {:.02} seconds",
-                    documents.len(),
+                    menus.len(),
                     content.duration.as_secs_f64(),
                 );
 
