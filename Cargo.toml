@@ -11,4 +11,4 @@ hugin = { path = "hugin" }
 meilisearch-sdk = { version = "0.20.1", default-features = false }
 sentry = "0.29.0"
 sentry-tracing = "0.29.0"
-uuid = "0.8.2"
+uuid = "1.2.1"
