@@ -4,9 +4,11 @@ members = ["database", "euphemism", "hugin", "munin", "oden-http", "smaz"]
 [workspace.dependencies]
 chrono = "0.4.22"
 chrono-tz = "0.8.0"
-clap = "4.0.18"
+clap = "4.0.26"
 database = { path = "database" }
 diesel = "1.4.8"
 hugin = { path = "hugin" }
 meilisearch-sdk = { version = "0.20.1", default-features = false }
+sentry = "0.29.0"
+sentry-tracing = "0.29.0"
 uuid = "0.8.2"

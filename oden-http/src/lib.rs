@@ -24,6 +24,7 @@ macro_rules! create_app {
         let meili_client = meilisearch_sdk::client::Client::new($meili_url, $meili_key);
 
         App::new()
+            .wrap(sentry_actix::Sentry::new())
             .app_data(Data::new($pool.clone()))
             .app_data(Data::new(meili_client))
             .wrap(NormalizePath::trim())
