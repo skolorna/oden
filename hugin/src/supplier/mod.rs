@@ -1,7 +1,6 @@
 pub mod kleins;
 pub mod matilda;
 pub mod mpi;
-pub mod sabis;
 pub mod skolmaten;
 pub mod sodexo;
 
@@ -75,7 +74,7 @@ impl Supplier {
             Sodexo => sodexo::list_menus(client).await,
             Mpi => mpi::list_menus(client).await,
             Kleins => kleins::list_menus(client).await,
-            Sabis => sabis::list_menus().await,
+            Sabis => Ok(Vec::new()),
             Matilda => matilda::list_menus(client).await,
         }
     }
@@ -105,7 +104,7 @@ impl Supplier {
             Sodexo => sodexo::list_days(client, menu_slug, first, last).await,
             Mpi => mpi::list_days(client, menu_slug, first, last).await,
             Kleins => kleins::list_days(client, menu_slug, first, last).await,
-            Sabis => sabis::list_days(client, menu_slug, first, last).await,
+            Sabis => Ok(Vec::new()),
             Matilda => {
                 matilda::list_days(
                     client,

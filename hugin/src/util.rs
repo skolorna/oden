@@ -18,16 +18,6 @@ pub fn last_path_segment(path: &str) -> Option<&str> {
         .last()
 }
 
-/// Extract digits from a character iterator.
-pub fn extract_digits<I>(chars: I, radix: u32) -> u32
-where
-    I: Iterator<Item = char>,
-{
-    let digits = chars.filter(|c| c.is_digit(radix)).collect::<String>();
-
-    u32::from_str_radix(&digits, radix).unwrap()
-}
-
 /// Parse weekday (Swedish).
 pub fn parse_weekday(literal: &str) -> Option<Weekday> {
     match literal {
