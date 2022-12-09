@@ -1,0 +1,29 @@
+[package]
+name = "stor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.66"
+async-compression = { version = "0.3.15", features = ["tokio", "zstd"], optional = true }
+futures-util = { version = "0.3.25", optional = true }
+reqwest = { version = "0.11.13", default-features = false, features = [
+  "tokio-rustls",
+  "stream",
+], optional = true }
+serde = { version = "1.0.149", features = ["derive"] }
+sqlx = { version = "0.6.2", features = ["sqlite", "runtime-tokio-rustls"], optional = true }
+tokio = { version = "1.23.0", features = ["full"], optional = true }
+tokio-util = { version = "0.7.4", features = ["codec", "io"], optional = true }
+uuid = { workspace = true, features = ["serde", "v4"] }
+
+[features]
+default = ["db"]
+db = [
+  "dep:async-compression",
+  "dep:futures-util",
+  "dep:reqwest",
+  "dep:sqlx",
+  "dep:tokio",
+  "dep:tokio-util",
+]

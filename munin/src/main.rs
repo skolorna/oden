@@ -11,6 +11,7 @@ use tracing_subscriber::EnvFilter;
 
 mod export;
 mod index;
+mod meili;
 
 #[derive(Debug, Parser)]
 struct Opt {

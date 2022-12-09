@@ -38,6 +38,45 @@ impl TryFrom<Day> for ExportedDay {
     }
 }
 
+pub fn days_chunks<F>(
+    connection: &PgConnection,
+    chunk_size: i64,
+    mut on_chunk: F,
+) -> anyhow::Result<()>
+where
+    F: FnMut(Vec<Day>),
+{
+    connection
+        .build_transaction()
+        .repeatable_read()
+        .read_only()
+        .run::<_, anyhow::Error, _>(|| {
+            let mut offset = 0;
+
+            loop {
+                let days = days_table
+                    .offset(offset)
+                    .limit(chunk_size)
+                    .load::<Day>(connection)?;
+                let num_days = days.len();
+
+                info!("loaded {} days", num_days);
+
+                (on_chunk)(days);
+
+                if (num_days as i64) < chunk_size {
+                    break;
+                }
+
+                offset += chunk_size;
+            }
+
+            Ok(())
+        })?;
+
+    Ok(())
+}
+
 #[derive(Debug, clap::Args)]
 pub struct Args {
     #[arg(short, long)]

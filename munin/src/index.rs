@@ -14,6 +14,7 @@ use diesel::pg::upsert::excluded;
 use diesel::prelude::*;
 use diesel::sql_types::Date;
 use diesel::PgConnection;
+use futures::executor::block_on;
 use futures::stream;
 use futures::StreamExt;
 use hugin::list_days;
@@ -23,7 +24,11 @@ use itertools::Itertools;
 use meilisearch_sdk::client::Client;
 use meilisearch_sdk::tasks::Task;
 use serde::Serialize;
+use tokio::sync::mpsc;
 use tracing::{info, instrument, warn};
+
+use crate::export::days_chunks;
+use crate::meili;
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -112,23 +117,7 @@ pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> 
         };
 
         let client = Client::new(meili_url, &opt.meili_key);
-        let index = if let Ok(index) = client.get_index(&opt.meili_index).await {
-            index
-        } else {
-            let task = client.create_index(&opt.meili_index, Some("id")).await?;
-            let task = task
-                .wait_for_completion(&client, None, Some(std::time::Duration::from_secs(10)))
-                .await?;
-            match task {
-                Task::Enqueued { .. } | Task::Processing { .. } => {
-                    bail!("timeout waiting for index creation")
-                }
-                Task::Failed { content } => {
-                    bail!(meilisearch_sdk::errors::Error::from(content.error))
-                }
-                Task::Succeeded { .. } => task.try_make_index(&client).unwrap(),
-            }
-        };
+        let index = meili::get_or_create_index(&client, &opt.meili_index).await?;
 
         let mut last_days = days_table
             .group_by(days_cols::menu_id)
@@ -172,25 +161,38 @@ pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> 
                 }
             })
             .collect::<Vec<_>>();
-        let task = index.add_documents(&menus, None).await?;
 
-        info!("queued {} documents for MeiliSearch indexing", menus.len());
+        meili::add_documents(&index, &menus, None).await?;
 
-        match task.wait_for_completion(&client, None, None).await? {
-            Task::Succeeded { content } => {
-                info!(
-                    "indexed {} documents in {:.02} seconds",
-                    menus.len(),
-                    content.duration.as_secs_f64(),
-                );
+        drop(menus);
 
-                Ok(())
-            }
-            Task::Failed { content } => bail!(meilisearch_sdk::errors::Error::from(content.error)),
-            Task::Enqueued { .. } | Task::Processing { .. } => {
-                bail!("timeout waiting for documents to be indexed")
-            }
-        }
+        let index = meili::get_or_create_index(&client, "days").await?;
+
+        days_chunks(connection, 10_000, |chunk| {
+            block_on(async {
+                #[derive(Debug, Serialize)]
+                struct Day {
+                    id: String,
+                    menu_id: MenuId,
+                    date: NaiveDate,
+                    meals: Vec<String>,
+                }
+
+                let days = chunk
+                    .into_iter()
+                    .map(|d| Day {
+                        id: format!("{}-{}", d.menu_id, d.date),
+                        menu_id: d.menu_id,
+                        date: d.date,
+                        meals: d.meals.to_string().lines().map(ToOwned::to_owned).collect(),
+                    })
+                    .collect::<Vec<_>>();
+
+                meili::add_documents(&index, &days, None).await.unwrap();
+            });
+        })?;
+
+        Ok(())
     } else {
         Ok(())
     }
