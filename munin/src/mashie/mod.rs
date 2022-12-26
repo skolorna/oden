@@ -2,19 +2,12 @@ mod scrape;
 
 pub use scrape::*;
 
-use chrono::NaiveDate;
 use reqwest::{header::CONTENT_LENGTH, Client};
 use select::document::Document;
 use serde::Deserialize;
+use stor::menu::{Supplier};
+use time::Date;
 use tracing::instrument;
-
-use crate::{
-    errors::{Error, Result},
-    util::is_sorted,
-    Day, MenuSlug,
-};
-
-use super::supplier::Supplier;
 
 #[derive(Deserialize, Debug)]
 pub struct Menu {
@@ -26,9 +19,8 @@ pub struct Menu {
 
 impl Menu {
     #[must_use]
-    pub fn normalize(self, supplier: Supplier) -> crate::Menu {
-        let id = MenuSlug::new(supplier, self.id);
-        crate::Menu::new(id, self.title)
+    pub fn normalize(self, as_supplier: Supplier) -> stor::Menu {
+        stor::Menu::from_supplier(as_supplier, self.id, self.title)
     }
 }
 
@@ -64,19 +56,19 @@ pub async fn list_days(
     client: &Client,
     host: &str,
     menu_slug: &str,
-    first: NaiveDate,
-    last: NaiveDate,
-) -> Result<Vec<Day>> {
+    first: Date,
+    last: Date,
+) -> Result<Vec<stor::Day>> {
     let menu = query_menu(client, host, menu_slug).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
     let doc = Document::from(html.as_str());
-    let days: Vec<Day> = scrape_days(&doc)
+    let days = scrape_days(&doc)
         .into_iter()
-        .filter(|day| day.is_between(first, last))
+        .filter(|day| (first..=last).contains(&day.date()))
         .collect();
 
-    debug_assert!(is_sorted(&days));
+    // debug_assert!(is_sorted(&days));
 
     Ok(days)
 }
@@ -84,11 +76,10 @@ pub async fn list_days(
 /// Automagically generate a Mashie client.
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
-        use chrono::NaiveDate;
+        use time::Date;
         use reqwest::Client;
-        use $crate::errors::Result;
-        use $crate::Day;
-        use $crate::{mashie, Menu};
+        use $crate::{mashie, Result};
+        use stor::{Day, Menu};
 
         const HOST: &str = $host;
 
@@ -105,8 +96,8 @@ macro_rules! mashie_impl {
         pub async fn list_days(
             client: &Client,
             menu_slug: &str,
-            first: NaiveDate,
-            last: NaiveDate,
+            first: Date,
+            last: Date,
         ) -> Result<Vec<Day>> {
             mashie::list_days(client, HOST, menu_slug, first, last).await
         }
@@ -126,6 +117,8 @@ macro_rules! mashie_impl {
 }
 
 pub(crate) use mashie_impl;
+
+use crate::{Result, Error};
 
 #[cfg(test)]
 mod tests {

@@ -5,11 +5,3 @@ services:
     image: getmeili/meilisearch:v0.29.1
     ports:
       - "7700:7700"
-
-  postgres:
-    image: postgres:13
-    environment:
-      POSTGRES_PASSWORD: "postgres"
-      POSTGRES_DB: "oden"
-    ports:
-      - "5432:5432"

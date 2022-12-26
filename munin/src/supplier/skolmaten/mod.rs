@@ -1,17 +1,16 @@
-use std::iter;
+use std::{iter, collections::HashMap};
 
-use chrono::{Datelike, NaiveDate};
 use futures::{
     stream::{self, StreamExt},
     TryFutureExt,
 };
 use reqwest::{Client, StatusCode};
 use serde::Deserialize;
+use stor::menu::Supplier;
+use time::{Date, Month};
 use tracing::{error, instrument};
 
-use crate::{dedup_day_dates, errors::Result, Error, MenuSlug};
-
-use super::Supplier;
+use crate::{Error, Result};
 
 /// Maximum number of concurrent HTTP requests when crawling. For comparison,
 /// Firefox allows 7 concurrent requests. There is virtually no improvement for
@@ -53,12 +52,13 @@ struct StationsResponse {
 }
 
 impl Station {
-    fn to_menu(&self, district_name: &str) -> Option<crate::Menu> {
+    fn to_menu(&self, district_name: &str) -> Option<stor::Menu> {
         if self.name.to_lowercase().contains("info") {
             None
         } else {
-            Some(crate::Menu::new(
-                MenuSlug::new(Supplier::Skolmaten, self.id.to_string()),
+            Some(stor::Menu::from_supplier(
+                Supplier::Skolmaten,
+                self.id.to_string(),
                 format!("{}, {}", self.name.trim(), district_name),
             ))
         }
@@ -96,7 +96,7 @@ async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<
 }
 
 #[instrument(err, skip(client))]
-pub async fn list_menus(client: &Client) -> Result<Vec<crate::Menu>> {
+pub async fn list_menus(client: &Client) -> Result<Vec<stor::Menu>> {
     let provinces = list_provinces(client).await?;
 
     let mut districts = Vec::new();
@@ -136,7 +136,7 @@ struct Meal {
 }
 
 impl Meal {
-    fn normalize(self) -> Option<crate::Meal> {
+    fn normalize(self) -> Option<stor::Meal> {
         self.value.parse().ok()
     }
 }
@@ -144,24 +144,40 @@ impl Meal {
 #[derive(Deserialize, Debug)]
 struct Day {
     year: i32,
-    month: u32,
-    day: u32,
+    month: u8,
+    day: u8,
     meals: Option<Vec<Meal>>,
 }
 
 impl Day {
-    /// Maps `NaiveDate::from_ymd_opt` and creates a [`Day`]; thus, `None`
-    /// is returned on invalid dates such as *February 29, 2021*. Also,
-    /// `None` is returned if `meals` is `None`.
-    fn normalize(self) -> Option<crate::Day> {
-        let date = NaiveDate::from_ymd_opt(self.year, self.month, self.day)?;
-        let meals: Vec<crate::Meal> = self
+    fn normalize(self) -> Option<stor::Day> {
+        let date = Date::from_calendar_date(
+            self.year,
+            match self.month {
+                1 => Month::January,
+                2 => Month::February,
+                3 => Month::March,
+                4 => Month::April,
+                5 => Month::May,
+                6 => Month::June,
+                7 => Month::July,
+                8 => Month::August,
+                9 => Month::September,
+                10 => Month::October,
+                11 => Month::November,
+                12 => Month::December,
+                _ => return None,
+            },
+            self.day,
+        )
+        .ok()?;
+        let meals: Vec<stor::Meal> = self
             .meals?
             .into_iter()
             .filter_map(Meal::normalize)
             .collect();
 
-        crate::Day::new_opt(date, meals)
+        stor::Day::new(date, meals)
     }
 }
 
@@ -194,7 +210,7 @@ struct MenuResponse {
 }
 
 impl MenuResponse {
-    fn into_days_iter(self) -> impl Iterator<Item = crate::Day> {
+    fn into_days_iter(self) -> impl Iterator<Item = stor::Day> {
         self.menu
             .weeks
             .into_iter()
@@ -206,7 +222,7 @@ impl MenuResponse {
 #[derive(PartialEq, Debug)]
 struct WeekSpan {
     year: i32,
-    week_of_year: u32,
+    week_of_year: u8,
     count: u8,
 }
 
@@ -219,21 +235,18 @@ async fn fetch_menu(client: &Client, station_id: u64, span: &WeekSpan) -> Result
 
     let res = fetch(client, &path).await?;
     let status = res.status();
-    match res.json::<MenuResponse>().await {
-        Ok(res) => Ok(res),
-        Err(e) => {
-            if status != StatusCode::NOT_FOUND {
-                error!("{}", e);
-            }
-
-            Err(Error::MenuNotFound)
+    Ok(res.json::<MenuResponse>().await.map_err(|e| {
+        if status != StatusCode::NOT_FOUND {
+            error!("{}", e);
         }
-    }
+
+        Error::MenuNotFound
+    })?)
 }
 
 /// Generate a series of queries because the Skolmaten API cannot handle
 /// more than one year per request.
-fn week_spans(first: NaiveDate, last: NaiveDate) -> impl Iterator<Item = WeekSpan> {
+fn week_spans(first: Date, last: Date) -> impl Iterator<Item = WeekSpan> {
     // in release mode, the iterator will yield None immediately
     debug_assert!(first <= last, "first must not be after last");
 
@@ -249,20 +262,20 @@ fn week_spans(first: NaiveDate, last: NaiveDate) -> impl Iterator<Item = WeekSpa
         let span_end = if last.year() == year {
             last
         } else {
-            NaiveDate::from_ymd(year, 12, 31)
+            Date::from_calendar_date(year, Month::December, 31).unwrap()
         };
 
         let diff = span_end - span_start;
-        let weeks = u8::try_from((diff.num_days() + 6) / 7).unwrap(); // round the number of weeks up
+        let weeks = u8::try_from((diff.whole_days() + 6) / 7).unwrap(); // round the number of weeks up
 
-        let mut week_of_year = span_start.iso_week().week();
+        let mut week_of_year = span_start.iso_week();
 
         // skolmaten.se cannot handle week numbers above 52
         if week_of_year > 52 {
             week_of_year = 1;
         }
 
-        span_start = NaiveDate::from_yo(year + 1, 1);
+        span_start = Date::from_ordinal_date(year + 1, 1).unwrap();
 
         Some(WeekSpan {
             year,
@@ -277,9 +290,9 @@ fn week_spans(first: NaiveDate, last: NaiveDate) -> impl Iterator<Item = WeekSpa
 pub async fn list_days(
     client: &Client,
     station: u64,
-    first: NaiveDate,
-    last: NaiveDate,
-) -> Result<Vec<crate::Day>> {
+    first: Date,
+    last: Date,
+) -> Result<Vec<stor::Day>> {
     let results = stream::iter(week_spans(first, last))
         .map(|span| {
             let client = &client;
@@ -298,11 +311,11 @@ pub async fn list_days(
     let mut days = days_2d
         .into_iter()
         .flatten()
-        .filter(|day| day.is_between(first, last))
+        .filter(|day| (first..=last).contains(&day.date()))
         .collect::<Vec<_>>();
 
     days.sort();
-    dedup_day_dates(&mut days);
+    days.dedup_by_key(|d| *d.date());
 
     Ok(days)
 }
@@ -323,10 +336,11 @@ async fn fetch(client: &Client, path: &str) -> reqwest::Result<reqwest::Response
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Duration, NaiveDate};
     use reqwest::Client;
+    use time::{macros::date, Duration, OffsetDateTime};
+    use time_tz::OffsetDateTimeExt;
 
-    use crate::skolmaten::WeekSpan;
+    use super::WeekSpan;
 
     #[tokio::test]
     async fn list_menus() {
@@ -335,13 +349,13 @@ mod tests {
         assert!(menus.len() > 5000);
 
         for menu in menus {
-            assert!(!menu.title().to_lowercase().contains("info"));
+            assert!(!menu.title.to_lowercase().contains("info"));
         }
     }
 
     #[tokio::test]
     async fn list_days() {
-        let first_day = chrono::offset::Local::now().date().naive_local();
+        let first_day = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
         let last_day = first_day + Duration::weeks(2);
 
         let days = super::list_days(&Client::new(), 4889403990212608, first_day, last_day)
@@ -353,10 +367,7 @@ mod tests {
 
     #[test]
     fn week_spans() {
-        let mut it = super::week_spans(
-            NaiveDate::from_ymd(2020, 8, 1),
-            NaiveDate::from_ymd(2021, 3, 1),
-        );
+        let mut it = super::week_spans(date!(2020 - 08 - 01), date!(2021 - 03 - 01));
         assert_eq!(
             it.next(),
             Some(WeekSpan {
@@ -391,7 +402,8 @@ mod tests {
             }
             .normalize()
             .unwrap()
-            .meals()
+            .meals
+            .into_inner()
             .len(),
             1
         );

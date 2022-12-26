@@ -1,10 +1,12 @@
+use stor::menu::Supplier;
+
 use crate::mashie::mashie_impl;
 
-mashie_impl!("https://sodexo.mashie.com", super::Supplier::Sodexo);
+mashie_impl!("https://sodexo.mashie.com", Supplier::Sodexo);
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Duration, Utc};
+    use time::{Duration, OffsetDateTime};
     use reqwest::Client;
 
     use crate::util::is_sorted;
@@ -17,7 +19,7 @@ mod tests {
 
     #[tokio::test]
     async fn list_days() {
-        let first = Utc::today().naive_utc();
+        let first = OffsetDateTime::now_utc().date();
         let last = first + Duration::days(365);
 
         let days = super::list_days(

@@ -1,7 +1,5 @@
-use std::{borrow::Cow, fmt::Display, str::FromStr};
+use std::{borrow::Cow, fmt::Display, str::FromStr, iter};
 
-use chrono::{Datelike, IsoWeek, NaiveDate, TimeZone, Utc, Weekday};
-use chrono_tz::Europe::Stockholm;
 use futures::{stream, StreamExt};
 use reqwest::Client;
 use select::{
@@ -10,15 +8,12 @@ use select::{
     predicate::{Attr, Class, Name, Predicate},
 };
 use serde::{Deserialize, Serialize};
+use stor::{Menu, menu::Supplier, Day, Meal};
+use time::{Date, OffsetDateTime, Weekday, Duration};
+use time_tz::OffsetDateTimeExt;
 use tracing::{error, instrument, trace};
 
-use crate::{
-    errors::{Error, Result},
-    util::parse_weekday,
-    Day, Meal, Menu, MenuSlug,
-};
-
-use super::Supplier;
+use crate::{util::parse_weekday, Error, Result};
 
 #[derive(Debug, Clone, Serialize)]
 struct Region {
@@ -108,17 +103,9 @@ trait MatildaMenu {
     fn query(&self) -> MenuQuery;
 
     fn title(&self) -> Cow<str>;
-}
 
-impl<T: MatildaMenu> From<T> for Menu {
-    fn from(i: T) -> Self {
-        Self {
-            slug: MenuSlug {
-                supplier: Supplier::Matilda,
-                local_id: i.query().to_string(),
-            },
-            title: i.title().into(),
-        }
+    fn to_menu(&self) -> stor::Menu {
+        Menu::from_supplier(Supplier::Matilda, self.query().to_string(), self.title())
     }
 }
 
@@ -237,9 +224,9 @@ async fn menus_in_part<'p>(client: &Client, part: Part<'p>) -> Result<Vec<Menu>>
     let customers = list_customers(client, &part).await?;
 
     if customers.is_empty() {
-        Ok(vec![part.into()])
+        Ok(vec![part.to_menu()])
     } else {
-        Ok(customers.into_iter().map(Into::into).collect())
+        Ok(customers.iter().map(MatildaMenu::to_menu).collect())
     }
 }
 
@@ -312,7 +299,7 @@ struct ListDaysQuery<'m> {
     week_offset: i64,
 }
 
-fn parse_day_node_opt(node: &Node, year: i32, week_num: u32) -> Option<Day> {
+fn parse_day_node_opt(node: &Node, year: i32, week_num: u8) -> Option<Day> {
     let meals = node
         .find(Class("meal-text"))
         .filter_map(|n| Meal::from_str(&n.text()).ok())
@@ -321,9 +308,9 @@ fn parse_day_node_opt(node: &Node, year: i32, week_num: u32) -> Option<Day> {
     let date = node.find(Class("date-container")).next()?.text();
     let mut date_parts = date.split_whitespace();
     let weekday = date_parts.next().and_then(parse_weekday)?;
-    let date = NaiveDate::from_isoywd_opt(year, week_num, weekday)?;
+    let date = Date::from_iso_week_date(year, week_num, weekday).ok()?;
 
-    Day::new_opt(date, meals)
+    Day::new(date, meals)
 }
 
 #[instrument(skip(client))]
@@ -340,16 +327,12 @@ async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Re
         .find(Attr("id", "Year"))
         .next()
         .and_then(|n| n.attr("value")?.parse().ok())
-        .ok_or(Error::ScrapeError {
-            context: "couldn't get year".into(),
-        })?;
+        .ok_or(Error::scrape_error("couldn't get year"))?;
     let week_num = doc
         .find(Attr("id", "WeekPageWeekNo"))
         .next()
         .and_then(|n| n.attr("value")?.parse().ok())
-        .ok_or(Error::ScrapeError {
-            context: "couldn't get week number".into(),
-        })?;
+        .ok_or(Error::scrape_error("couldn't get week number"))?;
 
     let days = doc
         .find(Name("li").and(Class("li-menu")))
@@ -364,17 +347,16 @@ async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Re
 pub async fn list_days(
     client: &Client,
     menu: &MenuQuery,
-    first: NaiveDate,
-    last: NaiveDate,
+    first: Date,
+    last: Date,
 ) -> Result<Vec<Day>> {
-    let utc = Utc::now().naive_utc();
-    let now = Stockholm.from_utc_datetime(&utc).date().naive_local();
+    let today = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
 
     let offsets = stream::iter(week_offsets(
-        now.iso_week(),
-        first.iso_week(),
-        last.iso_week(),
-    ));
+        today,
+        first,
+        last,
+    ).unwrap());
     let mut days_stream = offsets
         .map(|o| days_by_week(client, menu, o))
         .buffer_unordered(CONCURRENT_REQUESTS);
@@ -388,26 +370,40 @@ pub async fn list_days(
     Ok(days)
 }
 
+fn rewind_to_weekday(mut date: Date, weekday: Weekday) -> Option<Date> {
+    while date.weekday() != weekday {
+        date = date.previous_day()?;
+    }
+
+    Some(date)
+}
+
 /// Calculate week offsets.
 pub(super) fn week_offsets(
-    around: IsoWeek,
-    first: IsoWeek,
-    last: IsoWeek,
-) -> impl Iterator<Item = i64> {
-    let first = NaiveDate::from_isoywd(first.year(), first.week(), Weekday::Mon);
-    let last = NaiveDate::from_isoywd(last.year(), last.week(), Weekday::Mon);
-    let around = NaiveDate::from_isoywd(around.year(), around.week(), Weekday::Mon);
+    around: Date,
+    first: Date,
+    last: Date,
+) -> Option<impl Iterator<Item = i64>> {
+    let mut first = rewind_to_weekday(first, Weekday::Monday)?;
+    let last = rewind_to_weekday(last, Weekday::Monday)?;
+    let around = rewind_to_weekday(around, Weekday::Monday)?;
 
-    first
-        .iter_weeks()
-        .take_while(move |d| *d <= last)
-        .map(move |d| (d - around).num_weeks())
+    Some(iter::from_fn(move || {
+        let this = first;
+        first += Duration::weeks(1);
+
+        if this <= last {
+            Some((this - around).whole_weeks())
+        } else {
+            None
+        }
+    }))
 }
 
 #[cfg(test)]
 mod tests {
-    use chrono::{Datelike, Duration, NaiveDate, Utc};
     use reqwest::Client;
+    use time::{OffsetDateTime, Duration, macros::date};
 
     use super::MenuQuery;
 
@@ -426,13 +422,13 @@ mod tests {
             municipality: 2161,
             region: 21,
         };
-        let first = Utc::now() - Duration::weeks(1);
+        let first = OffsetDateTime::now_utc() - Duration::weeks(1);
 
         let days = super::list_days(
             &Client::new(),
             &menu,
-            first.date().naive_utc(),
-            (first + Duration::days(30)).date().naive_local(),
+            first.date(),
+            (first + Duration::days(30)).date(),
         )
         .await
         .unwrap();
@@ -442,11 +438,11 @@ mod tests {
 
     #[test]
     fn calc_week_offsets() {
-        let around = NaiveDate::from_ymd(2022, 1, 4).iso_week();
-        let first = NaiveDate::from_ymd(2021, 12, 12).iso_week();
-        let last = NaiveDate::from_ymd(2022, 1, 12).iso_week();
+        let around = date!(2022-01-04);
+        let first = date!(2021-12-12);
+        let last = date!(2022-01-12);
 
-        let offsets: Vec<i64> = super::week_offsets(around, first, last).collect();
+        let offsets: Vec<i64> = super::week_offsets(around, first, last).unwrap().collect();
 
         assert_eq!(offsets, &[-4, -3, -2, -1, 0, 1]);
     }

@@ -1,18 +1,15 @@
-use chrono::NaiveDate;
 use reqwest::{header::USER_AGENT, Client, IntoUrl, Response};
 use select::{
     document::Document,
     node::Node,
     predicate::{Class, Name, Predicate},
 };
+use stor::{menu::{Menu, Supplier}, Day};
+use time::Date;
 use tracing::instrument;
 
-use crate::{
-    errors::{Error, Result},
-    mashie,
-    util::last_path_segment,
-    Day, Menu, MenuSlug, Supplier,
-};
+use crate::{Result, util::last_path_segment, Error, mashie};
+
 
 #[derive(Debug)]
 struct School {
@@ -22,9 +19,7 @@ struct School {
 
 impl School {
     pub fn normalize(self) -> Menu {
-        let id = MenuSlug::new(Supplier::Kleins, self.slug);
-
-        Menu::new(id, self.title)
+        Menu::from_supplier(Supplier::Kleins, self.slug, self.title)
     }
 }
 
@@ -82,9 +77,7 @@ async fn query_school(client: &Client, school_slug: &str) -> Result<QuerySchoolR
         .find(Name("iframe"))
         .next()
         .and_then(|n| extract_menu_url(&n))
-        .ok_or_else(|| Error::ScrapeError {
-            context: html.clone(),
-        })?;
+        .ok_or_else(|| Error::scrape_error_with_context("no iframe found", Some(&html)))?;
 
     Ok(QuerySchoolResponse { menu_url })
 }
@@ -93,8 +86,8 @@ async fn query_school(client: &Client, school_slug: &str) -> Result<QuerySchoolR
 pub async fn list_days(
     client: &Client,
     menu_slug: &str,
-    first: NaiveDate,
-    last: NaiveDate,
+    first: Date,
+    last: Date,
 ) -> Result<Vec<Day>> {
     let menu_url = {
         let res = query_school(client, menu_slug).await?;
@@ -103,7 +96,7 @@ pub async fn list_days(
     let html = reqwest::get(&menu_url).await?.text().await?;
     let doc = Document::from(html.as_str());
     let days = mashie::scrape_days(&doc)
-        .filter(|day| day.is_between(first, last))
+        .filter(|day| (first..=last).contains(&day.date()))
         .collect();
 
     Ok(days)
@@ -117,8 +110,8 @@ async fn fetch(client: &Client, url: impl IntoUrl) -> reqwest::Result<Response> 
 
 #[cfg(test)]
 mod tests {
-    use chrono::NaiveDate;
     use reqwest::{Client, StatusCode};
+    use time::macros::date;
 
     #[tokio::test]
     async fn list_schools() {
@@ -153,8 +146,8 @@ mod tests {
         let days = super::list_days(
             &Client::new(),
             "forskolan-pingvinen",
-            NaiveDate::from_ymd(1970, 1, 1),
-            NaiveDate::from_ymd(2077, 1, 1),
+            date!(1970-01-01),
+            date!(2077-01-01),
         )
         .await
         .unwrap();

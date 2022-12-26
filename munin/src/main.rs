@@ -1,28 +1,32 @@
+use std::path::PathBuf;
+use std::str::FromStr;
+
 use clap::Parser;
 use clap::Subcommand;
-use diesel::prelude::*;
-use diesel::PgConnection;
 use dotenv::dotenv;
-use export::export;
-use index::index;
+use munin::index;
 use sentry::types::Dsn;
+use sqlx::{SqlitePool, sqlite::SqliteConnectOptions};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
-mod export;
-mod index;
 mod meili;
+
+use index::index;
 
 #[derive(Debug, Parser)]
 struct Opt {
-    #[structopt(long, env)]
-    postgres_url: String,
-
-    #[structopt(long, env)]
+    #[arg(long, env)]
     sentry_dsn: Option<Dsn>,
 
-    #[structopt(long, env)]
+    #[arg(long, env)]
     sentry_environment: Option<String>,
+
+    #[arg(long)]
+    db_path: Option<PathBuf>,
+
+    #[arg(long, default_value_t)]
+    create_db: bool,
 
     #[command(subcommand)]
     cmd: Command,
@@ -30,10 +34,8 @@ struct Opt {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Fetch new menus and load new days
+    /// Fetch new menus and days
     Index(index::Args),
-    /// Export menus and days from the database
-    Export(export::Args),
 }
 
 #[tokio::main]
@@ -56,14 +58,15 @@ async fn main() -> anyhow::Result<()> {
         .with(sentry_tracing::layer())
         .init();
 
-    let connection = PgConnection::establish(&opt.postgres_url)?;
+    let path = opt.db_path.unwrap();
+    let sqlite_url = format!("sqlite://{}", path.display());
 
-    database::run_migrations(&connection).expect("migrations failed");
+    let options = SqliteConnectOptions::from_str(&sqlite_url)?.create_if_missing(opt.create_db);
+    let pool = SqlitePool::connect_with(options).await?;
+
+    stor::db::MIGRATOR.run(&pool).await?;
 
     match opt.cmd {
-        Command::Index(opt) => index(&connection, &opt).await?,
-        Command::Export(opt) => export(&connection, &opt)?,
+        Command::Index(opt) => index(&opt, &pool).await,
     }
-
-    Ok(())
 }
