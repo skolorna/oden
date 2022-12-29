@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt::Display, str::FromStr, iter};
+use std::{borrow::Cow, fmt::Display, iter, str::FromStr};
 
 use futures::{stream, StreamExt};
 use reqwest::Client;
@@ -8,12 +8,14 @@ use select::{
     predicate::{Attr, Class, Name, Predicate},
 };
 use serde::{Deserialize, Serialize};
-use stor::{Menu, menu::Supplier, Day, Meal};
-use time::{Date, OffsetDateTime, Weekday, Duration};
+use stor::{menu::Supplier, Day, Meal, Menu};
+use time::{Date, Duration, OffsetDateTime, Weekday};
 use time_tz::OffsetDateTimeExt;
 use tracing::{error, instrument, trace};
 
 use crate::{util::parse_weekday, Error, Result};
+
+use super::ListDays;
 
 #[derive(Debug, Clone, Serialize)]
 struct Region {
@@ -327,12 +329,12 @@ async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Re
         .find(Attr("id", "Year"))
         .next()
         .and_then(|n| n.attr("value")?.parse().ok())
-        .ok_or(Error::scrape_error("couldn't get year"))?;
+        .ok_or_else(|| Error::scrape_error("couldn't get year"))?;
     let week_num = doc
         .find(Attr("id", "WeekPageWeekNo"))
         .next()
         .and_then(|n| n.attr("value")?.parse().ok())
-        .ok_or(Error::scrape_error("couldn't get week number"))?;
+        .ok_or_else(|| Error::scrape_error("couldn't get week number"))?;
 
     let days = doc
         .find(Name("li").and(Class("li-menu")))
@@ -349,14 +351,10 @@ pub async fn list_days(
     menu: &MenuQuery,
     first: Date,
     last: Date,
-) -> Result<Vec<Day>> {
+) -> Result<ListDays> {
     let today = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
 
-    let offsets = stream::iter(week_offsets(
-        today,
-        first,
-        last,
-    ).unwrap());
+    let offsets = stream::iter(week_offsets(today, first, last).unwrap());
     let mut days_stream = offsets
         .map(|o| days_by_week(client, menu, o))
         .buffer_unordered(CONCURRENT_REQUESTS);
@@ -367,7 +365,7 @@ pub async fn list_days(
         days.append(&mut result?);
     }
 
-    Ok(days)
+    Ok(ListDays { menu: None, days })
 }
 
 fn rewind_to_weekday(mut date: Date, weekday: Weekday) -> Option<Date> {
@@ -403,7 +401,9 @@ pub(super) fn week_offsets(
 #[cfg(test)]
 mod tests {
     use reqwest::Client;
-    use time::{OffsetDateTime, Duration, macros::date};
+    use time::{macros::date, Duration, OffsetDateTime};
+
+    use crate::supplier::ListDays;
 
     use super::MenuQuery;
 
@@ -424,7 +424,7 @@ mod tests {
         };
         let first = OffsetDateTime::now_utc() - Duration::weeks(1);
 
-        let days = super::list_days(
+        let ListDays { days, .. } = super::list_days(
             &Client::new(),
             &menu,
             first.date(),
@@ -438,9 +438,9 @@ mod tests {
 
     #[test]
     fn calc_week_offsets() {
-        let around = date!(2022-01-04);
-        let first = date!(2021-12-12);
-        let last = date!(2022-01-12);
+        let around = date!(2022 - 01 - 04);
+        let first = date!(2021 - 12 - 12);
+        let last = date!(2022 - 01 - 12);
 
         let offsets: Vec<i64> = super::week_offsets(around, first, last).unwrap().collect();
 

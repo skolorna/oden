@@ -1,6 +1,9 @@
+use std::ops::RangeInclusive;
+
 use futures::{stream, StreamExt};
 use reqwest::Client;
-use stor::{menu::Supplier, Menu, Day};
+use stor::{menu::Supplier, Menu};
+use supplier::ListDays;
 use thiserror::Error;
 use time::Date;
 use tracing::{debug, instrument};
@@ -23,7 +26,7 @@ pub enum Error {
 }
 
 impl Error {
-    fn scrape_error_with_context(message: &str, context: Option<&str>) -> Self {
+    fn scrape_error_with_context(_message: &str, _context: Option<&str>) -> Self {
         Self::ScrapeError
     }
 
@@ -66,14 +69,29 @@ pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
-#[instrument(skip(client), fields(?supplier, %supplier_reference, %first, %last))]
-pub async fn list_days(client: &Client, supplier: Supplier, supplier_reference: &str, first: Date, last: Date) -> Result<Vec<Day>> {
-  match supplier {
-    Supplier::Skolmaten => skolmaten::list_days(&client, supplier_reference.parse().unwrap(), first, last).await,
-    Supplier::Sodexo => sodexo::list_days(&client, supplier_reference, first, last).await,
-    Supplier::Mpi => mpi::list_days(&client, supplier_reference, first, last).await,
-    Supplier::Kleins => kleins::list_days(&client, supplier_reference, first, last).await,
-    Supplier::Sabis => Ok(Vec::new()),
-    Supplier::Matilda => matilda::list_days(&client, &supplier_reference.parse().unwrap(), first, last).await,
-  }
+#[instrument(skip(client), fields(?supplier, %supplier_reference, ?range))]
+pub async fn list_days(
+    client: &Client,
+    supplier: Supplier,
+    supplier_reference: &str,
+    range: RangeInclusive<Date>,
+) -> Result<ListDays> {
+    let first = *range.start();
+    let last = *range.end();
+
+    match supplier {
+        Supplier::Skolmaten => {
+            skolmaten::list_days(client, supplier_reference.parse().unwrap(), range).await
+        }
+        Supplier::Sodexo => sodexo::list_days(client, supplier_reference, first, last).await,
+        Supplier::Mpi => mpi::list_days(client, supplier_reference, first, last).await,
+        Supplier::Kleins => kleins::list_days(client, supplier_reference, first, last).await,
+        Supplier::Sabis => Ok(ListDays {
+            menu: None,
+            days: Vec::new(),
+        }),
+        Supplier::Matilda => {
+            matilda::list_days(client, &supplier_reference.parse().unwrap(), first, last).await
+        }
+    }
 }

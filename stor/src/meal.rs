@@ -17,7 +17,6 @@ impl FromStr for Meal {
 
     fn from_str(s: &str) -> Result<Self, Self::Err> {
         let value = s
-            .trim()
             .split_whitespace()
             .fold(String::new(), |mut result, word| {
                 if !result.is_empty() {

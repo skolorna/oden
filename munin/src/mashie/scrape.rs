@@ -42,7 +42,10 @@ fn parse_date_literal(literal: &str) -> Option<Date> {
     // Accept None as year, but not Some(&str) that doesn't parse to i32.
     let y = segments
         .next()
-        .map_or_else(|| Ok(OffsetDateTime::now_utc().to_timezone(crate::TZ).year()), str::parse)
+        .map_or_else(
+            || Ok(OffsetDateTime::now_utc().to_timezone(crate::TZ).year()),
+            str::parse,
+        )
         .ok()?;
 
     Date::from_calendar_date(y, m, d).ok()
@@ -74,7 +77,7 @@ mod tests {
     use reqwest::Client;
     use time::macros::date;
 
-    use crate::{mashie::query_menu};
+    use crate::mashie::query_menu;
 
     use super::*;
 
@@ -88,11 +91,11 @@ mod tests {
         );
         assert_eq!(
             parse_date_literal("17 maj 2020").unwrap(),
-            date!(2020-05-17)
+            date!(2020 - 05 - 17)
         );
         assert_eq!(
             parse_date_literal("29 feb 2020").unwrap(),
-            date!(2020-02-29)
+            date!(2020 - 02 - 29)
         );
 
         assert!(parse_date_literal("May 17").is_none());
@@ -113,7 +116,7 @@ mod tests {
         let html = reqwest::get(&url).await.unwrap().text().await.unwrap();
         let doc = Document::from(html.as_str());
         let days = scrape_days(&doc).collect::<Vec<_>>();
-        
+
         assert!(!days.is_empty());
 
         assert_eq!(scrape_days(&Document::from("<h1>no days</h1>")).count(), 0);

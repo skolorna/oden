@@ -6,10 +6,10 @@ mashie_impl!("https://sodexo.mashie.com", Supplier::Sodexo);
 
 #[cfg(test)]
 mod tests {
-    use time::{Duration, OffsetDateTime};
     use reqwest::Client;
+    use time::{Duration, OffsetDateTime};
 
-    use crate::util::is_sorted;
+    use crate::supplier::ListDays;
 
     #[tokio::test]
     async fn list_menus() {
@@ -22,7 +22,7 @@ mod tests {
         let first = OffsetDateTime::now_utc().date();
         let last = first + Duration::days(365);
 
-        let days = super::list_days(
+        let ListDays { days, .. } = super::list_days(
             &Client::new(),
             "312dd0ae-3ebd-49d9-870e-abeb008c0e4b",
             first,
@@ -32,7 +32,6 @@ mod tests {
         .unwrap();
 
         assert!(days.len() > 5);
-        assert!(is_sorted(&days));
 
         for day in days {
             assert!(*day.date() >= first);

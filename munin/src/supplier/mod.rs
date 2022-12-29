@@ -1,8 +1,16 @@
+use stor::{Day, Menu};
+
 pub mod kleins;
 pub mod matilda;
 pub mod mpi;
 pub mod skolmaten;
 pub mod sodexo;
+
+#[derive(Debug)]
+pub struct ListDays {
+    pub menu: Option<Menu>,
+    pub days: Vec<Day>,
+}
 
 // impl Supplier {
 //     #[must_use]

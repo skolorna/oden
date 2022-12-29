@@ -1,9 +1,7 @@
 [workspace]
-members = ["euphemism", "munin", "oden-http", "stor"]
+members = ["euphemism", "munin", "stor"]
 
 [workspace.dependencies]
-chrono = "0.4.22"
-chrono-tz = "0.8.0"
 clap = "4.0.18"
 meilisearch-sdk = { version = "0.20.1", default-features = false }
 stor = { path = "stor" }

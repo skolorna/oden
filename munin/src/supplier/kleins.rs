@@ -4,12 +4,13 @@ use select::{
     node::Node,
     predicate::{Class, Name, Predicate},
 };
-use stor::{menu::{Menu, Supplier}, Day};
+use stor::menu::{Menu, Supplier};
 use time::Date;
 use tracing::instrument;
 
-use crate::{Result, util::last_path_segment, Error, mashie};
+use crate::{mashie, util::last_path_segment, Error, Result};
 
+use super::ListDays;
 
 #[derive(Debug)]
 struct School {
@@ -88,7 +89,7 @@ pub async fn list_days(
     menu_slug: &str,
     first: Date,
     last: Date,
-) -> Result<Vec<Day>> {
+) -> Result<ListDays> {
     let menu_url = {
         let res = query_school(client, menu_slug).await?;
         res.menu_url
@@ -96,10 +97,10 @@ pub async fn list_days(
     let html = reqwest::get(&menu_url).await?.text().await?;
     let doc = Document::from(html.as_str());
     let days = mashie::scrape_days(&doc)
-        .filter(|day| (first..=last).contains(&day.date()))
+        .filter(|day| (first..=last).contains(day.date()))
         .collect();
 
-    Ok(days)
+    Ok(ListDays { menu: None, days })
 }
 
 const UA: &str = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0";
@@ -112,6 +113,8 @@ async fn fetch(client: &Client, url: impl IntoUrl) -> reqwest::Result<Response> 
 mod tests {
     use reqwest::{Client, StatusCode};
     use time::macros::date;
+
+    use crate::supplier::ListDays;
 
     #[tokio::test]
     async fn list_schools() {
@@ -143,11 +146,11 @@ mod tests {
 
     #[tokio::test]
     async fn list_days() {
-        let days = super::list_days(
+        let ListDays { days, .. } = super::list_days(
             &Client::new(),
             "forskolan-pingvinen",
-            date!(1970-01-01),
-            date!(2077-01-01),
+            date!(1970 - 01 - 01),
+            date!(2077 - 01 - 01),
         )
         .await
         .unwrap();

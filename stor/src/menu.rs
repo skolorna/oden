@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "db")]
-use sqlx::{
-    sqlite::{Sqlite, SqliteArgumentValue, SqliteRow, SqliteTypeInfo, SqliteValueRef},
-    Decode, Encode, Row, Type, FromRow,
-};
+use sqlx::{sqlite::SqliteRow, FromRow, Row};
 use uuid::Uuid;
 
 pub const UUID_NAMESPACE: Uuid = Uuid::from_bytes([
@@ -36,7 +33,7 @@ impl Supplier {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
 pub struct Coord {
     pub longitude: f64,
     pub latitude: f64,
@@ -54,10 +51,10 @@ pub struct Menu {
 impl Menu {
     pub fn from_supplier(
         supplier: Supplier,
-        supplier_refernce: impl Into<String>,
+        supplier_reference: impl Into<String>,
         title: impl Into<String>,
     ) -> Self {
-        let supplier_reference = supplier_refernce.into();
+        let supplier_reference = supplier_reference.into();
         let id = Uuid::new_v5(&UUID_NAMESPACE, supplier_reference.as_bytes());
 
         Self {
@@ -67,6 +64,14 @@ impl Menu {
             supplier_reference,
             location: None,
         }
+    }
+
+    pub fn longitude(&self) -> Option<f64> {
+        self.location.as_ref().map(|l| l.longitude)
+    }
+
+    pub fn latitude(&self) -> Option<f64> {
+        self.location.as_ref().map(|l| l.latitude)
     }
 }
 

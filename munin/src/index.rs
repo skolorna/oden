@@ -1,48 +1,12 @@
-// use anyhow::bail;
-// use chrono::DateTime;
-// use chrono::Duration;
-// use chrono::NaiveDate;
-// use chrono::TimeZone;
-// use chrono::Utc;
-// use chrono_tz::Europe::Stockholm;
-// use database::models::MenuId;
-// use database::models::NewDay;
-// use database::models::NewMenu;
-// use database::{models::Menu, MeiliIndexable};
-// use diesel::dsl::sql;
-// use diesel::pg::upsert::excluded;
-// use diesel::prelude::*;
-// use diesel::sql_types::Date;
-// use diesel::PgConnection;
-// use futures::executor::block_on;
-// use futures::stream;
-// use futures::StreamExt;
-// use hugin::list_days;
-// use hugin::list_menus;
-// use hugin::MenuSlug;
-// use itertools::Itertools;
-// use meilisearch_sdk::client::Client;
-// use meilisearch_sdk::tasks::Task;
-// use serde::Serialize;
-// use tokio::sync::mpsc;
-// use tracing::{info, instrument, warn};
-
-// use crate::export::days_chunks;
-// use crate::meili;
-
 use futures::{Stream, StreamExt, TryStreamExt};
 use reqwest::Client;
-use sqlx::{Acquire, FromRow, Sqlite, SqliteConnection, SqliteExecutor, SqlitePool, Transaction};
-use stor::{
-    menu::{Coord, Supplier},
-    Day, Menu,
-};
+use sqlx::{Acquire, SqliteConnection, SqliteExecutor, SqlitePool};
+use stor::{menu::Coord, Day, Menu};
 use time::{Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
-use tracing::{debug, info, warn};
-use uuid::Uuid;
+use tracing::warn;
 
-use crate::Result;
+use crate::{supplier::ListDays, Result};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -104,13 +68,6 @@ async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
     Ok(txn.commit().await?)
 }
 
-#[derive(Debug, FromRow)]
-struct MenuReference {
-    id: Uuid,
-    supplier: Supplier,
-    supplier_reference: String,
-}
-
 fn get_expired<'a>(
     conn: impl SqliteExecutor<'a> + 'a,
     max_age: Duration,
@@ -146,25 +103,27 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
     );
 
     let client = Client::new();
-    let first = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
-    let last = first + Duration::days(opt.days.into());
+    let start = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
+    let end = start + Duration::days(opt.days.into());
 
-    let mut days = expired
+    let mut results = expired
         .map(|result| {
             let client = client.clone();
             async move {
                 match result {
                     Ok(menu) => {
-                        let days = crate::list_days(
+                        let ListDays {
+                            days,
+                            menu: patched_menu,
+                        } = crate::list_days(
                             &client,
                             menu.supplier,
                             &menu.supplier_reference,
-                            first,
-                            last,
+                            start..=end,
                         )
                         .await?;
 
-                        Ok((menu, days))
+                        Ok((patched_menu.unwrap_or(menu), days))
                     }
                     Err(e) => Err(e),
                 }
@@ -174,17 +133,14 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 
     // open a new connection since get_expired uses the current
     let mut txn = pool.begin().await?;
-    let mut total_menus = 0usize;
-    let mut failures = 0usize;
 
-    let mut pending_insertions = 0usize;
+    let mut uncommitted_queries = 0usize;
 
-    while let Some(res) = days.next().await {
+    while let Some(res) = results.next().await {
         let (menu, days) = match res {
             Ok(o) => o,
             Err(e) => {
                 warn!("{e}");
-                failures += 1;
                 continue;
             }
         };
@@ -201,27 +157,37 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
             .execute(&mut txn)
             .await?;
 
-            pending_insertions += 1;
+            uncommitted_queries += 1;
 
-            if pending_insertions >= DAYS_BATCH_INSERT_COUNT {
+            if uncommitted_queries >= DAYS_BATCH_INSERT_COUNT {
                 txn.commit().await?;
-                pending_insertions = 0;
+                uncommitted_queries = 0;
                 txn = pool.begin().await?;
             }
         }
 
         let now = OffsetDateTime::now_utc();
 
+        let longitude = menu.longitude();
+        let latitude = menu.latitude();
+
         sqlx::query!(
-            "UPDATE menus SET checked_at = $1 WHERE id = $2",
+            "UPDATE menus SET
+                checked_at = $1,
+                title = $2,
+                longitude = $3,
+                latitude = $4
+            WHERE id = $5",
             now,
-            menu.id
+            menu.title,
+            longitude,
+            latitude,
+            menu.id,
         )
         .execute(&mut txn)
         .await?;
 
-        pending_insertions += 1;
-        total_menus += 1;
+        uncommitted_queries += 1;
     }
 
     txn.commit().await?;
@@ -264,26 +230,24 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 }
 
 mod meili {
-
     use std::time::Duration;
 
     use anyhow::bail;
     use meilisearch_sdk::{indexes::Index, tasks::Task, Client};
-    use serde::{Deserialize, Serialize, Serializer};
+    use serde::{Serialize, Serializer};
     use sqlx::FromRow;
     use stor::{
         day::Meals,
         menu::{Coord, Supplier},
     };
-    use time::{Date, OffsetDateTime};
+    use time::Date;
     use tracing::info;
     use uuid::Uuid;
 
     #[derive(Debug, FromRow)]
     pub struct Menu {
         #[sqlx(flatten)]
-        menu: stor::Menu,
-        checked_at: Option<OffsetDateTime>,
+        inner: stor::Menu,
         last_day: Option<Date>,
     }
 
@@ -292,18 +256,14 @@ mod meili {
         where
             S: Serializer,
         {
-            let Self {
-                menu,
-                checked_at,
-                last_day,
-            } = self;
+            let Self { inner, last_day } = self;
             let stor::Menu {
                 id,
                 title,
                 supplier,
                 supplier_reference: _,
                 location,
-            } = menu;
+            } = inner;
 
             #[derive(Debug, Serialize)]
             struct Geo {
@@ -324,16 +284,15 @@ mod meili {
             Doc {
                 id: *id,
                 title,
-                geo: match location {
-                    Some(Coord {
-                        longitude,
-                        latitude,
-                    }) => Some(Geo {
-                        lon: *longitude,
-                        lat: *latitude,
-                    }),
-                    None => None,
-                },
+                geo: location.map(
+                    |Coord {
+                         longitude,
+                         latitude,
+                     }| Geo {
+                        lon: longitude,
+                        lat: latitude,
+                    },
+                ),
                 last_day: *last_day,
                 supplier: *supplier,
             }
@@ -417,7 +376,7 @@ mod meili {
         } else {
             let task = client.create_index(uid, None).await?;
             let task = task
-                .wait_for_completion(&client, None, Some(std::time::Duration::from_secs(10)))
+                .wait_for_completion(client, None, Some(std::time::Duration::from_secs(10)))
                 .await?;
             match task {
                 Task::Enqueued { .. } | Task::Processing { .. } => {
@@ -426,7 +385,7 @@ mod meili {
                 Task::Failed { content } => {
                     bail!(meilisearch_sdk::errors::Error::from(content.error))
                 }
-                Task::Succeeded { .. } => Ok(task.try_make_index(&client).unwrap()),
+                Task::Succeeded { .. } => Ok(task.try_make_index(client).unwrap()),
             }
         }
     }

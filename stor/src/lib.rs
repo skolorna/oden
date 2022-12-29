@@ -4,6 +4,6 @@ pub mod db;
 pub mod meal;
 pub mod menu;
 
+pub use day::Day;
 pub use meal::Meal;
 pub use menu::Menu;
-pub use day::Day;

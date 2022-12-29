@@ -1,8 +1,8 @@
-use std::{iter, collections::HashMap};
+use std::{iter, ops::RangeInclusive};
 
 use futures::{
     stream::{self, StreamExt},
-    TryFutureExt,
+    TryFutureExt, TryStreamExt,
 };
 use reqwest::{Client, StatusCode};
 use serde::Deserialize;
@@ -12,13 +12,15 @@ use tracing::{error, instrument};
 
 use crate::{Error, Result};
 
+use super::ListDays;
+
 /// Maximum number of concurrent HTTP requests when crawling. For comparison,
 /// Firefox allows 7 concurrent requests. There is virtually no improvement for
 /// values above 64, and 32 is just marginally slower (and half the memory
 /// usage).
 const CONCURRENT_REQUESTS: usize = 32;
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 struct Province {
     id: u64,
     // name: String,
@@ -40,10 +42,34 @@ struct DistrictsResponse {
     districts: Vec<District>,
 }
 
+#[derive(Debug, Clone, Copy, Deserialize)]
+struct Location {
+    latitude: f64,
+    longitude: f64,
+}
+
+impl From<Location> for stor::menu::Coord {
+    fn from(
+        Location {
+            longitude,
+            latitude,
+        }: Location,
+    ) -> Self {
+        Self {
+            longitude,
+            latitude,
+        }
+    }
+}
+
 #[derive(Deserialize, Debug, Clone)]
-struct Station {
+#[serde(rename_all = "camelCase")]
+pub struct Station {
     id: u64,
     name: String,
+    // image_url: Option<String>,
+    district: Option<District>,
+    location: Option<Location>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -52,16 +78,24 @@ struct StationsResponse {
 }
 
 impl Station {
-    fn to_menu(&self, district_name: &str) -> Option<stor::Menu> {
-        if self.name.to_lowercase().contains("info") {
-            None
-        } else {
-            Some(stor::Menu::from_supplier(
-                Supplier::Skolmaten,
-                self.id.to_string(),
-                format!("{}, {}", self.name.trim(), district_name),
-            ))
-        }
+    fn district_name(&self) -> Option<&str> {
+        self.district.as_ref().map(|d| d.name.as_str())
+    }
+
+    /// If `district_name` is `None`, the Station's internal district name will be
+    /// used, provided it exists.
+    fn to_menu(&self, district_name: Option<&str>) -> Option<stor::Menu> {
+        let district_name = district_name.or_else(|| self.district_name())?;
+
+        let mut menu = stor::Menu::from_supplier(
+            Supplier::Skolmaten,
+            self.id.to_string(),
+            format!("{}, {}", self.name.trim(), district_name),
+        );
+
+        menu.location = self.location.map(Into::into);
+
+        Some(menu)
     }
 }
 
@@ -123,7 +157,7 @@ pub async fn list_menus(client: &Client) -> Result<Vec<stor::Menu>> {
         menus.extend(
             stations
                 .into_iter()
-                .filter_map(|s| s.to_menu(&district_name)),
+                .filter_map(|s| s.to_menu(Some(&district_name))),
         );
     }
 
@@ -199,27 +233,12 @@ pub(super) struct Week {
 struct Menu {
     // is_feedback_allowed: bool,
     weeks: Vec<Week>,
-    // station: DetailedStation,
+    station: Station,
     // id: u64,
     // bulletins: Vec<Bulletin>,
 }
 
-#[derive(Deserialize, Debug)]
-struct MenuResponse {
-    menu: Menu,
-}
-
-impl MenuResponse {
-    fn into_days_iter(self) -> impl Iterator<Item = stor::Day> {
-        self.menu
-            .weeks
-            .into_iter()
-            .flat_map(|week| week.days)
-            .filter_map(Day::normalize)
-    }
-}
-
-#[derive(PartialEq, Debug)]
+#[derive(PartialEq, Debug, Clone, Copy)]
 struct WeekSpan {
     year: i32,
     week_of_year: u8,
@@ -227,7 +246,12 @@ struct WeekSpan {
 }
 
 #[instrument(skip(client))]
-async fn fetch_menu(client: &Client, station_id: u64, span: &WeekSpan) -> Result<MenuResponse> {
+async fn fetch_menu(client: &Client, station_id: u64, span: WeekSpan) -> Result<Menu> {
+    #[derive(Deserialize, Debug)]
+    struct Response {
+        menu: Menu,
+    }
+
     let path = format!(
         "menu?station={}&year={}&weekOfYear={}&count={}",
         station_id, span.year, span.week_of_year, span.count
@@ -235,32 +259,31 @@ async fn fetch_menu(client: &Client, station_id: u64, span: &WeekSpan) -> Result
 
     let res = fetch(client, &path).await?;
     let status = res.status();
-    Ok(res.json::<MenuResponse>().await.map_err(|e| {
+    let res = res.json::<Response>().await.map_err(|e| {
         if status != StatusCode::NOT_FOUND {
             error!("{}", e);
         }
 
         Error::MenuNotFound
-    })?)
+    })?;
+
+    Ok(res.menu)
 }
 
 /// Generate a series of queries because the Skolmaten API cannot handle
 /// more than one year per request.
-fn week_spans(first: Date, last: Date) -> impl Iterator<Item = WeekSpan> {
-    // in release mode, the iterator will yield None immediately
-    debug_assert!(first <= last, "first must not be after last");
-
-    let mut span_start = first;
+fn week_spans(range: RangeInclusive<Date>) -> impl Iterator<Item = WeekSpan> {
+    let mut span_start = *range.start();
 
     iter::from_fn(move || {
-        if last <= span_start {
+        if *range.end() <= span_start {
             return None;
         }
 
         let year = span_start.year();
 
-        let span_end = if last.year() == year {
-            last
+        let span_end = if range.end().year() == year {
+            *range.end()
         } else {
             Date::from_calendar_date(year, Month::December, 31).unwrap()
         };
@@ -286,38 +309,34 @@ fn week_spans(first: Date, last: Date) -> impl Iterator<Item = WeekSpan> {
 }
 
 /// List days of a particular Skolmaten menu.
-#[instrument(skip(client), fields(%first, %last))]
+#[instrument(skip(client), fields(?range))]
 pub async fn list_days(
     client: &Client,
     station: u64,
-    first: Date,
-    last: Date,
-) -> Result<Vec<stor::Day>> {
-    let results = stream::iter(week_spans(first, last))
-        .map(|span| {
-            let client = &client;
-            async move {
-                fetch_menu(client, station, &span)
-                    .await
-                    .map(MenuResponse::into_days_iter)
-            }
-        })
-        .buffer_unordered(4)
-        .collect::<Vec<_>>()
-        .await;
+    range: RangeInclusive<Date>,
+) -> Result<ListDays> {
+    let mut results = stream::iter(week_spans(range.clone()))
+        .map(|span| fetch_menu(client, station, span))
+        .buffer_unordered(4);
 
-    let days_2d = results.into_iter().collect::<Result<Vec<_>>>()?;
+    let mut menu = None;
+    let mut days = vec![];
 
-    let mut days = days_2d
-        .into_iter()
-        .flatten()
-        .filter(|day| (first..=last).contains(&day.date()))
-        .collect::<Vec<_>>();
+    while let Some(res) = results.try_next().await? {
+        days.extend(
+            res.weeks
+                .into_iter()
+                .flat_map(|w| w.days.into_iter().filter_map(Day::normalize))
+                .filter(|d| range.contains(d.date())),
+        );
+
+        menu = menu.or_else(|| res.station.to_menu(None));
+    }
 
     days.sort();
     days.dedup_by_key(|d| *d.date());
 
-    Ok(days)
+    Ok(ListDays { menu, days })
 }
 
 #[instrument(err)]
@@ -340,6 +359,8 @@ mod tests {
     use time::{macros::date, Duration, OffsetDateTime};
     use time_tz::OffsetDateTimeExt;
 
+    use crate::supplier::ListDays;
+
     use super::WeekSpan;
 
     #[tokio::test]
@@ -347,10 +368,6 @@ mod tests {
         let menus = super::list_menus(&Client::new()).await.unwrap();
 
         assert!(menus.len() > 5000);
-
-        for menu in menus {
-            assert!(!menu.title.to_lowercase().contains("info"));
-        }
     }
 
     #[tokio::test]
@@ -358,16 +375,18 @@ mod tests {
         let first_day = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
         let last_day = first_day + Duration::weeks(2);
 
-        let days = super::list_days(&Client::new(), 4889403990212608, first_day, last_day)
-            .await
-            .unwrap();
+        let ListDays { menu, days } =
+            super::list_days(&Client::new(), 4889403990212608, first_day..=last_day)
+                .await
+                .unwrap();
 
+        assert!(menu.is_some());
         assert!(!days.is_empty());
     }
 
     #[test]
     fn week_spans() {
-        let mut it = super::week_spans(date!(2020 - 08 - 01), date!(2021 - 03 - 01));
+        let mut it = super::week_spans(date!(2020 - 08 - 01)..=date!(2021 - 03 - 01));
         assert_eq!(
             it.next(),
             Some(WeekSpan {

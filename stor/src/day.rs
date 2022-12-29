@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 use sqlx::{
-    sqlite::{SqliteArgumentValue, SqliteValueRef, SqliteTypeInfo},
+    sqlite::{SqliteArgumentValue, SqliteTypeInfo, SqliteValueRef},
     Decode,
 };
 #[cfg(feature = "db")]
@@ -76,7 +76,7 @@ impl sqlx::Type<Sqlite> for Meals {
 #[cfg(feature = "db")]
 #[cfg(test)]
 mod tests {
-    use sqlx::{Sqlite, pool::PoolConnection};
+    use sqlx::{pool::PoolConnection, Sqlite};
     use time::macros::date;
     use uuid::Uuid;
 
@@ -116,9 +116,20 @@ mod tests {
         .execute(&mut conn)
         .await?;
 
-        sqlx::query!("INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3)", menu.id, day.date, day.meals).execute(&mut conn).await?;
+        sqlx::query!(
+            "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3)",
+            menu.id,
+            day.date,
+            day.meals
+        )
+        .execute(&mut conn)
+        .await?;
 
-        let data: Day = sqlx::query_as("SELECT * FROM days WHERE menu_id = $1 AND date = $2").bind(menu.id).bind(day.date).fetch_one(&mut conn).await?;
+        let data: Day = sqlx::query_as("SELECT * FROM days WHERE menu_id = $1 AND date = $2")
+            .bind(menu.id)
+            .bind(day.date)
+            .fetch_one(&mut conn)
+            .await?;
 
         assert_eq!(data, day);
 

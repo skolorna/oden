@@ -5,7 +5,7 @@ pub use scrape::*;
 use reqwest::{header::CONTENT_LENGTH, Client};
 use select::document::Document;
 use serde::Deserialize;
-use stor::menu::{Supplier};
+use stor::menu::Supplier;
 use time::Date;
 use tracing::instrument;
 
@@ -58,28 +58,28 @@ pub async fn list_days(
     menu_slug: &str,
     first: Date,
     last: Date,
-) -> Result<Vec<stor::Day>> {
+) -> Result<ListDays> {
     let menu = query_menu(client, host, menu_slug).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
     let doc = Document::from(html.as_str());
     let days = scrape_days(&doc)
         .into_iter()
-        .filter(|day| (first..=last).contains(&day.date()))
+        .filter(|day| (first..=last).contains(day.date()))
         .collect();
 
     // debug_assert!(is_sorted(&days));
 
-    Ok(days)
+    Ok(ListDays { menu: None, days })
 }
 
 /// Automagically generate a Mashie client.
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
-        use time::Date;
         use reqwest::Client;
-        use $crate::{mashie, Result};
-        use stor::{Day, Menu};
+        use stor::Menu;
+        use time::Date;
+        use $crate::{mashie, supplier::ListDays, Result};
 
         const HOST: &str = $host;
 
@@ -98,7 +98,7 @@ macro_rules! mashie_impl {
             menu_slug: &str,
             first: Date,
             last: Date,
-        ) -> Result<Vec<Day>> {
+        ) -> Result<ListDays> {
             mashie::list_days(client, HOST, menu_slug, first, last).await
         }
 
@@ -109,7 +109,6 @@ macro_rules! mashie_impl {
             #[tokio::test]
             async fn nonempty() {
                 let menus = super::list_menus(&Client::new()).await.unwrap();
-                println!("{:?}", &menus);
                 assert!(!menus.is_empty());
             }
         }
@@ -118,7 +117,7 @@ macro_rules! mashie_impl {
 
 pub(crate) use mashie_impl;
 
-use crate::{Result, Error};
+use crate::{supplier::ListDays, Error, Result};
 
 #[cfg(test)]
 mod tests {
