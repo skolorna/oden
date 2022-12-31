@@ -10,6 +10,7 @@ use tracing::{debug, instrument};
 
 use crate::supplier::{kleins, matilda, mpi, skolmaten, sodexo};
 
+pub mod geosearch;
 pub mod index;
 mod mashie;
 pub mod supplier;
@@ -36,6 +37,15 @@ impl Error {
 }
 
 pub const TZ: &time_tz::Tz = time_tz::timezones::db::europe::STOCKHOLM;
+
+pub const USER_AGENT: &str = concat!(
+    env!("CARGO_PKG_NAME"),
+    "/",
+    env!("CARGO_PKG_VERSION"),
+    " (",
+    env!("CARGO_PKG_REPOSITORY"),
+    ")"
+);
 
 #[instrument]
 pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {

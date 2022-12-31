@@ -4,15 +4,20 @@ use sqlx::{Acquire, SqliteConnection, SqliteExecutor, SqlitePool};
 use stor::{menu::Coord, Day, Menu};
 use time::{Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
-use tracing::warn;
+use tracing::{error, info, warn};
 
-use crate::{supplier::ListDays, Result};
+use crate::{geosearch, supplier::ListDays, Result};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
     /// Download new menus and insert them, if not already present.
     #[arg(long)]
     load_menus: bool,
+
+    /// GitHub personal access token for the OSM repository, enabling
+    /// geosearch for menus.
+    #[arg(env)]
+    osm_gh_pat: Option<String>,
 
     /// How many days to fetch for each menu
     #[arg(long, default_value = "90")]
@@ -51,6 +56,7 @@ async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
             supplier,
             supplier_reference,
             location,
+            osm_id,
         } = menu;
 
         let (longitude, latitude) = match location {
@@ -61,8 +67,10 @@ async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
             None => (None, None),
         };
 
-        sqlx::query!("INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude) VALUES ($1, $2, $3, $4, $5, $6)",
-        id, title, supplier, supplier_reference, longitude, latitude).execute(&mut txn).await?;
+        let osm_id = osm_id.map(|id| id.to_string());
+
+        sqlx::query!("INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
+        id, title, supplier, supplier_reference, longitude, latitude, osm_id).execute(&mut txn).await?;
     }
 
     Ok(txn.commit().await?)
@@ -96,6 +104,27 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
         load_menus(&mut conn).await?;
     }
 
+    let geoindex = if let Some(ref gh_pat) = opt.osm_gh_pat {
+        info!("building geoindex");
+
+        match crate::geosearch::build_index(gh_pat).await {
+            Ok(index) => {
+                let rtxn = index.inner.read_txn()?;
+                let num_docs = index.inner.number_of_documents(&rtxn)?;
+                info!("built geoindex ({num_docs} documents)");
+                drop(rtxn);
+                Some(index)
+            }
+            Err(e) => {
+                error!("failed to build geoindex: {e}");
+                None
+            }
+        }
+    } else {
+        info!("skipping geosearch (no personal access token found)");
+        None
+    };
+
     let expired = get_expired(
         &mut conn,
         Duration::seconds(opt.max_age_secs),
@@ -112,18 +141,23 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
             async move {
                 match result {
                     Ok(menu) => {
-                        let ListDays {
-                            days,
-                            menu: patched_menu,
-                        } = crate::list_days(
+                        match crate::list_days(
                             &client,
                             menu.supplier,
                             &menu.supplier_reference,
                             start..=end,
                         )
-                        .await?;
-
-                        Ok((patched_menu.unwrap_or(menu), days))
+                        .await
+                        {
+                            Ok(ListDays {
+                                days,
+                                menu: patched_menu,
+                            }) => Ok((patched_menu.unwrap_or(menu), days)),
+                            Err(e) => {
+                                warn!(supplier = ?menu.supplier, menu = %menu.id, supplier_reference = ?menu.supplier_reference, "{e}");
+                                Err(e)
+                            }
+                        }
                     }
                     Err(e) => Err(e),
                 }
@@ -133,17 +167,42 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 
     // open a new connection since get_expired uses the current
     let mut txn = pool.begin().await?;
-
     let mut uncommitted_queries = 0usize;
 
+    let search_txn = geoindex
+        .as_ref()
+        .map(|index| {
+            let index = &index.inner;
+            let rtxn = index.read_txn()?;
+            let fields_ids_map = index.fields_ids_map(&rtxn)?;
+            Ok::<_, milli::Error>((rtxn, index, fields_ids_map))
+        })
+        .transpose()?;
+
     while let Some(res) = results.next().await {
-        let (menu, days) = match res {
+        let (mut menu, days) = match res {
             Ok(o) => o,
-            Err(e) => {
-                warn!("{e}");
-                continue;
-            }
+            Err(_) => continue,
         };
+
+        if let Some((ref rtxn, index, ref fields_ids_map)) = search_txn {
+            if menu.location.is_none() {
+                let mut search = milli::Search::new(rtxn, index);
+                search.query(&menu.title);
+                search.limit(1);
+
+                let result = search.execute()?;
+                let mut hits = index
+                    .documents(rtxn, result.documents_ids)?
+                    .into_iter()
+                    .map(|(_id, obkv)| geosearch::parse_obkv(fields_ids_map, obkv));
+
+                if let Some(hit) = hits.next() {
+                    menu.location = Some(hit.coordinates);
+                    menu.osm_id = Some(hit.id);
+                }
+            }
+        }
 
         for day in days {
             let Day { date, meals } = day;
@@ -168,21 +227,38 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 
         let now = OffsetDateTime::now_utc();
 
-        let longitude = menu.longitude();
-        let latitude = menu.latitude();
+        let Menu {
+            id,
+            title,
+            supplier: _,
+            supplier_reference: _,
+            location,
+            osm_id,
+        } = menu;
+
+        let (longitude, latitude) = match location {
+            Some(Coord {
+                longitude,
+                latitude,
+            }) => (Some(longitude), Some(latitude)),
+            None => (None, None),
+        };
+        let osm_id = osm_id.map(|id| id.to_string());
 
         sqlx::query!(
             "UPDATE menus SET
                 checked_at = $1,
                 title = $2,
                 longitude = $3,
-                latitude = $4
-            WHERE id = $5",
+                latitude = $4,
+                osm_id = $5
+            WHERE id = $6",
             now,
-            menu.title,
+            title,
             longitude,
             latitude,
-            menu.id,
+            osm_id,
+            id,
         )
         .execute(&mut txn)
         .await?;
@@ -234,6 +310,7 @@ mod meili {
 
     use anyhow::bail;
     use meilisearch_sdk::{indexes::Index, tasks::Task, Client};
+    use osm::OsmId;
     use serde::{Serialize, Serializer};
     use sqlx::FromRow;
     use stor::{
@@ -263,6 +340,7 @@ mod meili {
                 supplier,
                 supplier_reference: _,
                 location,
+                osm_id,
             } = inner;
 
             #[derive(Debug, Serialize)]
@@ -279,6 +357,7 @@ mod meili {
                 geo: Option<Geo>,
                 last_day: Option<Date>,
                 supplier: Supplier,
+                osm_id: Option<OsmId>,
             }
 
             Doc {
@@ -295,6 +374,7 @@ mod meili {
                 ),
                 last_day: *last_day,
                 supplier: *supplier,
+                osm_id: *osm_id,
             }
             .serialize(serializer)
         }

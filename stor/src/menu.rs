@@ -1,3 +1,4 @@
+use osm::OsmId;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "db")]
 use sqlx::{sqlite::SqliteRow, FromRow, Row};
@@ -46,6 +47,7 @@ pub struct Menu {
     pub supplier: Supplier,
     pub supplier_reference: String,
     pub location: Option<Coord>,
+    pub osm_id: Option<OsmId>,
 }
 
 impl Menu {
@@ -63,15 +65,8 @@ impl Menu {
             supplier,
             supplier_reference,
             location: None,
+            osm_id: None,
         }
-    }
-
-    pub fn longitude(&self) -> Option<f64> {
-        self.location.as_ref().map(|l| l.longitude)
-    }
-
-    pub fn latitude(&self) -> Option<f64> {
-        self.location.as_ref().map(|l| l.latitude)
     }
 }
 
@@ -88,11 +83,18 @@ impl FromRow<'_, SqliteRow> for Menu {
             }
         };
 
+        let osm_id = row
+            .try_get::<Option<String>, _>("osm_id")?
+            .map(|s| s.parse::<OsmId>())
+            .transpose()
+            .map_err(|e| sqlx::Error::Decode(e.into()))?;
+
         Ok(Self {
             id: row.try_get("id")?,
             title: row.try_get("title")?,
             supplier: row.try_get("supplier")?,
             supplier_reference: row.try_get("supplier_reference")?,
+            osm_id,
             location,
         })
     }

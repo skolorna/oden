@@ -5,6 +5,7 @@ CREATE TABLE menus (
   supplier_reference TEXT NOT NULL,
   longitude REAL,
   latitude REAL,
+  osm_id TEXT,
   created_at TIMESTAMP NOT NULL DEFAULT NOW,
   checked_at TIMESTAMP
 );

@@ -76,6 +76,7 @@ impl sqlx::Type<Sqlite> for Meals {
 #[cfg(feature = "db")]
 #[cfg(test)]
 mod tests {
+    use osm::OsmId;
     use sqlx::{pool::PoolConnection, Sqlite};
     use time::macros::date;
     use uuid::Uuid;
@@ -104,14 +105,17 @@ mod tests {
             supplier: Supplier::Sodexo,
             supplier_reference: "69420".to_owned(),
             location: None,
+            osm_id: Some(OsmId::Way(104245269)),
         };
+        let osm_id = menu.osm_id.map(|id| id.to_string());
 
         sqlx::query!(
-            "INSERT INTO menus (id, title, supplier, supplier_reference) VALUES ($1, $2, $3, $4)",
+            "INSERT INTO menus (id, title, supplier, supplier_reference, osm_id) VALUES ($1, $2, $3, $4, $5)",
             menu.id,
             menu.title,
             menu.supplier,
-            menu.supplier_reference
+            menu.supplier_reference,
+            osm_id,
         )
         .execute(&mut conn)
         .await?;
