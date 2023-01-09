@@ -33,5 +33,6 @@ csv-async = { version = "1.2.5", features = ["tokio"] }
 milli = { git = "https://github.com/meilisearch/milli.git", version = "0.38.0", default-features = false }
 osm = { workspace = true }
 obkv = "0.2.0"
+indicatif = "0.17.2"
 
 [features]

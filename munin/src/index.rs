@@ -1,4 +1,5 @@
 use futures::{Stream, StreamExt, TryStreamExt};
+use milli::TermsMatchingStrategy;
 use reqwest::Client;
 use sqlx::{Acquire, SqliteConnection, SqliteExecutor, SqlitePool};
 use stor::{menu::Coord, Day, Menu};
@@ -6,7 +7,11 @@ use time::{Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
 use tracing::{error, info, warn};
 
-use crate::{geosearch, supplier::ListDays, Result};
+use crate::{
+    geosearch::{self, Hit},
+    supplier::ListDays,
+    Result,
+};
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -111,7 +116,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
             Ok(index) => {
                 let rtxn = index.inner.read_txn()?;
                 let num_docs = index.inner.number_of_documents(&rtxn)?;
-                info!("built geoindex ({num_docs} documents)");
+                info!(num_docs, "built geoindex");
                 drop(rtxn);
                 Some(index)
             }
@@ -147,8 +152,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
                             &menu.supplier_reference,
                             start..=end,
                         )
-                        .await
-                        {
+                        .await {
                             Ok(ListDays {
                                 days,
                                 menu: patched_menu,
@@ -179,7 +183,15 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
         })
         .transpose()?;
 
+    let pb = indicatif::ProgressBar::new_spinner()
+        .with_style(
+            indicatif::ProgressStyle::with_template("{spinner} {msg} ({pos} done)").unwrap(),
+        )
+        .with_message("updating menus");
+
     while let Some(res) = results.next().await {
+        pb.inc(1);
+
         let (mut menu, days) = match res {
             Ok(o) => o,
             Err(_) => continue,
@@ -187,17 +199,29 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 
         if let Some((ref rtxn, index, ref fields_ids_map)) = search_txn {
             if menu.location.is_none() {
+                let execute_search = |search: &milli::Search| -> Result<Option<Hit>> {
+                    let result = search.execute()?;
+                    let mut hits = index
+                        .documents(rtxn, result.documents_ids)?
+                        .into_iter()
+                        .map(|(_id, obkv)| geosearch::parse_obkv(fields_ids_map, obkv));
+
+                    Ok(hits.next())
+                };
+
                 let mut search = milli::Search::new(rtxn, index);
                 search.query(&menu.title);
                 search.limit(1);
 
-                let result = search.execute()?;
-                let mut hits = index
-                    .documents(rtxn, result.documents_ids)?
-                    .into_iter()
-                    .map(|(_id, obkv)| geosearch::parse_obkv(fields_ids_map, obkv));
-
-                if let Some(hit) = hits.next() {
+                if let Some(hit) = execute_search(&search)
+                    .transpose()
+                    .or_else(|| {
+                        // fall back to a less strict terms matching strategy if the search returns no hits
+                        search.terms_matching_strategy(TermsMatchingStrategy::Any);
+                        execute_search(&search).transpose()
+                    })
+                    .transpose()?
+                {
                     menu.location = Some(hit.coordinates);
                     menu.osm_id = Some(hit.id);
                 }
@@ -266,6 +290,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
         uncommitted_queries += 1;
     }
 
+    pb.finish_and_clear();
     txn.commit().await?;
 
     if let Some(ref meili_url) = opt.meili_url {
