@@ -327,7 +327,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
         }
     }
 
-    todo!()
+    Ok(())
 }
 
 mod meili {

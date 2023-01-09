@@ -14,11 +14,11 @@ pub static MIGRATOR: sqlx::migrate::Migrator = sqlx::migrate!();
 
 const COMPRESSION_LEVEL: async_compression::Level = async_compression::Level::Precise(9);
 
-pub async fn compress(uncompressed: impl AsyncBufRead) -> impl AsyncRead {
+pub fn compress(uncompressed: impl AsyncBufRead) -> impl AsyncRead {
     ZstdEncoder::with_quality(uncompressed, COMPRESSION_LEVEL)
 }
 
-pub async fn decompress(compressed: impl AsyncBufRead) -> impl AsyncRead {
+pub fn decompress(compressed: impl AsyncBufRead) -> impl AsyncRead {
     ZstdDecoder::new(compressed)
 }
 
@@ -34,9 +34,8 @@ pub async fn download(
         res.bytes_stream()
             .map_err(|e| std::io::Error::new(std::io::ErrorKind::Other, e)),
     );
-    let mut db = decompress(read).await;
 
-    io::copy(&mut db, &mut destination).await?;
+    io::copy(&mut decompress(read), &mut destination).await?;
 
     let url = format!("sqlite://{}", path.display());
     let pool = SqlitePool::connect(&url).await?;

@@ -47,6 +47,12 @@ async fn main() -> anyhow::Result<()> {
     stor::db::MIGRATOR.run(&pool).await?;
 
     match opt.cmd {
-        Command::Index(opt) => index(&opt, &pool).await,
+        Command::Index(opt) => {
+            index(&opt, &pool).await?;
+        }
     }
+
+    pool.close().await;
+
+    Ok(())
 }
