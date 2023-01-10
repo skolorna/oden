@@ -15,7 +15,7 @@ use reqwest::{
 };
 use serde::Deserialize;
 use tempdir::TempDir;
-use tokio::io::AsyncRead;
+use tokio::{io::AsyncRead, task};
 use tokio_util::io::StreamReader;
 
 mod github {
@@ -83,35 +83,36 @@ async fn download_latest_artifact(
     download_zip(&client, latest.archive_download_url).await
 }
 
-async fn append_csv(
-    index: &milli::Index,
-    csv: impl AsyncRead + Unpin + Send,
-) -> anyhow::Result<()> {
-    let mut wtxn = index.write_txn()?;
-
+async fn append_csv(index: milli::Index, csv: impl AsyncRead + Unpin + Send) -> anyhow::Result<()> {
     let mut builder = DocumentsBatchBuilder::new(Cursor::new(Vec::new()));
     let mut records =
         csv_async::AsyncDeserializer::from_reader(csv).into_deserialize::<osm::Record>();
 
     while let Some(record) = records.try_next().await? {
-        builder.append_json_object(&record_to_milli_obj(record))?;
+        task::block_in_place(|| builder.append_json_object(&record_to_milli_obj(record)))?;
     }
 
-    let buffer = builder.into_inner()?;
-    let indexer_config = IndexerConfig::default();
-    let builder = IndexDocuments::new(
-        &mut wtxn,
-        index,
-        &indexer_config,
-        IndexDocumentsConfig::default(),
-        |_| (),
-        || false,
-    )?;
+    task::spawn_blocking(move || -> anyhow::Result<()> {
+        let mut wtxn = index.write_txn()?;
+        let buffer = builder.into_inner()?;
+        let indexer_config = IndexerConfig::default();
+        let builder = IndexDocuments::new(
+            &mut wtxn,
+            &index,
+            &indexer_config,
+            IndexDocumentsConfig::default(),
+            |_| (),
+            || false,
+        )?;
 
-    let (builder, res) = builder.add_documents(DocumentsBatchReader::from_reader(buffer)?)?;
-    res?;
-    builder.execute()?;
-    wtxn.commit()?;
+        let (builder, res) = builder.add_documents(DocumentsBatchReader::from_reader(buffer)?)?;
+        res?;
+        builder.execute()?;
+        wtxn.commit()?;
+
+        Ok(())
+    })
+    .await??;
 
     Ok(())
 }
@@ -133,7 +134,7 @@ pub async fn build_index(gh_pat: &str) -> anyhow::Result<Index> {
     let mut zip = download_latest_artifact(gh_pat).await?;
     let csv = zip.entry_reader().await?.unwrap();
 
-    append_csv(&index, csv).await?;
+    append_csv(index.clone(), csv).await?;
 
     Ok(Index { inner: index, dir })
 }

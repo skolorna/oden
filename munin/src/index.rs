@@ -50,7 +50,7 @@ pub struct Args {
     meili_key: String,
 }
 
-const DAYS_BATCH_INSERT_COUNT: usize = 1_000;
+const INSERTION_BATCH_SIZE: usize = 1_000;
 
 async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
     let menus = crate::list_menus(4).await?;
@@ -74,8 +74,21 @@ async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
 
         let osm_id = osm_id.map(|id| id.to_string());
 
-        sqlx::query!("INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id) VALUES ($1, $2, $3, $4, $5, $6, $7)",
-        id, title, supplier, supplier_reference, longitude, latitude, osm_id).execute(&mut txn).await?;
+        sqlx::query!(
+            r#"
+                INSERT OR REPLACE INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id)
+                VALUES ($1, $2, $3, $4, $5, $6, $7)
+            "#,
+            id,
+            title,
+            supplier,
+            supplier_reference,
+            longitude,
+            latitude,
+            osm_id
+        )
+        .execute(&mut txn)
+        .await?;
     }
 
     Ok(txn.commit().await?)
@@ -105,30 +118,34 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 
     let mut conn = pool.acquire().await?;
 
+    let gh_pat = opt.osm_gh_pat.clone();
+
+    let geoindex = tokio::spawn(async move {
+        anyhow::Ok(if let Some(ref gh_pat) = gh_pat {
+            info!("building geoindex");
+
+            match crate::geosearch::build_index(gh_pat).await {
+                Ok(index) => {
+                    let rtxn = index.inner.read_txn()?;
+                    let num_docs = index.inner.number_of_documents(&rtxn)?;
+                    info!(num_docs, "built geoindex");
+                    drop(rtxn);
+                    Some(index)
+                }
+                Err(e) => {
+                    error!("failed to build geoindex: {e}");
+                    None
+                }
+            }
+        } else {
+            warn!("skipping geosearch (no personal access token found)");
+            None
+        })
+    });
+
     if opt.load_menus {
         load_menus(&mut conn).await?;
     }
-
-    let geoindex = if let Some(ref gh_pat) = opt.osm_gh_pat {
-        info!("building geoindex");
-
-        match crate::geosearch::build_index(gh_pat).await {
-            Ok(index) => {
-                let rtxn = index.inner.read_txn()?;
-                let num_docs = index.inner.number_of_documents(&rtxn)?;
-                info!(num_docs, "built geoindex");
-                drop(rtxn);
-                Some(index)
-            }
-            Err(e) => {
-                error!("failed to build geoindex: {e}");
-                None
-            }
-        }
-    } else {
-        warn!("skipping geosearch (no personal access token found)");
-        None
-    };
 
     let expired = get_expired(
         &mut conn,
@@ -177,6 +194,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
     let mut txn = pool.begin().await?;
     let mut uncommitted_queries = 0usize;
 
+    let geoindex = geoindex.await??;
     let search_txn = geoindex
         .as_ref()
         .map(|index| {
@@ -253,7 +271,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 
             uncommitted_queries += 1;
 
-            if uncommitted_queries >= DAYS_BATCH_INSERT_COUNT {
+            if uncommitted_queries >= INSERTION_BATCH_SIZE {
                 txn.commit().await?;
                 uncommitted_queries = 0;
                 txn = pool.begin().await?;
@@ -323,23 +341,6 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
         .await?;
 
         meili::add_documents(&menus_index, &menus, None).await?;
-
-        let days_index = meili::get_or_create_index(&client, "days").await?;
-
-        let mut days = sqlx::query_as::<_, meili::Day>(
-            r#"
-            SELECT days.menu_id, days.date, days.meals, menus.longitude, menus.latitude
-            FROM days
-            INNER JOIN menus
-            ON days.menu_id = menus.id
-        "#,
-        )
-        .fetch(pool)
-        .try_chunks(5000);
-
-        while let Some(chunk) = days.try_next().await? {
-            meili::add_documents(&days_index, &chunk, Some("id")).await?;
-        }
     }
 
     Ok(())
@@ -353,7 +354,7 @@ mod meili {
     use osm::OsmId;
     use serde::{Serialize, Serializer};
     use sqlx::FromRow;
-    use stor::{day::Meals, menu::Supplier};
+    use stor::menu::Supplier;
     use time::Date;
     use tracing::info;
     use uuid::Uuid;
@@ -407,55 +408,6 @@ mod meili {
                 last_day: *last_day,
                 supplier: *supplier,
                 osm_id: *osm_id,
-            }
-            .serialize(serializer)
-        }
-    }
-
-    #[derive(Debug, FromRow)]
-    pub struct Day {
-        menu_id: Uuid,
-        date: Date,
-        meals: Meals,
-        longitude: Option<f64>,
-        latitude: Option<f64>,
-    }
-
-    impl Serialize for Day {
-        fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-        where
-            S: Serializer,
-        {
-            let Day {
-                menu_id,
-                date,
-                meals,
-                longitude,
-                latitude,
-            } = self;
-
-            #[derive(Debug, Serialize)]
-            struct Doc<'a> {
-                id: Uuid,
-                menu_id: &'a Uuid,
-                date: &'a Date,
-                meals: &'a Meals,
-                #[serde(rename = "_geo", skip_serializing_if = "Option::is_none")]
-                geo: Option<Geo>,
-            }
-
-            Doc {
-                id: Uuid::new_v5(menu_id, date.to_string().as_bytes()),
-                menu_id,
-                date,
-                meals,
-                geo: match (longitude, latitude) {
-                    (Some(lon), Some(lat)) => Some(Geo {
-                        lon: *lon,
-                        lat: *lat,
-                    }),
-                    _ => None,
-                },
             }
             .serialize(serializer)
         }
@@ -521,237 +473,3 @@ mod meili {
         }
     }
 }
-
-// #[derive(Debug, Serialize)]
-// struct MeiliMenu {
-//     id: MenuId,
-//     updated_at: Option<DateTime<Utc>>,
-//     slug: MenuSlug,
-//     title: String,
-//     last_day: Option<NaiveDate>,
-// }
-
-// pub async fn index(connection: &PgConnection, opt: &Args) -> anyhow::Result<()> {
-//     let client = reqwest::Client::new();
-
-//     if opt.load_menus {
-//         load_menus(connection).await?;
-//     }
-
-//     let must_update = get_candidates(
-//         connection,
-//         Duration::seconds(opt.max_age_secs),
-//         opt.menu_limit,
-//     )?;
-
-//     info!("updating {} menus", must_update.len());
-
-//     let utc = Utc::now().naive_utc().date();
-//     let first = Stockholm.from_utc_date(&utc).naive_local();
-//     let last = first + Duration::days(opt.days as i64);
-
-//     let mut stream = stream::iter(must_update)
-//         .map(|(id, slug)| {
-//             let client = client.clone();
-//             async move {
-//                 let res = list_days(&client, &slug, first, last).await;
-//                 (id, res)
-//             }
-//         })
-//         .buffer_unordered(opt.concurrent)
-//         .chunks(opt.menus_per_chunk);
-
-//     while let Some(chunk) = stream.next().await {
-//         submit_days(connection, chunk)?;
-//     }
-
-//     if let Some(meili_url) = &opt.meili_url {
-//         use database::schema::{
-//             days::{columns as days_cols, table as days_table},
-//             menus::{columns as menus_cols, table as menus_table},
-//         };
-
-//         let client = Client::new(meili_url, &opt.meili_key);
-//         let index = meili::get_or_create_index(&client, &opt.meili_index).await?;
-
-//         let mut last_days = days_table
-//             .group_by(days_cols::menu_id)
-//             .order(days_cols::menu_id.asc())
-//             .select((days_cols::menu_id, sql::<Date>("max(date)")))
-//             .load::<(MenuId, NaiveDate)>(connection)?
-//             .into_iter();
-
-//         index
-//             .set_sortable_attributes(&["updated_at", "last_day"])
-//             .await?;
-//         index
-//             .set_filterable_attributes(&["slug", "updated_at", "last_day"])
-//             .await?;
-
-//         let menus = menus_table
-//             .order(menus_cols::id.asc())
-//             .load::<Menu>(connection)?
-//             .into_iter();
-
-//         let menus = menus
-//             .map(|menu| {
-//                 let last_day = last_days
-//                     .take_while_ref(|(id, _)| *id <= menu.id)
-//                     .find(|(id, _)| *id == menu.id)
-//                     .map(|(_, d)| d);
-
-//                 let Menu {
-//                     id,
-//                     title,
-//                     slug,
-//                     updated_at,
-//                 } = menu;
-
-//                 MeiliMenu {
-//                     id,
-//                     updated_at,
-//                     slug,
-//                     title,
-//                     last_day,
-//                 }
-//             })
-//             .collect::<Vec<_>>();
-
-//         meili::add_documents(&index, &menus, None).await?;
-
-//         drop(menus);
-
-//         let index = meili::get_or_create_index(&client, "days").await?;
-
-//         days_chunks(connection, 10_000, |chunk| {
-//             block_on(async {
-//                 #[derive(Debug, Serialize)]
-//                 struct Day {
-//                     id: String,
-//                     menu_id: MenuId,
-//                     date: NaiveDate,
-//                     meals: Vec<String>,
-//                 }
-
-//                 let days = chunk
-//                     .into_iter()
-//                     .map(|d| Day {
-//                         id: format!("{}-{}", d.menu_id, d.date),
-//                         menu_id: d.menu_id,
-//                         date: d.date,
-//                         meals: d.meals.to_string().lines().map(ToOwned::to_owned).collect(),
-//                     })
-//                     .collect::<Vec<_>>();
-
-//                 meili::add_documents(&index, &days, None).await.unwrap();
-//             });
-//         })?;
-
-//         Ok(())
-//     } else {
-//         Ok(())
-//     }
-// }
-
-// /// Indexes the menus from the suppliers, and stores them in the database. If
-// /// the menu already exists, it won't be updated. Returns the number of menus
-// /// inserted.
-// #[instrument(err, skip(connection))]
-// pub async fn load_menus(connection: &PgConnection) -> anyhow::Result<usize> {
-//     use database::schema::menus::dsl::*;
-
-//     let records = list_menus(4)
-//         .await?
-//         .into_iter()
-//         .map(Into::into)
-//         .collect::<Vec<NewMenu>>();
-
-//     info!("Fetched {} menus", records.len());
-
-//     let inserted_count = diesel::insert_into(menus)
-//         .values(&records)
-//         .on_conflict_do_nothing()
-//         .execute(connection)?;
-
-//     match inserted_count {
-//         0 => info!("no new menus were inserted"),
-//         _ => info!("inserted {} new menus", inserted_count),
-//     }
-
-//     Ok(inserted_count)
-// }
-
-// #[instrument(err, skip(connection))]
-// pub fn get_candidates(
-//     connection: &PgConnection,
-//     max_age: Duration,
-//     limit: Option<i64>,
-// ) -> QueryResult<Vec<(MenuId, hugin::MenuSlug)>> {
-//     use database::schema::menus::dsl::*;
-
-//     let q = menus
-//         .select((id, slug))
-//         .filter(updated_at.lt(Utc::now() - max_age).or(updated_at.is_null()));
-
-//     if let Some(limit) = limit {
-//         q.limit(limit).load(connection)
-//     } else {
-//         q.load(connection)
-//     }
-// }
-
-// #[instrument(err, skip_all)]
-// pub fn submit_days(
-//     connection: &PgConnection,
-//     results: Vec<(MenuId, Result<Vec<hugin::Day>, hugin::Error>)>,
-// ) -> QueryResult<()> {
-//     use database::schema::days::{columns as days_columns, table as days_table};
-//     use database::schema::menus::{columns as menus_columns, table as menus_table};
-
-//     let successful = results
-//         .iter()
-//         .filter_map(|(m, r)| r.as_ref().ok().map(|_| *m))
-//         .collect::<Vec<_>>();
-
-//     let failed = results.len() - successful.len();
-
-//     if failed > 0 {
-//         warn!("{}/{} downloads failed", failed, results.len());
-//     }
-
-//     let records = results
-//         .into_iter()
-//         .filter_map(|(m, r)| {
-//             let d = r
-//                 .ok()?
-//                 .into_iter()
-//                 .map(|d| NewDay::from_day(d, m))
-//                 .collect::<Vec<_>>();
-
-//             Some(d)
-//         })
-//         .flatten()
-//         .collect::<Vec<NewDay>>();
-
-//     info!("inserting {} days", records.len());
-
-//     for chunk in records.chunks(10000) {
-//         diesel::insert_into(days_table)
-//             .values(chunk)
-//             // .on_conflict_do_nothing()
-//             .on_conflict((days_columns::menu_id, days_columns::date))
-//             .do_update()
-//             .set(days_columns::meals.eq(excluded(days_columns::meals)))
-//             .execute(connection)?;
-//     }
-
-//     let updated_at = Utc::now();
-
-//     for chunk in successful.chunks(1000) {
-//         diesel::update(menus_table.filter(menus_columns::id.eq_any(chunk)))
-//             .set(menus_columns::updated_at.eq(updated_at))
-//             .execute(connection)?;
-//     }
-
-//     Ok(())
-// }
