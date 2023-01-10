@@ -44,21 +44,18 @@ struct DistrictsResponse {
 
 #[derive(Debug, Clone, Copy, Deserialize)]
 struct Location {
-    latitude: f64,
     longitude: f64,
+    latitude: f64,
 }
 
-impl From<Location> for stor::menu::Coord {
+impl From<Location> for geo::Point {
     fn from(
         Location {
             longitude,
             latitude,
         }: Location,
     ) -> Self {
-        Self {
-            longitude,
-            latitude,
-        }
+        geo::Point::new(longitude, latitude)
     }
 }
 

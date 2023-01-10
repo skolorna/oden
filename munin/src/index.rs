@@ -1,8 +1,9 @@
 use futures::{Stream, StreamExt, TryStreamExt};
+use geo::VincentyDistance;
 use milli::TermsMatchingStrategy;
 use reqwest::Client;
 use sqlx::{Acquire, SqliteConnection, SqliteExecutor, SqlitePool};
-use stor::{menu::Coord, Day, Menu};
+use stor::{Day, Menu};
 use time::{Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
 use tracing::{error, info, warn};
@@ -12,6 +13,8 @@ use crate::{
     supplier::ListDays,
     Result,
 };
+
+const CONVERGENCE_LIMIT_M: f64 = 1000.;
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -65,10 +68,7 @@ async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
         } = menu;
 
         let (longitude, latitude) = match location {
-            Some(Coord {
-                longitude,
-                latitude,
-            }) => (Some(longitude), Some(latitude)),
+            Some(p) => (Some(p.x()), Some(p.y())),
             None => (None, None),
         };
 
@@ -126,7 +126,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
             }
         }
     } else {
-        info!("skipping geosearch (no personal access token found)");
+        warn!("skipping geosearch (no personal access token found)");
         None
     };
 
@@ -146,6 +146,10 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
             async move {
                 match result {
                     Ok(menu) => {
+                        if opt.days == 0 {
+                            return Ok((menu, vec![]));
+                        }
+
                         match crate::list_days(
                             &client,
                             menu.supplier,
@@ -198,30 +202,37 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
         };
 
         if let Some((ref rtxn, index, ref fields_ids_map)) = search_txn {
-            if menu.location.is_none() {
-                let execute_search = |search: &milli::Search| -> Result<Option<Hit>> {
-                    let result = search.execute()?;
-                    let mut hits = index
-                        .documents(rtxn, result.documents_ids)?
-                        .into_iter()
-                        .map(|(_id, obkv)| geosearch::parse_obkv(fields_ids_map, obkv));
+            let execute_search = |search: &milli::Search| -> Result<Option<Hit>> {
+                let result = search.execute()?;
+                let mut hits = index
+                    .documents(rtxn, result.documents_ids)?
+                    .into_iter()
+                    .map(|(_id, obkv)| geosearch::parse_obkv(fields_ids_map, obkv));
 
-                    Ok(hits.next())
-                };
+                Ok(hits.next())
+            };
 
-                let mut search = milli::Search::new(rtxn, index);
-                search.query(&menu.title);
-                search.limit(1);
+            let mut search = milli::Search::new(rtxn, index);
+            search.query(&menu.title);
+            search.limit(1);
 
-                if let Some(hit) = execute_search(&search)
-                    .transpose()
-                    .or_else(|| {
-                        // fall back to a less strict terms matching strategy if the search returns no hits
-                        search.terms_matching_strategy(TermsMatchingStrategy::Any);
-                        execute_search(&search).transpose()
-                    })
-                    .transpose()?
-                {
+            if let Some(hit) = [
+                TermsMatchingStrategy::Last,
+                TermsMatchingStrategy::Size,
+                TermsMatchingStrategy::Any,
+            ]
+            .into_iter()
+            .find_map(|strategy| {
+                search.terms_matching_strategy(strategy);
+                execute_search(&search).transpose()
+            })
+            .transpose()?
+            {
+                if let Some(location) = menu.location {
+                    if location.vincenty_distance(&hit.coordinates)? < CONVERGENCE_LIMIT_M {
+                        menu.osm_id = Some(hit.id);
+                    }
+                } else {
                     menu.location = Some(hit.coordinates);
                     menu.osm_id = Some(hit.id);
                 }
@@ -261,10 +272,7 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
         } = menu;
 
         let (longitude, latitude) = match location {
-            Some(Coord {
-                longitude,
-                latitude,
-            }) => (Some(longitude), Some(latitude)),
+            Some(p) => (Some(p.x()), Some(p.y())),
             None => (None, None),
         };
         let osm_id = osm_id.map(|id| id.to_string());
@@ -318,9 +326,16 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
 
         let days_index = meili::get_or_create_index(&client, "days").await?;
 
-        let mut days = sqlx::query_as::<_, meili::Day>("SELECT menu_id, date, meals FROM days")
-            .fetch(pool)
-            .try_chunks(10_000);
+        let mut days = sqlx::query_as::<_, meili::Day>(
+            r#"
+            SELECT days.menu_id, days.date, days.meals, menus.longitude, menus.latitude
+            FROM days
+            INNER JOIN menus
+            ON days.menu_id = menus.id
+        "#,
+        )
+        .fetch(pool)
+        .try_chunks(5000);
 
         while let Some(chunk) = days.try_next().await? {
             meili::add_documents(&days_index, &chunk, Some("id")).await?;
@@ -338,13 +353,16 @@ mod meili {
     use osm::OsmId;
     use serde::{Serialize, Serializer};
     use sqlx::FromRow;
-    use stor::{
-        day::Meals,
-        menu::{Coord, Supplier},
-    };
+    use stor::{day::Meals, menu::Supplier};
     use time::Date;
     use tracing::info;
     use uuid::Uuid;
+
+    #[derive(Debug, Serialize)]
+    struct Geo {
+        lon: f64,
+        lat: f64,
+    }
 
     #[derive(Debug, FromRow)]
     pub struct Menu {
@@ -369,16 +387,10 @@ mod meili {
             } = inner;
 
             #[derive(Debug, Serialize)]
-            struct Geo {
-                lon: f64,
-                lat: f64,
-            }
-
-            #[derive(Debug, Serialize)]
             struct Doc<'a> {
                 id: Uuid,
                 title: &'a str,
-                #[serde(rename = "_geo")]
+                #[serde(rename = "_geo", skip_serializing_if = "Option::is_none")]
                 geo: Option<Geo>,
                 last_day: Option<Date>,
                 supplier: Supplier,
@@ -388,15 +400,10 @@ mod meili {
             Doc {
                 id: *id,
                 title,
-                geo: location.map(
-                    |Coord {
-                         longitude,
-                         latitude,
-                     }| Geo {
-                        lon: longitude,
-                        lat: latitude,
-                    },
-                ),
+                geo: location.map(|p| Geo {
+                    lon: p.x(),
+                    lat: p.y(),
+                }),
                 last_day: *last_day,
                 supplier: *supplier,
                 osm_id: *osm_id,
@@ -410,6 +417,8 @@ mod meili {
         menu_id: Uuid,
         date: Date,
         meals: Meals,
+        longitude: Option<f64>,
+        latitude: Option<f64>,
     }
 
     impl Serialize for Day {
@@ -417,19 +426,36 @@ mod meili {
         where
             S: Serializer,
         {
+            let Day {
+                menu_id,
+                date,
+                meals,
+                longitude,
+                latitude,
+            } = self;
+
             #[derive(Debug, Serialize)]
             struct Doc<'a> {
                 id: Uuid,
-                menu_id: Uuid,
-                date: Date,
+                menu_id: &'a Uuid,
+                date: &'a Date,
                 meals: &'a Meals,
+                #[serde(rename = "_geo", skip_serializing_if = "Option::is_none")]
+                geo: Option<Geo>,
             }
 
             Doc {
-                id: Uuid::new_v5(&self.menu_id, self.date.to_string().as_bytes()),
-                menu_id: self.menu_id,
-                date: self.date,
-                meals: &self.meals,
+                id: Uuid::new_v5(menu_id, date.to_string().as_bytes()),
+                menu_id,
+                date,
+                meals,
+                geo: match (longitude, latitude) {
+                    (Some(lon), Some(lat)) => Some(Geo {
+                        lon: *lon,
+                        lat: *lat,
+                    }),
+                    _ => None,
+                },
             }
             .serialize(serializer)
         }
@@ -451,7 +477,7 @@ mod meili {
         );
 
         match task
-            .wait_for_completion(&index.client, None, Some(Duration::from_secs(10)))
+            .wait_for_completion(&index.client, None, Some(Duration::from_secs(30)))
             .await?
         {
             Task::Succeeded { content } => {

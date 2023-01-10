@@ -2,6 +2,7 @@ use std::io::Cursor;
 
 use async_zip::read::stream::ZipFileReader;
 use futures::TryStreamExt;
+use geo::Point;
 use milli::{
     documents::{DocumentsBatchBuilder, DocumentsBatchReader},
     heed::EnvOpenOptions,
@@ -13,7 +14,6 @@ use reqwest::{
     Client, IntoUrl,
 };
 use serde::Deserialize;
-use stor::menu::Coord;
 use tempdir::TempDir;
 use tokio::io::AsyncRead;
 use tokio_util::io::StreamReader;
@@ -142,7 +142,7 @@ pub async fn build_index(gh_pat: &str) -> anyhow::Result<Index> {
 pub struct Hit {
     pub name: String,
     pub id: OsmId,
-    pub coordinates: Coord,
+    pub coordinates: Point,
 }
 
 pub fn parse_obkv(fields_ids_map: &milli::FieldsIdsMap, obkv: obkv::KvReader<'_, u16>) -> Hit {
@@ -152,18 +152,15 @@ pub fn parse_obkv(fields_ids_map: &milli::FieldsIdsMap, obkv: obkv::KvReader<'_,
         lon: f64,
     }
 
-    impl From<Geo> for Coord {
+    impl From<Geo> for Point {
         fn from(Geo { lon, lat }: Geo) -> Self {
-            Self {
-                latitude: lat,
-                longitude: lon,
-            }
+            Self::new(lon, lat)
         }
     }
 
     let mut name = None;
     let mut id = None;
-    let mut coordinates: Option<Coord> = None;
+    let mut coordinates: Option<Point> = None;
 
     for (key, value) in obkv.iter() {
         match fields_ids_map.name(key).expect("missing field name") {

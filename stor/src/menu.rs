@@ -1,3 +1,4 @@
+use geo::Point;
 use osm::OsmId;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "db")]
@@ -34,19 +35,13 @@ impl Supplier {
     }
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
-pub struct Coord {
-    pub longitude: f64,
-    pub latitude: f64,
-}
-
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Menu {
     pub id: Uuid,
     pub title: String,
     pub supplier: Supplier,
     pub supplier_reference: String,
-    pub location: Option<Coord>,
+    pub location: Option<Point>,
     pub osm_id: Option<OsmId>,
 }
 
@@ -75,10 +70,7 @@ impl FromRow<'_, SqliteRow> for Menu {
     fn from_row(row: &SqliteRow) -> Result<Self, sqlx::Error> {
         let location = {
             match (row.try_get("longitude")?, row.try_get("latitude")?) {
-                (Some(longitude), Some(latitude)) => Some(Coord {
-                    longitude,
-                    latitude,
-                }),
+                (Some(longitude), Some(latitude)) => Some(Point::new(longitude, latitude)),
                 _ => None,
             }
         };

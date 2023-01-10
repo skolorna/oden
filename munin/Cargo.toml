@@ -34,5 +34,6 @@ milli = { git = "https://github.com/meilisearch/milli.git", version = "0.38.0", 
 osm = { workspace = true }
 obkv = "0.2.0"
 indicatif = "0.17.2"
+geo = "0.23.1"
 
 [features]
