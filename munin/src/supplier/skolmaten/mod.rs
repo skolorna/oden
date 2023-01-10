@@ -5,7 +5,7 @@ use futures::{
     TryFutureExt, TryStreamExt,
 };
 use reqwest::{Client, StatusCode};
-use serde::Deserialize;
+use serde::{Deserialize, Serialize};
 use stor::menu::Supplier;
 use time::{Date, Month};
 use tracing::{error, instrument};
@@ -214,7 +214,7 @@ impl Day {
 
 #[derive(Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
-pub(super) struct Week {
+struct Week {
     // year: i32,
     // week_of_year: u32,
     days: Vec<Day>,
@@ -235,23 +235,33 @@ struct Menu {
     // bulletins: Vec<Bulletin>,
 }
 
-#[derive(PartialEq, Debug, Clone, Copy)]
+#[derive(PartialEq, Debug, Clone, Copy, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct WeekSpan {
     year: i32,
+    /// Starting year of the span.
     week_of_year: u8,
+    /// Total number of weeks.
     count: u8,
 }
 
 #[instrument(skip(client))]
-async fn fetch_menu(client: &Client, station_id: u64, span: WeekSpan) -> Result<Menu> {
+async fn fetch_menu(client: &Client, station: u64, span: WeekSpan) -> Result<Menu> {
+    #[derive(Debug, Serialize)]
+    struct Query {
+        #[serde(flatten)]
+        span: WeekSpan,
+        station: u64,
+    }
+
     #[derive(Deserialize, Debug)]
     struct Response {
         menu: Menu,
     }
 
     let path = format!(
-        "menu?station={}&year={}&weekOfYear={}&count={}",
-        station_id, span.year, span.week_of_year, span.count
+        "menu?{}",
+        serde_urlencoded::to_string(&Query { span, station }).unwrap()
     );
 
     let res = fetch(client, &path).await?;
