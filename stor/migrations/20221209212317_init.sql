@@ -1,18 +1,20 @@
+CREATE TYPE supplier AS ENUM ('skolmaten', 'sodexo', 'mpi', 'kleins', 'sabis', 'matilda');
+
 CREATE TABLE menus (
-  id BLOB PRIMARY KEY,
+  id UUID PRIMARY KEY,
   title TEXT NOT NULL,
-  supplier TEXT NOT NULL,
+  supplier supplier NOT NULL,
   supplier_reference TEXT NOT NULL,
-  longitude REAL,
-  latitude REAL,
+  longitude FLOAT8,
+  latitude FLOAT8,
   osm_id TEXT,
-  created_at TIMESTAMP NOT NULL DEFAULT NOW,
-  checked_at TIMESTAMP
+  created_at TIMESTAMPTZ NOT NULL DEFAULT now(),
+  checked_at TIMESTAMPTZ
 );
 
 CREATE TABLE days (
-  menu_id BLOB NOT NULL REFERENCES menus (id) ON DELETE CASCADE,
+  menu_id UUID NOT NULL REFERENCES menus (id) ON DELETE CASCADE,
   date DATE NOT NULL,
-  meals BLOB NOT NULL,
+  meals TEXT[] NOT NULL,
   PRIMARY KEY (menu_id, date)
-)
+);

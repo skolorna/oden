@@ -2,7 +2,7 @@ use futures::{Stream, StreamExt, TryStreamExt};
 use geo::VincentyDistance;
 use milli::TermsMatchingStrategy;
 use reqwest::Client;
-use sqlx::{Acquire, SqliteConnection, SqliteExecutor, SqlitePool};
+use sqlx::{Acquire, PgConnection, PgExecutor, PgPool};
 use stor::{Day, Menu};
 use time::{Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
@@ -50,9 +50,9 @@ pub struct Args {
     meili_key: String,
 }
 
-const INSERTION_BATCH_SIZE: usize = 1_000;
+pub const INSERTION_BATCH_SIZE: usize = 10_000;
 
-async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
+async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
     let menus = crate::list_menus(4).await?;
 
     let mut txn = conn.begin().await?;
@@ -76,8 +76,15 @@ async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
 
         sqlx::query!(
             r#"
-                INSERT OR REPLACE INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id)
+                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id)
                 VALUES ($1, $2, $3, $4, $5, $6, $7)
+                ON CONFLICT (id) DO UPDATE SET
+                    title = excluded.title,
+                    supplier = excluded.supplier,
+                    supplier_reference = excluded.supplier_reference,
+                    longitude = excluded.longitude,
+                    latitude = excluded.latitude,
+                    osm_id = excluded.osm_id
             "#,
             id,
             title,
@@ -95,7 +102,7 @@ async fn load_menus(conn: &mut SqliteConnection) -> anyhow::Result<()> {
 }
 
 fn get_expired<'a>(
-    conn: impl SqliteExecutor<'a> + 'a,
+    conn: impl PgExecutor<'a> + 'a,
     max_age: Duration,
     limit: Option<i64>,
 ) -> impl Stream<Item = Result<Menu>> + 'a {
@@ -110,7 +117,7 @@ fn get_expired<'a>(
     .map_err(Into::into)
 }
 
-pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
+pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     sqlx::query("PRAGMA journal_mode=WAL").execute(pool).await?;
     sqlx::query("PRAGMA busy_timeout=60000")
         .execute(pool)
@@ -261,7 +268,12 @@ pub async fn index(opt: &Args, pool: &SqlitePool) -> anyhow::Result<()> {
             let Day { date, meals } = day;
 
             sqlx::query!(
-                "INSERT OR REPLACE INTO days (menu_id, date, meals) VALUES ($1, $2, $3)",
+                r#"
+                    INSERT INTO days (menu_id, date, meals)
+                    VALUES ($1, $2, $3)
+                    --ON CONFLICT (meals) DO UPDATE
+                    --    SET meals = meals
+                "#,
                 menu.id,
                 date,
                 meals

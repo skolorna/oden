@@ -3,6 +3,7 @@ use std::ops::RangeInclusive;
 use futures::{stream, StreamExt};
 use reqwest::Client;
 use stor::{menu::Supplier, Menu};
+use strum::IntoEnumIterator;
 use supplier::ListDays;
 use thiserror::Error;
 use time::Date;
@@ -11,6 +12,7 @@ use tracing::{debug, instrument};
 use crate::supplier::{kleins, matilda, mpi, skolmaten, sodexo};
 
 pub mod geosearch;
+pub mod import;
 pub mod index;
 mod mashie;
 pub mod supplier;

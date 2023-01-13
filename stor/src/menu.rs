@@ -2,16 +2,24 @@ use geo::Point;
 use osm::OsmId;
 use serde::{Deserialize, Serialize};
 #[cfg(feature = "db")]
-use sqlx::{sqlite::SqliteRow, FromRow, Row};
+use sqlx::{postgres::PgRow, FromRow, Row};
+use strum::{EnumIter, EnumString};
 use uuid::Uuid;
 
 pub const UUID_NAMESPACE: Uuid = Uuid::from_bytes([
     0x88, 0xdc, 0x80, 0xe5, 0xf4, 0x7f, 0x46, 0x34, 0xb6, 0x33, 0x2c, 0xce, 0x5e, 0xf2, 0xcb, 0x11,
 ]);
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq)]
+#[derive(
+    Debug, Clone, Copy, Serialize, Deserialize, PartialEq, Eq, EnumIter, EnumString, strum::Display,
+)]
 #[serde(rename_all = "lowercase")]
-#[cfg_attr(feature = "db", derive(sqlx::Type), sqlx(rename_all = "lowercase"))]
+#[strum(serialize_all = "lowercase")]
+#[cfg_attr(
+    feature = "db",
+    derive(sqlx::Type),
+    sqlx(type_name = "supplier", rename_all = "lowercase") // postgres type defined in migrations
+)]
 pub enum Supplier {
     Skolmaten,
     Sodexo,
@@ -19,20 +27,6 @@ pub enum Supplier {
     Kleins,
     Sabis,
     Matilda,
-}
-
-impl Supplier {
-    pub fn iter() -> impl Iterator<Item = Self> {
-        [
-            Self::Skolmaten,
-            Self::Sodexo,
-            Self::Mpi,
-            Self::Kleins,
-            Self::Sabis,
-            Self::Matilda,
-        ]
-        .into_iter()
-    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -52,7 +46,10 @@ impl Menu {
         title: impl Into<String>,
     ) -> Self {
         let supplier_reference = supplier_reference.into();
-        let id = Uuid::new_v5(&UUID_NAMESPACE, supplier_reference.as_bytes());
+        let id = Uuid::new_v5(
+            &UUID_NAMESPACE,
+            format!("{}.{}", supplier, supplier_reference).as_bytes(), // maintain compatibility with older versions
+        );
 
         Self {
             id,
@@ -66,8 +63,8 @@ impl Menu {
 }
 
 #[cfg(feature = "db")]
-impl FromRow<'_, SqliteRow> for Menu {
-    fn from_row(row: &SqliteRow) -> Result<Self, sqlx::Error> {
+impl FromRow<'_, PgRow> for Menu {
+    fn from_row(row: &PgRow) -> Result<Self, sqlx::Error> {
         let location = {
             match (row.try_get("longitude")?, row.try_get("latitude")?) {
                 (Some(longitude), Some(latitude)) => Some(Point::new(longitude, latitude)),
@@ -95,7 +92,7 @@ impl FromRow<'_, SqliteRow> for Menu {
 #[cfg(feature = "db")]
 #[cfg(test)]
 mod tests {
-    use sqlx::SqlitePool;
+    use sqlx::PgPool;
     use uuid::Uuid;
 
     use crate::menu::Supplier;
@@ -103,7 +100,7 @@ mod tests {
     use super::Menu;
 
     #[sqlx::test]
-    async fn menu_from_row(pool: SqlitePool) -> sqlx::Result<()> {
+    async fn menu_from_row(pool: PgPool) -> sqlx::Result<()> {
         let mut conn = pool.acquire().await?;
 
         let id = Uuid::new_v4();

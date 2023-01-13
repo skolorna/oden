@@ -5,35 +5,20 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.66"
-async-compression = { version = "0.3.15", features = [
-  "tokio",
-  "zstd",
-], optional = true }
-futures-util = { version = "0.3.25", optional = true }
 geo = { version = "0.23.1", features = ["use-serde"] }
-minicbor = { version = "0.18.0", optional = true, features = ["std", "derive"] }
 reqwest = { version = "0.11.13", features = ["stream"], optional = true }
 serde = { version = "1.0.149", features = ["derive"] }
 sqlx = { version = "0.6.2", features = [
-  "sqlite",
+  "postgres",
   "runtime-tokio-rustls",
   "time",
   "uuid",
 ], optional = true }
 time = { version = "0.3.17", features = ["serde-human-readable"] }
-tokio = { version = "1.23.0", features = ["full"], optional = true }
-tokio-util = { version = "0.7.4", features = ["codec", "io"], optional = true }
 uuid = { workspace = true, features = ["serde", "v4", "v5"] }
 osm = { workspace = true }
+strum = { version = "0.24.1", features = ["derive"] }
 
 [features]
 default = ["db"]
-db = [
-  "dep:async-compression",
-  "dep:futures-util",
-  "dep:reqwest",
-  "dep:sqlx",
-  "dep:tokio",
-  "dep:tokio-util",
-  "dep:minicbor",
-]
+db = ["dep:reqwest", "dep:sqlx"]

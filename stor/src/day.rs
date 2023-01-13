@@ -1,10 +1,4 @@
 use serde::{Deserialize, Serialize};
-use sqlx::{
-    sqlite::{SqliteArgumentValue, SqliteTypeInfo, SqliteValueRef},
-    Decode,
-};
-#[cfg(feature = "db")]
-use sqlx::{Encode, Sqlite};
 use time::Date;
 
 use crate::Meal;
@@ -41,35 +35,23 @@ impl Day {
 }
 
 #[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "db", derive(minicbor::Encode, minicbor::Decode))]
-pub struct Meals(#[cfg_attr(feature = "db", n(0))] Vec<Meal>);
+#[cfg_attr(feature = "db", derive(sqlx::Encode, sqlx::Decode))]
+pub struct Meals(pub Vec<Meal>);
 
 impl Meals {
+    pub fn new(meals: Vec<Meal>) -> Self {
+        Self(meals)
+    }
+
     pub fn into_inner(self) -> Vec<Meal> {
         self.0
     }
 }
 
 #[cfg(feature = "db")]
-impl Encode<'_, Sqlite> for Meals {
-    fn encode_by_ref(&self, buf: &mut Vec<SqliteArgumentValue<'_>>) -> sqlx::encode::IsNull {
-        let mut cbor = Vec::new();
-        minicbor::encode(self, &mut cbor).unwrap();
-        <Vec<u8> as sqlx::Encode<Sqlite>>::encode(cbor, buf)
-    }
-}
-
-#[cfg(feature = "db")]
-impl Decode<'_, Sqlite> for Meals {
-    fn decode(value: SqliteValueRef) -> Result<Self, sqlx::error::BoxDynError> {
-        let bytes = <&[u8] as Decode<Sqlite>>::decode(value)?;
-        Ok(minicbor::decode(bytes)?)
-    }
-}
-
-impl sqlx::Type<Sqlite> for Meals {
-    fn type_info() -> SqliteTypeInfo {
-        <&[u8] as sqlx::Type<Sqlite>>::type_info()
+impl sqlx::Type<sqlx::Postgres> for Meals {
+    fn type_info() -> <sqlx::Postgres as sqlx::Database>::TypeInfo {
+        <Vec<Meal> as sqlx::Type<sqlx::Postgres>>::type_info()
     }
 }
 
@@ -77,7 +59,7 @@ impl sqlx::Type<Sqlite> for Meals {
 #[cfg(test)]
 mod tests {
     use osm::OsmId;
-    use sqlx::{pool::PoolConnection, Sqlite};
+    use sqlx::{pool::PoolConnection, Postgres};
     use time::macros::date;
     use uuid::Uuid;
 
@@ -86,16 +68,12 @@ mod tests {
     use super::Meals;
 
     #[sqlx::test]
-    async fn from_row(mut conn: PoolConnection<Sqlite>) -> sqlx::Result<()> {
+    async fn from_row(mut conn: PoolConnection<Postgres>) -> sqlx::Result<()> {
         let day = Day {
             date: date!(2022 - 12 - 09),
             meals: Meals(vec![
-                Meal {
-                    value: "Fisk Björkeby".to_owned(),
-                },
-                Meal {
-                    value: "Fisk Bordelaise".to_owned(),
-                },
+                Meal("Fisk Björkeby".to_owned()),
+                Meal("Fisk Bordelaise".to_owned()),
             ]),
         };
 

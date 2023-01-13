@@ -4,7 +4,8 @@ use std::str::FromStr;
 use clap::Parser;
 use clap::Subcommand;
 use dotenv::dotenv;
-use munin::index;
+use munin::import::import;
+use munin::{import, index};
 use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
@@ -25,6 +26,8 @@ struct Opt {
 
 #[derive(Debug, Subcommand)]
 enum Command {
+    Import(import::Args),
+
     /// Fetch new menus and days
     Index(index::Args),
 }
@@ -47,8 +50,11 @@ async fn main() -> anyhow::Result<()> {
     stor::db::MIGRATOR.run(&pool).await?;
 
     match opt.cmd {
+        Command::Import(opt) => {
+            import(opt, &pool).await?;
+        }
         Command::Index(opt) => {
-            index(&opt, &pool).await?;
+            index(opt, &pool).await?;
         }
     }
 

@@ -1,6 +1,14 @@
 # Compose file for DEVELOPMENT
 version: "3"
 services:
+  postgres:
+    image: postgres:15
+    environment:
+      POSTGRES_PASSWORD: "postgres"
+      POSTGRES_DB: "oden"
+    ports:
+      - "5432:5432"
+
   meilisearch:
     image: getmeili/meilisearch:v0.29.1
     ports:
