@@ -26,10 +26,11 @@ async fn import_menus(conn: &mut PgConnection, path: &Path) -> anyhow::Result<()
             r#"
                 INSERT INTO menus (id, title, supplier, supplier_reference)
                 VALUES ($1, $2, $3, $4)
+                ON CONFLICT DO NOTHING
             "#,
             id,
             title,
-            slug.0,
+            slug.0 as _,
             slug.1
         )
         .execute(&mut txn)
@@ -59,10 +60,10 @@ async fn import_days(pool: &PgPool, path: &Path) -> anyhow::Result<()> {
     }) = days.try_next().await?
     {
         sqlx::query!(
-            "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3)",
+            "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING",
             menu_id,
             date,
-            meals,
+            meals as _,
         )
         .execute(&mut txn)
         .await?;
@@ -83,11 +84,6 @@ async fn import_days(pool: &PgPool, path: &Path) -> anyhow::Result<()> {
 }
 
 pub async fn import(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
-    sqlx::query("PRAGMA journal_mode=WAL").execute(pool).await?;
-    sqlx::query("PRAGMA busy_timeout=60000")
-        .execute(pool)
-        .await?;
-
     let mut conn = pool.acquire().await?;
 
     import_menus(&mut conn, &opt.menus).await?;

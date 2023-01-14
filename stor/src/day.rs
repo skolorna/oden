@@ -91,7 +91,7 @@ mod tests {
             "INSERT INTO menus (id, title, supplier, supplier_reference, osm_id) VALUES ($1, $2, $3, $4, $5)",
             menu.id,
             menu.title,
-            menu.supplier,
+            menu.supplier as _,
             menu.supplier_reference,
             osm_id,
         )
@@ -102,7 +102,7 @@ mod tests {
             "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3)",
             menu.id,
             day.date,
-            day.meals
+            day.meals as _
         )
         .execute(&mut conn)
         .await?;

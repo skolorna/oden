@@ -1,10 +1,8 @@
 *
-!/oden-http
-!/database
 !/euphemism
 !/hugin
 !/munin
-!/smaz
+!/stor
 !Cargo.toml
 !Cargo.lock
 **/Dockerfile

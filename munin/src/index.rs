@@ -88,7 +88,7 @@ async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
             "#,
             id,
             title,
-            supplier,
+            supplier as _,
             supplier_reference,
             longitude,
             latitude,
@@ -112,17 +112,12 @@ fn get_expired<'a>(
         "SELECT * FROM menus WHERE checked_at < $1 OR checked_at IS NULL LIMIT $2",
     )
     .bind(expires_at)
-    .bind(limit.unwrap_or(-1))
+    .bind(limit)
     .fetch(conn)
     .map_err(Into::into)
 }
 
 pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
-    sqlx::query("PRAGMA journal_mode=WAL").execute(pool).await?;
-    sqlx::query("PRAGMA busy_timeout=60000")
-        .execute(pool)
-        .await?;
-
     let mut conn = pool.acquire().await?;
 
     let gh_pat = opt.osm_gh_pat.clone();
@@ -276,7 +271,7 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
                 "#,
                 menu.id,
                 date,
-                meals
+                meals as _
             )
             .execute(&mut txn)
             .await?;

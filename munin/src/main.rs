@@ -1,12 +1,9 @@
-use std::path::PathBuf;
-use std::str::FromStr;
-
 use clap::Parser;
 use clap::Subcommand;
 use dotenv::dotenv;
 use munin::import::import;
 use munin::{import, index};
-use sqlx::{sqlite::SqliteConnectOptions, SqlitePool};
+use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
@@ -15,10 +12,7 @@ use index::index;
 #[derive(Debug, Parser)]
 struct Opt {
     #[arg(long, env)]
-    db_path: Option<PathBuf>,
-
-    #[arg(long, default_value_t)]
-    create_db: bool,
+    database_url: String,
 
     #[command(subcommand)]
     cmd: Command,
@@ -41,11 +35,7 @@ async fn main() -> anyhow::Result<()> {
 
     tracing_subscriber::registry().with(fmt_layer).init();
 
-    let path = opt.db_path.unwrap();
-    let sqlite_url = format!("sqlite://{}", path.display());
-
-    let options = SqliteConnectOptions::from_str(&sqlite_url)?.create_if_missing(opt.create_db);
-    let pool = SqlitePool::connect_with(options).await?;
+    let pool = PgPoolOptions::new().connect(&opt.database_url).await?;
 
     stor::db::MIGRATOR.run(&pool).await?;
 

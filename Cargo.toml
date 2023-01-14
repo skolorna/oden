@@ -1,9 +1,9 @@
 [workspace]
-members = ["euphemism", "munin", "stor"]
+members = ["hugin", "euphemism", "munin", "stor"]
 
 [workspace.dependencies]
 clap = "4.0.18"
 meilisearch-sdk = { version = "0.20.1", default-features = false }
 stor = { path = "stor" }
 uuid = "1.2.2"
-osm = { git = "https://github.com/akeamc/osm.git", version = "0.1.0", default-features = false}
+osm = { git = "https://github.com/akeamc/osm.git", version = "0.1.0", default-features = false }
