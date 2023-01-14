@@ -21,6 +21,13 @@ jobs:
   test:
     name: Test Suite
     runs-on: ubuntu-latest
+    services:
+      postgres:
+        image: postgres:13
+        env:
+          POSTGRES_PASSWORD: postgres
+        ports:
+          - 5432:5432
     steps:
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
@@ -30,6 +37,8 @@ jobs:
           override: true
       - uses: Swatinem/rust-cache@v2.0.1
       - uses: actions-rs/cargo@v1
+        env:
+          DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
         with:
           command: test
 
