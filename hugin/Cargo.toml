@@ -7,6 +7,7 @@ edition = "2021"
 anyhow = "1.0.68"
 axum = { version = "0.6.2", default-features = false, features = ["http1", "json", "tokio", "tower-log", "query"] }
 dotenv = "0.15.0"
+meilisearch-sdk = { workspace = true }
 serde = { version = "1.0.152", features = ["derive"] }
 sqlx = "0.6.2"
 stor = { workspace = true }

@@ -38,10 +38,8 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v2.0.1
-      - name: Run migrations
-        run: |
-          cargo install sqlx-cli --no-default-features --features native-tls,postgres
-          sqlx database create
+      - run: cargo install sqlx-cli --no-default-features --features native-tls,postgres
+      - run: sqlx database create
       - uses: actions-rs/cargo@v1
         with:
           command: test

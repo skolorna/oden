@@ -1334,6 +1334,7 @@ dependencies = [
  "anyhow",
  "axum",
  "dotenv",
+ "meilisearch-sdk",
  "serde",
  "sqlx",
  "stor",

@@ -1,11 +1,12 @@
 use anyhow::Context;
 use axum::{
-    extract::{Path, Query, State},
+    extract::{FromRef, Path, Query, State},
     http::StatusCode,
-    response::IntoResponse,
+    response::{IntoResponse, Response},
     routing::get,
     Json, Router,
 };
+use meilisearch_sdk::key::Action;
 use serde::{Deserialize, Serialize};
 use sqlx::{
     postgres::{types::PgRange, PgPoolOptions},
@@ -20,19 +21,23 @@ use uuid::Uuid;
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
 
-    let database_url = env::var("DATABASE_URL")?;
-
-    let db = PgPoolOptions::new()
-        .connect(&database_url)
+    let pg = PgPoolOptions::new()
+        .connect(&env::var("DATABASE_URL")?)
         .await
         .context("could not connect to database")?;
+
+    let state = AppState {
+        pg,
+        meili: meilisearch_sdk::Client::new(env::var("MEILI_URL")?, env::var("MEILI_KEY")?),
+    };
 
     let app = Router::new()
         .route("/health", get(health))
         .route("/stats", get(stats))
+        .route("/key", get(meilisearch_key))
         .route("/menus/:id", get(menu))
         .route("/menus/:id/days", get(days))
-        .with_state(db);
+        .with_state(state);
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
 
@@ -41,6 +46,24 @@ async fn main() -> anyhow::Result<()> {
         .await?;
 
     Ok(())
+}
+
+#[derive(Clone)]
+struct AppState {
+    pg: PgPool,
+    meili: meilisearch_sdk::Client,
+}
+
+impl FromRef<AppState> for PgPool {
+    fn from_ref(state: &AppState) -> Self {
+        state.pg.clone()
+    }
+}
+
+impl FromRef<AppState> for meilisearch_sdk::Client {
+    fn from_ref(state: &AppState) -> Self {
+        state.meili.clone()
+    }
 }
 
 #[derive(Debug, Serialize)]
@@ -115,12 +138,31 @@ async fn days(
     Ok(Json(days))
 }
 
+async fn meilisearch_key(State(client): State<meilisearch_sdk::Client>) -> Result<Response> {
+    Ok(
+        if let Some(key) = client
+            .get_keys()
+            .await?
+            .results
+            .into_iter()
+            .find(|k| k.actions == vec![Action::Search])
+        {
+            ([("cache-control", "public, max-age=300")], key.key).into_response()
+        } else {
+            StatusCode::NOT_FOUND.into_response()
+        },
+    )
+}
+
 type Result<T, E = Error> = core::result::Result<T, E>;
 
 #[derive(Debug, thiserror::Error)]
 enum Error {
     #[error("database error")]
     Db(#[from] sqlx::Error),
+
+    #[error("meilisearch error")]
+    MeiliSearch(#[from] meilisearch_sdk::errors::Error),
 
     #[error("internal server error")]
     Internal,
@@ -132,7 +174,7 @@ enum Error {
 impl IntoResponse for Error {
     fn into_response(self) -> axum::response::Response {
         match self {
-            Self::Db(_) | Self::Internal => {
+            Self::Db(_) | Self::Internal | Self::MeiliSearch(_) => {
                 (StatusCode::INTERNAL_SERVER_ERROR, "internal server error").into_response()
             }
             Self::MenuNotFound => (StatusCode::NOT_FOUND, "menu not found").into_response(),

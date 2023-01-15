@@ -13,5 +13,7 @@ services:
 
   meilisearch:
     image: getmeili/meilisearch:v0.29.1
+    environment:
+      MEILI_MASTER_KEY: "meili"
     ports:
       - "7700:7700"
