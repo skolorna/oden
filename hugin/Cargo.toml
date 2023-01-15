@@ -1,11 +1,17 @@
 [package]
 name = "hugin"
-version = "0.1.0"
+version = "0.3.0"
 edition = "2021"
 
 [dependencies]
 anyhow = "1.0.68"
-axum = { version = "0.6.2", default-features = false, features = ["http1", "json", "tokio", "tower-log", "query"] }
+axum = { version = "0.6.2", default-features = false, features = [
+  "http1",
+  "json",
+  "tokio",
+  "tower-log",
+  "query",
+] }
 dotenv = "0.15.0"
 meilisearch-sdk = { workspace = true }
 serde = { version = "1.0.152", features = ["derive"] }
