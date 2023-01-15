@@ -39,7 +39,7 @@ async fn main() -> anyhow::Result<()> {
         .route("/menus/:id/days", get(days))
         .with_state(state);
 
-    let addr = SocketAddr::from(([127, 0, 0, 1], 8000));
+    let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
