@@ -1,0 +1,25 @@
+[package]
+name = "stor"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+anyhow = "1.0.66"
+geo = { version = "0.23.1", features = ["use-serde"] }
+reqwest = { version = "0.11.13", features = ["stream"], optional = true }
+serde = { version = "1.0.149", features = ["derive"] }
+sqlx = { version = "0.6.2", features = [
+  "postgres",
+  "runtime-tokio-rustls",
+  "time",
+  "uuid",
+  "offline"
+], optional = true }
+time = { version = "0.3.17", features = ["serde-human-readable"] }
+uuid = { workspace = true, features = ["serde", "v4", "v5"] }
+osm = { workspace = true }
+strum = { version = "0.24.1", features = ["derive"] }
+
+[features]
+default = ["db"]
+db = ["dep:reqwest", "dep:sqlx"]

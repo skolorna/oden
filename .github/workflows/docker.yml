@@ -38,7 +38,7 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-  oden-http:
+  hugin:
     runs-on: ubuntu-latest
     permissions:
       packages: write
@@ -52,7 +52,7 @@ jobs:
           toolchain: stable
           override: true
       - id: prep
-        working-directory: ./oden-http
+        working-directory: ./hugin
         run: |
           echo ::set-output name=version::$(cargo pkgid | cut -d "#" -f2 -)
       - uses: docker/login-action@v2
@@ -62,10 +62,10 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - uses: docker/build-push-action@v3
         with:
-          file: ./oden-http/Dockerfile
+          file: ./hugin/Dockerfile
           push: ${{ github.ref == 'refs/heads/main' }}
           tags: |
-            ghcr.io/skolorna/oden-http:${{ steps.prep.outputs.version }}
-            ghcr.io/skolorna/oden-http:latest
+            ghcr.io/skolorna/hugin:${{ steps.prep.outputs.version }}
+            ghcr.io/skolorna/hugin:latest
           cache-from: type=gha
           cache-to: type=gha,mode=max

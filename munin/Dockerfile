@@ -1,4 +1,4 @@
-FROM clux/muslrust:1.64.0 as build-env
+FROM clux/muslrust:1.66.1 as build-env
 WORKDIR /app
 COPY . .
 RUN cargo build --release --bin munin

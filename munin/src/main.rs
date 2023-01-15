@@ -1,27 +1,18 @@
 use clap::Parser;
 use clap::Subcommand;
-use diesel::prelude::*;
-use diesel::PgConnection;
 use dotenv::dotenv;
-use export::export;
-use index::index;
-use sentry::types::Dsn;
+use munin::import::import;
+use munin::{import, index};
+use sqlx::postgres::PgPoolOptions;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::EnvFilter;
 
-mod export;
-mod index;
+use index::index;
 
 #[derive(Debug, Parser)]
 struct Opt {
-    #[structopt(long, env)]
-    postgres_url: String,
-
-    #[structopt(long, env)]
-    sentry_dsn: Option<Dsn>,
-
-    #[structopt(long, env)]
-    sentry_environment: Option<String>,
+    #[arg(long, env)]
+    database_url: String,
 
     #[command(subcommand)]
     cmd: Command,
@@ -29,10 +20,10 @@ struct Opt {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    /// Fetch new menus and load new days
+    Import(import::Args),
+
+    /// Fetch new menus and days
     Index(index::Args),
-    /// Export menus and days from the database
-    Export(export::Args),
 }
 
 #[tokio::main]
@@ -40,29 +31,24 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     let opt = Opt::parse();
 
-    let _guard = sentry::init(sentry::ClientOptions {
-        // Set this a to lower value in production
-        traces_sample_rate: 1.0,
-        dsn: opt.sentry_dsn,
-        environment: opt.sentry_environment.map(Into::into),
-        ..sentry::ClientOptions::default()
-    });
-
     let fmt_layer = tracing_subscriber::fmt::layer().with_filter(EnvFilter::from_default_env());
 
-    tracing_subscriber::registry()
-        .with(fmt_layer)
-        .with(sentry_tracing::layer())
-        .init();
+    tracing_subscriber::registry().with(fmt_layer).init();
 
-    let connection = PgConnection::establish(&opt.postgres_url)?;
+    let pool = PgPoolOptions::new().connect(&opt.database_url).await?;
 
-    database::run_migrations(&connection).expect("migrations failed");
+    stor::db::MIGRATOR.run(&pool).await?;
 
     match opt.cmd {
-        Command::Index(opt) => index(&connection, &opt).await?,
-        Command::Export(opt) => export(&connection, &opt)?,
+        Command::Import(opt) => {
+            import(opt, &pool).await?;
+        }
+        Command::Index(opt) => {
+            index(opt, &pool).await?;
+        }
     }
+
+    pool.close().await;
 
     Ok(())
 }

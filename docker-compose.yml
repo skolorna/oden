@@ -1,15 +1,19 @@
 # Compose file for DEVELOPMENT
 version: "3"
 services:
-  meilisearch:
-    image: getmeili/meilisearch:v0.29.1
-    ports:
-      - "7700:7700"
-
   postgres:
-    image: postgres:13
+    image: postgres:15
     environment:
       POSTGRES_PASSWORD: "postgres"
       POSTGRES_DB: "oden"
     ports:
       - "5432:5432"
+    volumes:
+      - ./postgres-data:/var/lib/postgresql/data
+
+  meilisearch:
+    image: getmeili/meilisearch:v0.29.1
+    environment:
+      MEILI_MASTER_KEY: "meili"
+    ports:
+      - "7700:7700"

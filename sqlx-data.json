@@ -1,0 +1,189 @@
+{
+  "db": "PostgreSQL",
+  "17cb9c599e5d2132605d15c4a0ac405843d7555b5b77ba07551b70349d0171ca": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Date",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
+  },
+  "320c4204fe1289d63ee700144ada0c7781067e423b2c3ee1ead59f660d3b6d20": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "skolmaten",
+                  "sodexo",
+                  "mpi",
+                  "kleins",
+                  "sabis",
+                  "matilda"
+                ]
+              },
+              "name": "supplier"
+            }
+          },
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference)\n                VALUES ($1, $2, $3, $4)\n                ON CONFLICT DO NOTHING\n            "
+  },
+  "4073d69ddb662a71bec3dcc4ee6b5a18f419dc89366fff6e73ca29ed6a52447c": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Timestamptz",
+          "Text",
+          "Float8",
+          "Float8",
+          "Text",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "UPDATE menus SET\n                checked_at = $1,\n                title = $2,\n                longitude = $3,\n                latitude = $4,\n                osm_id = $5\n            WHERE id = $6"
+  },
+  "4e88aa95eb90f21e3a7cd6cc8611513cbde4896c0798319f77ab3665feacc650": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "skolmaten",
+                  "sodexo",
+                  "mpi",
+                  "kleins",
+                  "sabis",
+                  "matilda"
+                ]
+              },
+              "name": "supplier"
+            }
+          },
+          "Text",
+          "Text"
+        ]
+      }
+    },
+    "query": "INSERT INTO menus (id, title, supplier, supplier_reference, osm_id) VALUES ($1, $2, $3, $4, $5)"
+  },
+  "5c71da5672979c8d4a9303d68b959ae897fcfa70d7e4d111b829f88ee03e4438": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "skolmaten",
+                  "sodexo",
+                  "mpi",
+                  "kleins",
+                  "sabis",
+                  "matilda"
+                ]
+              },
+              "name": "supplier"
+            }
+          },
+          "Text",
+          "Float8",
+          "Float8",
+          "Text"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id)\n                VALUES ($1, $2, $3, $4, $5, $6, $7)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude,\n                    osm_id = excluded.osm_id\n            "
+  },
+  "6ee5fc2b0e506e5abb675c72bec706e91e93c6fe8aa567cc54cb1087577b8171": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(*) FROM days"
+  },
+  "a49c7fdf0399582d3f615f6ae754394f6b4ffd177bbb4ec398bad3b5dcd23131": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Date",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3)"
+  },
+  "b5990b20f2a69f2a8cbcdd8467b83c347912804239518b3b135fefe781a29160": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Date",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "\n                    INSERT INTO days (menu_id, date, meals)\n                    VALUES ($1, $2, $3)\n                    --ON CONFLICT (meals) DO UPDATE\n                    --    SET meals = meals\n                "
+  },
+  "da4e5e3e372f27ce9b82b10310d43e416f09109b70993ee83fbfd2e8a06d6fa3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(*) FROM menus"
+  }
+}
