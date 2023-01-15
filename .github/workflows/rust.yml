@@ -36,6 +36,10 @@ jobs:
           toolchain: stable
           override: true
       - uses: Swatinem/rust-cache@v2.0.1
+      - name: Run migrations
+        run: |
+          cargo install sqlx-cli --no-default-features --features native-tls,postgres
+          sqlx database create
       - uses: actions-rs/cargo@v1
         env:
           DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
