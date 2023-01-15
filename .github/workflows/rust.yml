@@ -12,7 +12,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v2.0.1
+      - uses: Swatinem/rust-cache@v2.0.2
       - uses: actions-rs/cargo@v1
         with:
           command: check
@@ -54,7 +54,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v2.0.1
+      - uses: Swatinem/rust-cache@v2.0.2
       - run: rustup component add rustfmt
       - uses: actions-rs/cargo@v1
         with:
@@ -70,7 +70,7 @@ jobs:
           profile: minimal
           toolchain: stable
           override: true
-      - uses: Swatinem/rust-cache@v2.0.1
+      - uses: Swatinem/rust-cache@v2.0.2
       - run: rustup component add clippy
       - uses: actions-rs/cargo@v1
         with:
