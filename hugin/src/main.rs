@@ -73,10 +73,13 @@ struct Health {
 }
 
 async fn health(State(db): State<PgPool>) -> impl IntoResponse {
-    Json(Health {
-        version: env!("CARGO_PKG_VERSION"),
-        db_connections: db.size(),
-    })
+    (
+        [("cache-control", "no-cache")],
+        Json(Health {
+            version: env!("CARGO_PKG_VERSION"),
+            db_connections: db.size(),
+        }),
+    )
 }
 
 #[derive(Debug, Serialize)]
@@ -102,13 +105,14 @@ async fn stats(State(db): State<PgPool>) -> Result<impl IntoResponse> {
     Ok(([("cache-control", "public, max-age=600")], Json(stats)))
 }
 
-async fn menu(State(db): State<PgPool>, Path(id): Path<Uuid>) -> Result<Json<Menu>> {
-    sqlx::query_as::<_, Menu>("SELECT * FROM menus WHERE id = $1")
+async fn menu(State(db): State<PgPool>, Path(id): Path<Uuid>) -> Result<impl IntoResponse> {
+    let menu = sqlx::query_as::<_, Menu>("SELECT * FROM menus WHERE id = $1")
         .bind(id)
         .fetch_optional(&db)
         .await?
-        .map(Json)
-        .ok_or(Error::MenuNotFound)
+        .ok_or(Error::MenuNotFound)?;
+
+    Ok(([("cache-control", "public, max-age=60")], Json(menu)))
 }
 
 #[derive(Debug, Deserialize)]
@@ -121,7 +125,7 @@ async fn days(
     State(db): State<PgPool>,
     Path(id): Path<Uuid>,
     Query(QueryDays { first, last }): Query<QueryDays>,
-) -> Result<Json<Vec<Day>>> {
+) -> Result<impl IntoResponse> {
     let days = sqlx::query_as::<_, stor::Day>(
         r#"
             SELECT * FROM days
@@ -135,7 +139,7 @@ async fn days(
     .fetch_all(&db)
     .await?;
 
-    Ok(Json(days))
+    Ok(([("cache-control", "public, max-age=60")], Json(days)))
 }
 
 async fn meilisearch_key(State(client): State<meilisearch_sdk::Client>) -> Result<Response> {
