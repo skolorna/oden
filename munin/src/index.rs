@@ -266,8 +266,8 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
                 r#"
                     INSERT INTO days (menu_id, date, meals)
                     VALUES ($1, $2, $3)
-                    --ON CONFLICT (meals) DO UPDATE
-                    --    SET meals = meals
+                    ON CONFLICT (meals) DO UPDATE
+                    SET meals = excluded.meals
                 "#,
                 menu.id,
                 date,

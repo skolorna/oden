@@ -60,36 +60,6 @@
     },
     "query": "UPDATE menus SET\n                checked_at = $1,\n                title = $2,\n                longitude = $3,\n                latitude = $4,\n                osm_id = $5\n            WHERE id = $6"
   },
-  "4e88aa95eb90f21e3a7cd6cc8611513cbde4896c0798319f77ab3665feacc650": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "skolmaten",
-                  "sodexo",
-                  "mpi",
-                  "kleins",
-                  "sabis",
-                  "matilda"
-                ]
-              },
-              "name": "supplier"
-            }
-          },
-          "Text",
-          "Text"
-        ]
-      }
-    },
-    "query": "INSERT INTO menus (id, title, supplier, supplier_reference, osm_id) VALUES ($1, $2, $3, $4, $5)"
-  },
   "5c71da5672979c8d4a9303d68b959ae897fcfa70d7e4d111b829f88ee03e4438": {
     "describe": {
       "columns": [],
@@ -140,7 +110,7 @@
     },
     "query": "SELECT COUNT(*) FROM days"
   },
-  "a49c7fdf0399582d3f615f6ae754394f6b4ffd177bbb4ec398bad3b5dcd23131": {
+  "c48172749314481cf47ae6086dbbc8faeec30e3d2c5a3cd1df63a8f1b08e6ab8": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -152,21 +122,7 @@
         ]
       }
     },
-    "query": "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3)"
-  },
-  "b5990b20f2a69f2a8cbcdd8467b83c347912804239518b3b135fefe781a29160": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Date",
-          "TextArray"
-        ]
-      }
-    },
-    "query": "\n                    INSERT INTO days (menu_id, date, meals)\n                    VALUES ($1, $2, $3)\n                    --ON CONFLICT (meals) DO UPDATE\n                    --    SET meals = meals\n                "
+    "query": "\n                    INSERT INTO days (menu_id, date, meals)\n                    VALUES ($1, $2, $3)\n                    ON CONFLICT (meals) DO UPDATE\n                    SET meals = excluded.meals\n                "
   },
   "da4e5e3e372f27ce9b82b10310d43e416f09109b70993ee83fbfd2e8a06d6fa3": {
     "describe": {
