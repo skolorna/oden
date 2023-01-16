@@ -9,7 +9,7 @@ use crate::index::INSERTION_BATCH_SIZE;
 #[derive(Debug, clap::Args)]
 pub struct Args {
     #[clap(long)]
-    menus: PathBuf,
+    menus: Option<PathBuf>,
 
     #[clap(long)]
     days: Option<PathBuf>,
@@ -86,7 +86,9 @@ async fn import_days(pool: &PgPool, path: &Path) -> anyhow::Result<()> {
 pub async fn import(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     let mut conn = pool.acquire().await?;
 
-    import_menus(&mut conn, &opt.menus).await?;
+    if let Some(ref path) = opt.menus {
+        import_menus(&mut conn, path).await?;
+    }
 
     if let Some(ref path) = opt.days {
         import_days(pool, path).await?;

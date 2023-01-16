@@ -68,35 +68,34 @@ async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
             osm_id,
         } = menu;
 
+        assert!(osm_id.is_none());
+
         let (longitude, latitude) = match location {
             Some(p) => (Some(p.x()), Some(p.y())),
             None => (None, None),
         };
 
-        let osm_id = osm_id.map(|id| id.to_string());
-
         sqlx::query!(
             r#"
-                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id)
-                VALUES ($1, $2, $3, $4, $5, $6, $7)
+                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude)
+                VALUES ($1, $2, $3, $4, $5, $6)
                 ON CONFLICT (id) DO UPDATE SET
                     title = excluded.title,
                     supplier = excluded.supplier,
                     supplier_reference = excluded.supplier_reference,
                     longitude = excluded.longitude,
-                    latitude = excluded.latitude,
-                    osm_id = excluded.osm_id
+                    latitude = excluded.latitude
             "#,
             id,
             title,
             supplier as _,
             supplier_reference,
             longitude,
-            latitude,
-            osm_id
+            latitude
         )
         .execute(&mut txn)
-        .await.context("failed to insert menus")?;
+        .await
+        .context("failed to insert menus")?;
     }
 
     Ok(txn.commit().await?)

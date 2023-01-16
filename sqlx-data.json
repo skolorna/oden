@@ -60,38 +60,6 @@
     },
     "query": "UPDATE menus SET\n                checked_at = $1,\n                title = $2,\n                longitude = $3,\n                latitude = $4,\n                osm_id = $5\n            WHERE id = $6"
   },
-  "5c71da5672979c8d4a9303d68b959ae897fcfa70d7e4d111b829f88ee03e4438": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "skolmaten",
-                  "sodexo",
-                  "mpi",
-                  "kleins",
-                  "sabis",
-                  "matilda"
-                ]
-              },
-              "name": "supplier"
-            }
-          },
-          "Text",
-          "Float8",
-          "Float8",
-          "Text"
-        ]
-      }
-    },
-    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id)\n                VALUES ($1, $2, $3, $4, $5, $6, $7)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude,\n                    osm_id = excluded.osm_id\n            "
-  },
   "5e3a0c896de2f4b516f3fefa2aa73a2f31fdbb120ed5aa7bf8e63186392883df": {
     "describe": {
       "columns": [],
@@ -141,5 +109,36 @@
       }
     },
     "query": "SELECT COUNT(*) FROM menus"
+  },
+  "dc05fb0c3f83d58b8cd634bec7d9b147c2e4c359a66ce5c3efa5d04ebbfbd7cf": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Text",
+          {
+            "Custom": {
+              "kind": {
+                "Enum": [
+                  "skolmaten",
+                  "sodexo",
+                  "mpi",
+                  "kleins",
+                  "sabis",
+                  "matilda"
+                ]
+              },
+              "name": "supplier"
+            }
+          },
+          "Text",
+          "Float8",
+          "Float8"
+        ]
+      }
+    },
+    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude\n            "
   }
 }
