@@ -12,6 +12,7 @@ use sqlx::{
     postgres::{types::PgRange, PgPoolOptions},
     PgPool,
 };
+use tower_http::cors::{Any, CorsLayer};
 use std::{env, net::SocketAddr};
 use stor::Menu;
 use time::Date;
@@ -31,7 +32,10 @@ async fn main() -> anyhow::Result<()> {
         meili: meilisearch_sdk::Client::new(env::var("MEILI_URL")?, env::var("MEILI_KEY")?),
     };
 
+    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any);
+
     let app = Router::new()
+        .layer(cors)
         .route("/health", get(health))
         .route("/stats", get(stats))
         .route("/key", get(meilisearch_key))
