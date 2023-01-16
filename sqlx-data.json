@@ -92,6 +92,20 @@
     },
     "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude, osm_id)\n                VALUES ($1, $2, $3, $4, $5, $6, $7)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude,\n                    osm_id = excluded.osm_id\n            "
   },
+  "5e3a0c896de2f4b516f3fefa2aa73a2f31fdbb120ed5aa7bf8e63186392883df": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Date",
+          "TextArray"
+        ]
+      }
+    },
+    "query": "\n                    INSERT INTO days (menu_id, date, meals)\n                    VALUES ($1, $2, $3)\n                    ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE\n                    SET meals = excluded.meals\n                "
+  },
   "6ee5fc2b0e506e5abb675c72bec706e91e93c6fe8aa567cc54cb1087577b8171": {
     "describe": {
       "columns": [
@@ -109,20 +123,6 @@
       }
     },
     "query": "SELECT COUNT(*) FROM days"
-  },
-  "c48172749314481cf47ae6086dbbc8faeec30e3d2c5a3cd1df63a8f1b08e6ab8": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Date",
-          "TextArray"
-        ]
-      }
-    },
-    "query": "\n                    INSERT INTO days (menu_id, date, meals)\n                    VALUES ($1, $2, $3)\n                    ON CONFLICT (meals) DO UPDATE\n                    SET meals = excluded.meals\n                "
   },
   "da4e5e3e372f27ce9b82b10310d43e416f09109b70993ee83fbfd2e8a06d6fa3": {
     "describe": {

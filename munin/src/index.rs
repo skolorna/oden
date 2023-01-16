@@ -1,3 +1,4 @@
+use anyhow::Context;
 use futures::{Stream, StreamExt, TryStreamExt};
 use geo::VincentyDistance;
 use milli::TermsMatchingStrategy;
@@ -95,7 +96,7 @@ async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
             osm_id
         )
         .execute(&mut txn)
-        .await?;
+        .await.context("failed to insert menus")?;
     }
 
     Ok(txn.commit().await?)
@@ -266,7 +267,7 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
                 r#"
                     INSERT INTO days (menu_id, date, meals)
                     VALUES ($1, $2, $3)
-                    ON CONFLICT (meals) DO UPDATE
+                    ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE
                     SET meals = excluded.meals
                 "#,
                 menu.id,
@@ -274,7 +275,8 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
                 meals as _
             )
             .execute(&mut txn)
-            .await?;
+            .await
+            .context("failed to insert days")?;
 
             uncommitted_queries += 1;
 

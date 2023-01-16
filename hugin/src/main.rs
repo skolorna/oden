@@ -13,7 +13,7 @@ use sqlx::{
     PgPool,
 };
 use std::{env, net::SocketAddr};
-use stor::{Day, Menu};
+use stor::Menu;
 use time::Date;
 use uuid::Uuid;
 
