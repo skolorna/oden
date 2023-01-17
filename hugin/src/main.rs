@@ -6,21 +6,37 @@ use axum::{
     routing::get,
     Json, Router,
 };
+use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use meilisearch_sdk::key::Action;
+use opentelemetry::{
+    sdk::{trace, Resource},
+    KeyValue,
+};
+use opentelemetry_otlp::WithExportConfig;
 use serde::{Deserialize, Serialize};
 use sqlx::{
     postgres::{types::PgRange, PgPoolOptions},
     PgPool,
 };
-use tower_http::cors::{Any, CorsLayer};
 use std::{env, net::SocketAddr};
 use stor::Menu;
 use time::Date;
+use tower_http::cors::CorsLayer;
+use tracing::warn;
+use tracing_subscriber::{
+    filter::LevelFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter,
+};
 use uuid::Uuid;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
+
+    if let Ok(otlp_endpoint) = env::var("OTLP_ENDPOINT") {
+        init_telemetry(otlp_endpoint)?;
+    } else {
+        warn!("OTLP_ENDPOINT not set");
+    }
 
     let pg = PgPoolOptions::new()
         .connect(&env::var("DATABASE_URL")?)
@@ -32,15 +48,14 @@ async fn main() -> anyhow::Result<()> {
         meili: meilisearch_sdk::Client::new(env::var("MEILI_URL")?, env::var("MEILI_KEY")?),
     };
 
-    let cors = CorsLayer::new().allow_methods(Any).allow_origin(Any);
-
     let app = Router::new()
-        .layer(cors)
-        .route("/health", get(health))
         .route("/stats", get(stats))
         .route("/key", get(meilisearch_key))
         .route("/menus/:id", get(menu))
         .route("/menus/:id/days", get(days))
+        .layer(opentelemetry_tracing_layer())
+        .route("/health", get(health))
+        .layer(CorsLayer::permissive())
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
@@ -48,6 +63,41 @@ async fn main() -> anyhow::Result<()> {
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
         .await?;
+
+    Ok(())
+}
+
+fn init_telemetry(otlp_endpoint: impl Into<String>) -> anyhow::Result<()> {
+    let exporter = opentelemetry_otlp::new_exporter()
+        .tonic()
+        .with_endpoint(otlp_endpoint);
+
+    let tracer = opentelemetry_otlp::new_pipeline()
+        .tracing()
+        .with_exporter(exporter)
+        .with_trace_config(trace::config().with_resource(Resource::new(vec![
+            KeyValue::new(
+                opentelemetry_semantic_conventions::resource::SERVICE_NAME,
+                env!("CARGO_PKG_NAME"),
+            ),
+            KeyValue::new(
+                opentelemetry_semantic_conventions::resource::SERVICE_VERSION,
+                env!("CARGO_PKG_VERSION"),
+            ),
+        ])))
+        .install_batch(opentelemetry::runtime::Tokio)?;
+
+    let otel_layer = tracing_opentelemetry::layer().with_tracer(tracer);
+
+    tracing_subscriber::registry()
+        .with(fmt::layer())
+        .with(
+            EnvFilter::builder()
+                .with_default_directive(LevelFilter::INFO.into())
+                .from_env_lossy(),
+        )
+        .with(otel_layer)
+        .init();
 
     Ok(())
 }
