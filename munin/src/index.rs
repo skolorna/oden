@@ -1,13 +1,17 @@
+use std::sync::Arc;
+
 use anyhow::Context;
 use futures::{Stream, StreamExt, TryStreamExt};
 use geo::VincentyDistance;
-use milli::TermsMatchingStrategy;
+use milli::{heed::RoTxn, FieldsIdsMap, TermsMatchingStrategy};
 use reqwest::Client;
 use sqlx::{Acquire, PgConnection, PgExecutor, PgPool};
 use stor::{Day, Menu};
-use time::{Duration, OffsetDateTime};
+use time::{Date, Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
+use tokio::task::spawn_blocking;
 use tracing::{error, info, warn};
+use trast::Pipeline;
 
 use crate::{
     geosearch::{self, Hit},
@@ -16,6 +20,8 @@ use crate::{
 };
 
 const CONVERGENCE_LIMIT_M: f64 = 1000.;
+
+const HUGGINGFACE_MODEL: &str = "amcoff/bert-based-swedish-cased-ner";
 
 #[derive(Debug, clap::Args)]
 pub struct Args {
@@ -52,6 +58,29 @@ pub struct Args {
 }
 
 pub const INSERTION_BATCH_SIZE: usize = 10_000;
+
+struct SearchTxn<'a> {
+    index: &'a milli::Index,
+    rtxn: RoTxn<'a>,
+    fields_ids_map: FieldsIdsMap,
+    #[cfg(feature = "nlp")]
+    nlp: Arc<trast::Pipeline>,
+}
+
+impl<'a> SearchTxn<'a> {
+    pub fn new(index: &'a geosearch::Index) -> Result<Self> {
+        let index = &index.inner;
+        let rtxn = index.read_txn()?;
+        let fields_ids_map = index.fields_ids_map(&rtxn)?;
+        Ok(Self {
+            index,
+            rtxn,
+            fields_ids_map,
+            #[cfg(feature = "nlp")]
+            nlp: Arc::new(Pipeline::from_pretrained(HUGGINGFACE_MODEL)?),
+        })
+    }
+}
 
 async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
     let menus = crate::list_menus(4).await?;
@@ -159,33 +188,25 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     let start = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
     let end = start + Duration::days(opt.days.into());
 
+    let geoindex = geoindex.await??;
+    let search_txn = geoindex
+        .as_ref()
+        .map(|i| SearchTxn::new(i).map(Arc::new))
+        .transpose()?;
+
     let mut results = expired
         .map(|result| {
             let client = client.clone();
+            let search_txn = search_txn.clone();
             async move {
                 match result {
-                    Ok(menu) => {
-                        if opt.days == 0 {
-                            return Ok((menu, vec![]));
-                        }
-
-                        match crate::list_days(
-                            &client,
-                            menu.supplier,
-                            &menu.supplier_reference,
-                            start..=end,
-                        )
-                        .await {
-                            Ok(ListDays {
-                                days,
-                                menu: patched_menu,
-                            }) => Ok((patched_menu.unwrap_or(menu), days)),
-                            Err(e) => {
-                                warn!(supplier = ?menu.supplier, menu = %menu.id, supplier_reference = ?menu.supplier_reference, "{e}");
-                                Err(e)
-                            }
-                        }
-                    }
+                    Ok(mut menu) => match process_menu(&client, &mut menu, start, end, opt.days, search_txn.as_deref()).await {
+                        Ok(days) => Ok((menu, days)),
+                        Err(e) => {
+                            warn!(supplier = ?menu.supplier, menu = %menu.id, supplier_reference = ?menu.supplier_reference, "{e}");
+                            Err(e)
+                        },
+                    },
                     Err(e) => Err(e),
                 }
             }
@@ -196,17 +217,6 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     let mut txn = pool.begin().await?;
     let mut uncommitted_queries = 0usize;
 
-    let geoindex = geoindex.await??;
-    let search_txn = geoindex
-        .as_ref()
-        .map(|index| {
-            let index = &index.inner;
-            let rtxn = index.read_txn()?;
-            let fields_ids_map = index.fields_ids_map(&rtxn)?;
-            Ok::<_, milli::Error>((rtxn, index, fields_ids_map))
-        })
-        .transpose()?;
-
     let pb = indicatif::ProgressBar::new_spinner()
         .with_style(
             indicatif::ProgressStyle::with_template("{spinner} {msg} ({pos} done)").unwrap(),
@@ -216,48 +226,10 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     while let Some(res) = results.next().await {
         pb.inc(1);
 
-        let (mut menu, days) = match res {
+        let (menu, days) = match res {
             Ok(o) => o,
             Err(_) => continue,
         };
-
-        if let Some((ref rtxn, index, ref fields_ids_map)) = search_txn {
-            let execute_search = |search: &milli::Search| -> Result<Option<Hit>> {
-                let result = search.execute()?;
-                let mut hits = index
-                    .documents(rtxn, result.documents_ids)?
-                    .into_iter()
-                    .map(|(_id, obkv)| geosearch::parse_obkv(fields_ids_map, obkv));
-
-                Ok(hits.next())
-            };
-
-            let mut search = milli::Search::new(rtxn, index);
-            search.query(&menu.title);
-            search.limit(1);
-
-            if let Some(hit) = [
-                TermsMatchingStrategy::Last,
-                TermsMatchingStrategy::Size,
-                TermsMatchingStrategy::Any,
-            ]
-            .into_iter()
-            .find_map(|strategy| {
-                search.terms_matching_strategy(strategy);
-                execute_search(&search).transpose()
-            })
-            .transpose()?
-            {
-                if let Some(location) = menu.location {
-                    if location.vincenty_distance(&hit.coordinates)? < CONVERGENCE_LIMIT_M {
-                        menu.osm_id = Some(hit.id);
-                    }
-                } else {
-                    menu.location = Some(hit.coordinates);
-                    menu.osm_id = Some(hit.id);
-                }
-            }
-        }
 
         for day in days {
             let Day { date, meals } = day;
@@ -352,6 +324,101 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     }
 
     Ok(())
+}
+
+async fn process_menu(
+    client: &Client,
+    menu: &mut Menu,
+    start: Date,
+    end: Date,
+    num_days: u32,
+    search_txn: Option<&SearchTxn<'_>>,
+) -> Result<Vec<Day>> {
+    let days = if num_days > 0 {
+        let ListDays {
+            days,
+            menu: patched,
+        } = crate::list_days(
+            client,
+            menu.supplier,
+            &menu.supplier_reference,
+            start..=end,
+        )
+        .await?;
+
+        if let Some(patched) = patched {
+            *menu = patched;
+        }
+
+        days
+    } else {
+        vec![]
+    };
+
+    if let Some(txn) = search_txn {
+        spawn_blocking(|| {}).await?;
+
+        let execute_search = |search: &milli::Search| -> Result<Option<Hit>> {
+            let result = search.execute()?;
+            let mut hits = txn
+                .index
+                .documents(&txn.rtxn, result.documents_ids)?
+                .into_iter()
+                .map(|(_id, obkv)| geosearch::parse_obkv(&txn.fields_ids_map, obkv));
+
+            Ok(hits.next())
+        };
+
+        #[cfg(feature = "nlp")]
+        let recognized_entities = {
+            let nlp = txn.nlp.clone();
+            let title = menu.title.clone();
+
+            spawn_blocking(move || {
+                let prediction = nlp
+                    .predict(&title)?
+                    .into_iter()
+                    .map(|e| e.word)
+                    .collect::<Vec<_>>()
+                    .join(" ");
+
+                anyhow::Ok(prediction)
+            })
+            .await??
+        };
+
+        let mut search = milli::Search::new(&txn.rtxn, txn.index);
+        search.limit(1);
+
+        if let Some(hit) = [
+            #[cfg(feature = "nlp")]
+            (&recognized_entities, TermsMatchingStrategy::Any),
+            (&menu.title, TermsMatchingStrategy::Last),
+            (&menu.title, TermsMatchingStrategy::Size),
+            (&menu.title, TermsMatchingStrategy::Any),
+        ]
+        .into_iter()
+        .find_map(|(query, strategy)| {
+            search.query(query);
+            search.terms_matching_strategy(strategy);
+            execute_search(&search).transpose()
+        })
+        .transpose()?
+        {
+            if let Some(location) = menu.location {
+                if menu.osm_id.is_some()
+                    || location.vincenty_distance(&hit.coordinates)? < CONVERGENCE_LIMIT_M
+                {
+                    menu.osm_id = Some(hit.id);
+                }
+            } else {
+                menu.location = Some(hit.coordinates);
+                menu.osm_id = Some(hit.id);
+            }
+        };
+    }
+
+    Ok(days)
 }
 
 mod meili {

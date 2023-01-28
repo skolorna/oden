@@ -1,6 +1,6 @@
 [package]
 name = "munin"
-version = "0.3.7"
+version = "0.3.8"
 edition = "2021"
 repository = "https://github.com/skolorna/oden/"
 
@@ -23,7 +23,7 @@ urlencoding = "2.1.2"
 time = "0.3.17"
 time-tz = "1.0.2"
 serde_urlencoded = "0.7.1"
-tempdir = "0.3.7"
+tempdir = "0.3.8"
 sqlx = "0.6.2"
 reqwest = { version = "0.11.13", features = ["json"] }
 async_zip = "0.0.9"
@@ -36,5 +36,8 @@ obkv = "0.2.0"
 indicatif = "0.17.2"
 geo = "0.23.1"
 strum = "0.24.1"
+trast = { git = "https://github.com/akeamc/trast", version = "0.1.0", optional = true, default-features = false, features = ["remote"] }
 
 [features]
+default = ["nlp"]
+nlp = ["dep:trast"]
