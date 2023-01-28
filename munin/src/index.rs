@@ -21,8 +21,6 @@ use crate::{
 
 const CONVERGENCE_LIMIT_M: f64 = 1000.;
 
-const HUGGINGFACE_MODEL: &str = "amcoff/bert-based-swedish-cased-ner";
-
 #[derive(Debug, clap::Args)]
 pub struct Args {
     /// Download new menus and insert them, if not already present.
@@ -77,7 +75,7 @@ impl<'a> SearchTxn<'a> {
             rtxn,
             fields_ids_map,
             #[cfg(feature = "nlp")]
-            nlp: Arc::new(Pipeline::from_pretrained(HUGGINGFACE_MODEL)?),
+            nlp: Arc::new(Pipeline::from_pretrained(crate::nlp::HUGGINGFACE_MODEL)?),
         })
     }
 }
@@ -338,13 +336,7 @@ async fn process_menu(
         let ListDays {
             days,
             menu: patched,
-        } = crate::list_days(
-            client,
-            menu.supplier,
-            &menu.supplier_reference,
-            start..=end,
-        )
-        .await?;
+        } = crate::list_days(client, menu.supplier, &menu.supplier_reference, start..=end).await?;
 
         if let Some(patched) = patched {
             *menu = patched;
@@ -356,8 +348,6 @@ async fn process_menu(
     };
 
     if let Some(txn) = search_txn {
-        spawn_blocking(|| {}).await?;
-
         let execute_search = |search: &milli::Search| -> Result<Option<Hit>> {
             let result = search.execute()?;
             let mut hits = txn
@@ -373,18 +363,7 @@ async fn process_menu(
         let recognized_entities = {
             let nlp = txn.nlp.clone();
             let title = menu.title.clone();
-
-            spawn_blocking(move || {
-                let prediction = nlp
-                    .predict(&title)?
-                    .into_iter()
-                    .map(|e| e.word)
-                    .collect::<Vec<_>>()
-                    .join(" ");
-
-                anyhow::Ok(prediction)
-            })
-            .await??
+            spawn_blocking(move || crate::nlp::gen_search_query(&nlp, &title)).await??
         };
 
         let mut search = milli::Search::new(&txn.rtxn, txn.index);

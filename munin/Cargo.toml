@@ -23,7 +23,7 @@ urlencoding = "2.1.2"
 time = "0.3.17"
 time-tz = "1.0.2"
 serde_urlencoded = "0.7.1"
-tempdir = "0.3.8"
+tempdir = "0.3.7"
 sqlx = "0.6.2"
 reqwest = { version = "0.11.13", features = ["json"] }
 async_zip = "0.0.9"
