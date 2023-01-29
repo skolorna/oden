@@ -1,4 +1,4 @@
-FROM clux/muslrust:1.66.1 as build-env
+FROM clux/muslrust:1.67.0 as build-env
 RUN ln -s /usr/bin/g++ /usr/bin/musl-g++
 WORKDIR /app
 COPY . .

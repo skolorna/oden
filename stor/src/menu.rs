@@ -48,7 +48,7 @@ impl Menu {
         let supplier_reference = supplier_reference.into();
         let id = Uuid::new_v5(
             &UUID_NAMESPACE,
-            format!("{}.{}", supplier, supplier_reference).as_bytes(), // maintain compatibility with older versions
+            format!("{supplier}.{supplier_reference}").as_bytes(), // maintain compatibility with older versions
         );
 
         Self {
