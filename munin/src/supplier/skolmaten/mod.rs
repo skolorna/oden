@@ -108,7 +108,7 @@ async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
 
 #[instrument(skip(client))]
 async fn list_districts_in_province(client: &Client, province_id: u64) -> Result<Vec<District>> {
-    let res = fetch(client, &format!("districts?province={}", province_id))
+    let res = fetch(client, &format!("districts?province={province_id}"))
         .await?
         .json::<DistrictsResponse>()
         .await?;
@@ -118,7 +118,7 @@ async fn list_districts_in_province(client: &Client, province_id: u64) -> Result
 
 #[instrument(skip(client))]
 async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<Vec<Station>> {
-    let res = fetch(client, &format!("stations?district={}", district_id))
+    let res = fetch(client, &format!("stations?district={district_id}"))
         .await?
         .json::<StationsResponse>()
         .await?;
@@ -348,7 +348,7 @@ pub async fn list_days(
 
 #[instrument(err)]
 async fn fetch(client: &Client, path: &str) -> reqwest::Result<reqwest::Response> {
-    let url = format!("https://skolmaten.se/api/4/{}", path);
+    let url = format!("https://skolmaten.se/api/4/{path}");
 
     client
         .get(&url)

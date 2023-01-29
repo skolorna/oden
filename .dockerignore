@@ -3,6 +3,7 @@
 !/hugin
 !/munin
 !/stor
+!sqlx-data.json
 !Cargo.toml
 !Cargo.lock
 **/Dockerfile

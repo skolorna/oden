@@ -28,8 +28,7 @@ impl Menu {
 pub async fn list_menus(client: &Client, host: &str) -> Result<Vec<Menu>> {
     let res = client
         .post(&format!(
-            "{}/public/app/internal/execute-query?country=se",
-            host
+            "{host}/public/app/internal/execute-query?country=se"
         ))
         .header(CONTENT_LENGTH, "0")
         .send()

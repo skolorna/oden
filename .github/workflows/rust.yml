@@ -6,6 +6,7 @@ jobs:
   check:
     runs-on: ubuntu-latest
     steps:
+      - run: sudo apt-get install protobuf-compiler
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
@@ -29,6 +30,7 @@ jobs:
     env:
       DATABASE_URL: postgres://postgres:postgres@localhost:5432/postgres
     steps:
+      - run: sudo apt-get install protobuf-compiler
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
@@ -64,6 +66,7 @@ jobs:
   clippy:
     runs-on: ubuntu-latest
     steps:
+      - run: sudo apt-get install protobuf-compiler
       - uses: actions/checkout@v3
       - uses: actions-rs/toolchain@v1
         with:
