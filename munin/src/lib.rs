@@ -15,8 +15,6 @@ pub mod geosearch;
 pub mod import;
 pub mod index;
 mod mashie;
-#[cfg(feature = "nlp")]
-mod nlp;
 pub mod supplier;
 mod util;
 
