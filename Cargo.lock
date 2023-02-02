@@ -709,9 +709,9 @@ dependencies = [
 
 [[package]]
 name = "cxx"
-version = "1.0.88"
+version = "1.0.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "322296e2f2e5af4270b54df9e85a02ff037e271af20ba3e7fe1575515dc840b8"
+checksum = "bc831ee6a32dd495436e317595e639a587aa9907bef96fe6e6abc290ab6204e9"
 dependencies = [
  "cc",
  "cxxbridge-flags",
@@ -721,9 +721,9 @@ dependencies = [
 
 [[package]]
 name = "cxx-build"
-version = "1.0.88"
+version = "1.0.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "017a1385b05d631e7875b1f151c9f012d37b53491e2a87f65bff5c262b2111d8"
+checksum = "94331d54f1b1a8895cd81049f7eaaaef9d05a7dcb4d1fd08bf3ff0806246789d"
 dependencies = [
  "cc",
  "codespan-reporting",
@@ -736,15 +736,15 @@ dependencies = [
 
 [[package]]
 name = "cxxbridge-flags"
-version = "1.0.88"
+version = "1.0.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c26bbb078acf09bc1ecda02d4223f03bdd28bd4874edcb0379138efc499ce971"
+checksum = "48dcd35ba14ca9b40d6e4b4b39961f23d835dbb8eed74565ded361d93e1feb8a"
 
 [[package]]
 name = "cxxbridge-macro"
-version = "1.0.88"
+version = "1.0.89"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "357f40d1f06a24b60ae1fe122542c1fb05d28d32acb2aed064e84bc2ad1e252e"
+checksum = "81bbeb29798b407ccd82a3324ade1a7286e0d29851475990b612670f6f5124d2"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -766,9 +766,9 @@ dependencies = [
 
 [[package]]
 name = "deserr"
-version = "0.3.0"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28380303ca15ec07e1d5b079baf19cf849b09edad5cab219c1c51b2bd07523de"
+checksum = "a08292c726dfbc0c943ea5f34757d716b8d39e3191b8e0953f7e5e72af9f0b28"
 dependencies = [
  "deserr-internal",
  "serde-cs",
@@ -777,9 +777,9 @@ dependencies = [
 
 [[package]]
 name = "deserr-internal"
-version = "0.3.0"
+version = "0.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "860928cd8af78d223a3d70dd581f21d7c3de8aa2eecd938e0c0a399ded7c1451"
+checksum = "ff7d356099586b0415609c43aeee46f11c8ee66d4cbbbdf4f5da06d3b50d0752"
 dependencies = [
  "convert_case",
  "proc-macro2",
@@ -905,8 +905,8 @@ dependencies = [
 
 [[package]]
 name = "filter-parser"
-version = "0.41.1"
-source = "git+https://github.com/meilisearch/milli.git#758b4acea7cecd689650bee65949b49cf09ddaa3"
+version = "1.0.0"
+source = "git+https://github.com/meilisearch/meilisearch#3f97f630edc5caf375e54e13ebfc1f9092ca2e62"
 dependencies = [
  "nom 7.1.3",
  "nom_locate",
@@ -930,8 +930,8 @@ dependencies = [
 
 [[package]]
 name = "flatten-serde-json"
-version = "0.41.1"
-source = "git+https://github.com/meilisearch/milli.git#758b4acea7cecd689650bee65949b49cf09ddaa3"
+version = "1.0.0"
+source = "git+https://github.com/meilisearch/meilisearch#3f97f630edc5caf375e54e13ebfc1f9092ca2e62"
 dependencies = [
  "serde_json",
 ]
@@ -1526,12 +1526,12 @@ dependencies = [
 
 [[package]]
 name = "io-lifetimes"
-version = "1.0.4"
+version = "1.0.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e7d6c6f8c91b4b9ed43484ad1a938e393caf35960fce7f82a040497207bd8e9e"
+checksum = "1abeb7a0dd0f8181267ff8adc397075586500b81b28a73e8a0208b00fc170fb3"
 dependencies = [
  "libc",
- "windows-sys 0.42.0",
+ "windows-sys 0.45.0",
 ]
 
 [[package]]
@@ -1629,8 +1629,8 @@ dependencies = [
 
 [[package]]
 name = "json-depth-checker"
-version = "0.41.1"
-source = "git+https://github.com/meilisearch/milli.git#758b4acea7cecd689650bee65949b49cf09ddaa3"
+version = "1.0.0"
+source = "git+https://github.com/meilisearch/meilisearch#3f97f630edc5caf375e54e13ebfc1f9092ca2e62"
 dependencies = [
  "serde_json",
 ]
@@ -1892,8 +1892,8 @@ dependencies = [
 
 [[package]]
 name = "milli"
-version = "0.41.1"
-source = "git+https://github.com/meilisearch/milli.git#758b4acea7cecd689650bee65949b49cf09ddaa3"
+version = "1.0.0"
+source = "git+https://github.com/meilisearch/meilisearch#3f97f630edc5caf375e54e13ebfc1f9092ca2e62"
 dependencies = [
  "bimap",
  "bincode",
@@ -1950,9 +1950,9 @@ checksum = "68354c5c6bd36d73ff3feceb05efa59b6acb7626617f4962be322a825e61f79a"
 
 [[package]]
 name = "miniz_oxide"
-version = "0.6.3"
+version = "0.6.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "913e8a62b0f7df0bdeca8b7273d2c616d26350a1f9b64d3627fc518ae9fd94e8"
+checksum = "f2e212582ede878b109755efd0773a4f0f4ec851584cf0aefbeb4d9ecc114822"
 dependencies = [
  "adler",
 ]
