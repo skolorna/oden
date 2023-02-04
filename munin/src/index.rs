@@ -1,17 +1,24 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use anyhow::Context;
 use futures::{Stream, StreamExt, TryStreamExt};
 use geo::VincentyDistance;
 use milli::{heed::RoTxn, FieldsIdsMap, TermsMatchingStrategy};
+use opentelemetry::propagation::Injector;
 use reqwest::Client;
 use sqlx::{Acquire, PgConnection, PgExecutor, PgPool};
 use stor::{Day, Menu};
 use time::{Date, Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
-use tokio::task::spawn_blocking;
-use tracing::{error, info, warn};
-use trast::Pipeline;
+use tonic::{
+    codegen::StdError,
+    metadata::{MetadataKey, MetadataMap},
+    transport::Channel,
+    IntoRequest,
+};
+use tracing::{error, info, instrument, warn, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
+use trast_proto::{trast_client::TrastClient, NerInput};
 
 use crate::{
     geosearch::{self, Hit},
@@ -53,6 +60,9 @@ pub struct Args {
 
     #[arg(long, env, hide_env_values = true, default_value = "")]
     meili_key: String,
+
+    #[arg(long, env)]
+    trast_url: Option<String>,
 }
 
 pub const INSERTION_BATCH_SIZE: usize = 10_000;
@@ -61,21 +71,29 @@ struct SearchTxn<'a> {
     index: &'a milli::Index,
     rtxn: RoTxn<'a>,
     fields_ids_map: FieldsIdsMap,
-    #[cfg(feature = "nlp")]
-    nlp: Arc<trast::Pipeline>,
+    trast_client: Option<TrastClient<Channel>>,
 }
 
 impl<'a> SearchTxn<'a> {
-    pub fn new(index: &'a geosearch::Index) -> Result<Self> {
+    pub async fn new<D>(index: &'a geosearch::Index, trast_url: Option<D>) -> Result<SearchTxn<'a>>
+    where
+        D: TryInto<tonic::transport::Endpoint>,
+        D::Error: Into<StdError>,
+    {
         let index = &index.inner;
         let rtxn = index.read_txn()?;
         let fields_ids_map = index.fields_ids_map(&rtxn)?;
+        let trast_client = if let Some(u) = trast_url {
+            Some(TrastClient::connect(u).await?)
+        } else {
+            None
+        };
+
         Ok(Self {
             index,
             rtxn,
             fields_ids_map,
-            #[cfg(feature = "nlp")]
-            nlp: Arc::new(Pipeline::from_pretrained(crate::nlp::HUGGINGFACE_MODEL)?),
+            trast_client,
         })
     }
 }
@@ -187,10 +205,10 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     let end = start + Duration::days(opt.days.into());
 
     let geoindex = geoindex.await??;
-    let search_txn = geoindex
-        .as_ref()
-        .map(|i| SearchTxn::new(i).map(Arc::new))
-        .transpose()?;
+    let search_txn = match geoindex.as_ref() {
+        Some(i) => Some(Arc::new(SearchTxn::new(i, opt.trast_url).await?)),
+        None => None,
+    };
 
     let mut results = expired
         .map(|result| {
@@ -324,6 +342,7 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[instrument(skip(client, menu, search_txn), fields(menu = %menu.id))]
 async fn process_menu(
     client: &Client,
     menu: &mut Menu,
@@ -359,30 +378,51 @@ async fn process_menu(
             Ok(hits.next())
         };
 
-        #[cfg(feature = "nlp")]
-        let recognized_entities = {
-            let nlp = txn.nlp.clone();
-            let title = menu.title.clone();
-            spawn_blocking(move || crate::nlp::gen_search_query(&nlp, &title)).await??
+        let recognized_entities = if let Some(mut trast) = txn.trast_client.clone() {
+            let span = Span::current();
+
+            let mut request = NerInput {
+                sentence: menu.title.clone(),
+            }
+            .into_request();
+
+            opentelemetry::global::get_text_map_propagator(|propagator| {
+                propagator.inject_context(
+                    &span.context(),
+                    &mut MetadataInjector::new(request.metadata_mut()),
+                )
+            });
+
+            let res = trast.ner(request).await?;
+            Some(
+                res.into_inner()
+                    .entities
+                    .into_iter()
+                    .map(|e| e.word)
+                    .collect::<Vec<String>>()
+                    .join(" "),
+            )
+        } else {
+            None
         };
 
         let mut search = milli::Search::new(&txn.rtxn, txn.index);
         search.limit(1);
 
-        if let Some(hit) = [
-            #[cfg(feature = "nlp")]
-            (&recognized_entities, TermsMatchingStrategy::Any),
-            (&menu.title, TermsMatchingStrategy::Last),
-            (&menu.title, TermsMatchingStrategy::Size),
-            (&menu.title, TermsMatchingStrategy::Any),
-        ]
-        .into_iter()
-        .find_map(|(query, strategy)| {
-            search.query(query);
-            search.terms_matching_strategy(strategy);
-            execute_search(&search).transpose()
-        })
-        .transpose()?
+        if let Some(hit) = recognized_entities
+            .iter()
+            .map(|q| (q, TermsMatchingStrategy::Any))
+            .chain([
+                (&menu.title, TermsMatchingStrategy::Last),
+                (&menu.title, TermsMatchingStrategy::Size),
+                (&menu.title, TermsMatchingStrategy::Any),
+            ])
+            .find_map(|(query, strategy)| {
+                search.query(query);
+                search.terms_matching_strategy(strategy);
+                execute_search(&search).transpose()
+            })
+            .transpose()?
         {
             if let Some(location) = menu.location {
                 if menu.osm_id.is_some()
@@ -523,6 +563,26 @@ mod meili {
                     bail!(meilisearch_sdk::errors::Error::from(content.error))
                 }
                 Task::Succeeded { .. } => Ok(task.try_make_index(client).unwrap()),
+            }
+        }
+    }
+}
+
+struct MetadataInjector<'a> {
+    metadata: &'a mut MetadataMap,
+}
+
+impl<'a> MetadataInjector<'a> {
+    pub fn new(metadata: &'a mut MetadataMap) -> Self {
+        Self { metadata }
+    }
+}
+
+impl<'a> Injector for MetadataInjector<'a> {
+    fn set(&mut self, key: &str, value: String) {
+        if let Ok(key) = MetadataKey::from_str(key) {
+            if let Ok(value) = value.parse() {
+                self.metadata.append(key, value);
             }
         }
     }

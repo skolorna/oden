@@ -1,5 +1,4 @@
 FROM clux/muslrust:1.67.0 as build-env
-RUN ln -s /usr/bin/g++ /usr/bin/musl-g++
 WORKDIR /app
 COPY . .
 RUN cargo build --release --bin munin

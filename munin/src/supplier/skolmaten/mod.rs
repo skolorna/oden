@@ -96,7 +96,7 @@ impl Station {
     }
 }
 
-#[instrument(skip(client))]
+#[instrument(level = "debug", skip(client))]
 async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
     let res = fetch(client, "provinces")
         .await?
@@ -106,7 +106,7 @@ async fn list_provinces(client: &Client) -> Result<Vec<Province>> {
     Ok(res.provinces)
 }
 
-#[instrument(skip(client))]
+#[instrument(level = "debug", skip(client))]
 async fn list_districts_in_province(client: &Client, province_id: u64) -> Result<Vec<District>> {
     let res = fetch(client, &format!("districts?province={province_id}"))
         .await?
@@ -116,7 +116,7 @@ async fn list_districts_in_province(client: &Client, province_id: u64) -> Result
     Ok(res.districts)
 }
 
-#[instrument(skip(client))]
+#[instrument(level = "debug", skip(client))]
 async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<Vec<Station>> {
     let res = fetch(client, &format!("stations?district={district_id}"))
         .await?
@@ -126,7 +126,7 @@ async fn list_stations_in_district(client: &Client, district_id: u64) -> Result<
     Ok(res.stations)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(name = "skolmaten::list_menus", err, skip(client))]
 pub async fn list_menus(client: &Client) -> Result<Vec<stor::Menu>> {
     let provinces = list_provinces(client).await?;
 
@@ -245,7 +245,7 @@ struct WeekSpan {
     count: u8,
 }
 
-#[instrument(skip(client))]
+#[instrument(level = "debug", skip(client))]
 async fn fetch_menu(client: &Client, station: u64, span: WeekSpan) -> Result<Menu> {
     #[derive(Debug, Serialize)]
     struct Query {
@@ -346,7 +346,7 @@ pub async fn list_days(
     Ok(ListDays { menu, days })
 }
 
-#[instrument(err)]
+#[instrument(level = "debug", err)]
 async fn fetch(client: &Client, path: &str) -> reqwest::Result<reqwest::Response> {
     let url = format!("https://skolmaten.se/api/4/{path}");
 
