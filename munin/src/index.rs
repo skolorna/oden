@@ -1,16 +1,12 @@
 use std::sync::Arc;
 
-use std::sync::Arc;
-
 use anyhow::Context;
 use futures::{Stream, StreamExt, TryStreamExt};
 use geo::VincentyDistance;
 use milli::{heed::RoTxn, FieldsIdsMap, TermsMatchingStrategy};
-use milli::{heed::RoTxn, FieldsIdsMap, TermsMatchingStrategy};
 use reqwest::Client;
 use sqlx::{Acquire, PgConnection, PgExecutor, PgPool};
 use stor::{Day, Menu};
-use time::{Date, Duration, OffsetDateTime};
 use time::{Date, Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
 use tonic::{codegen::StdError, transport::Channel};
@@ -211,16 +207,8 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
         .map(|result| {
             let client = client.clone();
             let search_txn = search_txn.clone();
-            let search_txn = search_txn.clone();
             async move {
                 match result {
-                    Ok(mut menu) => match process_menu(&client, &mut menu, start, end, opt.days, search_txn.as_deref()).await {
-                        Ok(days) => Ok((menu, days)),
-                        Err(e) => {
-                            warn!(supplier = ?menu.supplier, menu = %menu.id, supplier_reference = ?menu.supplier_reference, "{e}");
-                            Err(e)
-                        },
-                    },
                     Ok(mut menu) => match process_menu(&client, &mut menu, start, end, opt.days, search_txn.as_deref()).await {
                         Ok(days) => Ok((menu, days)),
                         Err(e) => {
@@ -247,7 +235,6 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     while let Some(res) = results.next().await {
         pb.inc(1);
 
-        let (menu, days) = match res {
         let (menu, days) = match res {
             Ok(o) => o,
             Err(_) => continue,
