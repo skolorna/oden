@@ -9,7 +9,7 @@ use axum::{
 use axum_tracing_opentelemetry::opentelemetry_tracing_layer;
 use meilisearch_sdk::key::Action;
 use opentelemetry::{
-    sdk::{trace, Resource},
+    sdk::{trace, Resource, propagation::TraceContextPropagator},
     KeyValue,
 };
 use opentelemetry_otlp::WithExportConfig;
@@ -98,6 +98,8 @@ fn init_telemetry(otlp_endpoint: impl Into<String>) -> anyhow::Result<()> {
         )
         .with(otel_layer)
         .init();
+    
+    opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
 
     Ok(())
 }

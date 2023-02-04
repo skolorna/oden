@@ -44,7 +44,7 @@ async fn list_schools(client: &Client) -> Result<Vec<School>> {
     Ok(schools)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(name = "kleins::list_menus", err, skip(client))]
 pub async fn list_menus(client: &Client) -> Result<Vec<Menu>> {
     let schools = list_schools(client).await?;
 

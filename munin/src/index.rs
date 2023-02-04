@@ -1,16 +1,23 @@
-use std::sync::Arc;
+use std::{str::FromStr, sync::Arc};
 
 use anyhow::Context;
 use futures::{Stream, StreamExt, TryStreamExt};
 use geo::VincentyDistance;
 use milli::{heed::RoTxn, FieldsIdsMap, TermsMatchingStrategy};
+use opentelemetry::propagation::Injector;
 use reqwest::Client;
 use sqlx::{Acquire, PgConnection, PgExecutor, PgPool};
 use stor::{Day, Menu};
 use time::{Date, Duration, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
-use tonic::{codegen::StdError, transport::Channel};
-use tracing::{error, info, warn};
+use tonic::{
+    codegen::StdError,
+    metadata::{MetadataKey, MetadataMap},
+    transport::Channel,
+    IntoRequest,
+};
+use tracing::{error, info, instrument, warn, Span};
+use tracing_opentelemetry::OpenTelemetrySpanExt;
 use trast_proto::{trast_client::TrastClient, NerInput};
 
 use crate::{
@@ -335,6 +342,7 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     Ok(())
 }
 
+#[instrument(skip(client, menu, search_txn), fields(menu = %menu.id))]
 async fn process_menu(
     client: &Client,
     menu: &mut Menu,
@@ -371,9 +379,19 @@ async fn process_menu(
         };
 
         let recognized_entities = if let Some(mut trast) = txn.trast_client.clone() {
-            let request = NerInput {
+            let span = Span::current();
+
+            let mut request = NerInput {
                 sentence: menu.title.clone(),
-            };
+            }
+            .into_request();
+
+            opentelemetry::global::get_text_map_propagator(|propagator| {
+                propagator.inject_context(
+                    &span.context(),
+                    &mut MetadataInjector::new(request.metadata_mut()),
+                )
+            });
 
             let res = trast.ner(request).await?;
             Some(
@@ -545,6 +563,26 @@ mod meili {
                     bail!(meilisearch_sdk::errors::Error::from(content.error))
                 }
                 Task::Succeeded { .. } => Ok(task.try_make_index(client).unwrap()),
+            }
+        }
+    }
+}
+
+struct MetadataInjector<'a> {
+    metadata: &'a mut MetadataMap,
+}
+
+impl<'a> MetadataInjector<'a> {
+    pub fn new(metadata: &'a mut MetadataMap) -> Self {
+        Self { metadata }
+    }
+}
+
+impl<'a> Injector for MetadataInjector<'a> {
+    fn set(&mut self, key: &str, value: String) {
+        if let Ok(key) = MetadataKey::from_str(key) {
+            if let Ok(value) = value.parse() {
+                self.metadata.append(key, value);
             }
         }
     }

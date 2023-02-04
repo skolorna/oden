@@ -38,3 +38,7 @@ geo = "0.23.1"
 strum = "0.24.1"
 trast-proto = { version = "0.2.0", git = "https://github.com/akeamc/trast", default-features = false }
 tonic = "0.8.3"
+opentelemetry = { version = "0.18.0", features = ["rt-tokio"] }
+tracing-opentelemetry = "0.18.0"
+opentelemetry-otlp = "0.11.0"
+opentelemetry-semantic-conventions = "0.10.0"

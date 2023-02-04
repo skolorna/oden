@@ -10,7 +10,6 @@ use tracing::{error, instrument};
 
 /// Parse a month literal in Swedish.
 #[must_use]
-#[instrument]
 pub fn parse_month(m: &str) -> Option<Month> {
     match m {
         "jan" => Some(Month::January),
