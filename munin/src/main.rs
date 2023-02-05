@@ -1,3 +1,5 @@
+use std::env;
+
 use clap::Parser;
 use clap::Subcommand;
 use dotenv::dotenv;
