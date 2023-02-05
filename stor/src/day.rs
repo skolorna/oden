@@ -84,6 +84,9 @@ mod tests {
             supplier_reference: "69420".to_owned(),
             location: None,
             osm_id: Some(OsmId::Way(104245269)),
+            created_at: None,
+            checked_at: None,
+            consecutive_failures: 0,
         };
         let osm_id = menu.osm_id.map(|id| id.to_string());
 

@@ -68,6 +68,8 @@ async fn main() -> anyhow::Result<()> {
 }
 
 fn init_telemetry(otlp_endpoint: impl Into<String>) -> anyhow::Result<()> {
+    opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
+
     let exporter = opentelemetry_otlp::new_exporter()
         .tonic()
         .with_endpoint(otlp_endpoint);
@@ -98,8 +100,6 @@ fn init_telemetry(otlp_endpoint: impl Into<String>) -> anyhow::Result<()> {
         )
         .with(otel_layer)
         .init();
-
-    opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
 
     Ok(())
 }

@@ -39,7 +39,7 @@ pub async fn list_menus(client: &Client, host: &str) -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
-#[instrument(err, skip(client))]
+#[instrument(level = "debug", skip(client))]
 pub async fn query_menu(client: &Client, host: &str, menu_slug: &str) -> Result<Menu> {
     let menus = list_menus(client, host).await?;
     let menu = menus
@@ -50,7 +50,7 @@ pub async fn query_menu(client: &Client, host: &str, menu_slug: &str) -> Result<
     Ok(menu)
 }
 
-#[instrument(fields(%first, %last))]
+#[instrument(level = "debug", skip_all, fields(host, menu_slug, %first, %last))]
 pub async fn list_days(
     client: &Client,
     host: &str,

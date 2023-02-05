@@ -43,24 +43,7 @@
     },
     "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference)\n                VALUES ($1, $2, $3, $4)\n                ON CONFLICT DO NOTHING\n            "
   },
-  "4073d69ddb662a71bec3dcc4ee6b5a18f419dc89366fff6e73ca29ed6a52447c": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Timestamptz",
-          "Text",
-          "Float8",
-          "Float8",
-          "Text",
-          "Uuid"
-        ]
-      }
-    },
-    "query": "UPDATE menus SET\n                checked_at = $1,\n                title = $2,\n                longitude = $3,\n                latitude = $4,\n                osm_id = $5\n            WHERE id = $6"
-  },
-  "5e3a0c896de2f4b516f3fefa2aa73a2f31fdbb120ed5aa7bf8e63186392883df": {
+  "32eaa3aea4c784822145e61f18db34aef40f2ac194eb7e284fda1bd142f2e49a": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -72,7 +55,7 @@
         ]
       }
     },
-    "query": "\n                    INSERT INTO days (menu_id, date, meals)\n                    VALUES ($1, $2, $3)\n                    ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE\n                    SET meals = excluded.meals\n                "
+    "query": "\n                            INSERT INTO days (menu_id, date, meals)\n                            VALUES ($1, $2, $3)\n                            ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE\n                            SET meals = excluded.meals\n                        "
   },
   "6ee5fc2b0e506e5abb675c72bec706e91e93c6fe8aa567cc54cb1087577b8171": {
     "describe": {
@@ -140,5 +123,23 @@
       }
     },
     "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude\n            "
+  },
+  "dc0e4660017adc7b4855ef0d85c8b541e7546c9b04f965ec877859a327d13ed2": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Timestamptz",
+          "Text",
+          "Float8",
+          "Float8",
+          "Text",
+          "Bool",
+          "Uuid"
+        ]
+      }
+    },
+    "query": "UPDATE menus SET\n                checked_at = $1,\n                title = $2,\n                longitude = $3,\n                latitude = $4,\n                osm_id = $5,\n                consecutive_failures = CASE\n                    WHEN $6 THEN 0\n                    ELSE consecutive_failures + 1\n                END\n            WHERE id = $7"
   }
 }

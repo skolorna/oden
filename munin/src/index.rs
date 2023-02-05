@@ -53,6 +53,9 @@ pub struct Args {
     #[arg(long, default_value = "86400")]
     max_age_secs: i64,
 
+    #[arg(long, default_value = "3600")]
+    backoff_secs: i64,
+
     /// If provided, the menus will be inserted into the given
     /// MeiliSearch instance.
     #[arg(long, env)]
@@ -111,6 +114,9 @@ async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
             supplier_reference,
             location,
             osm_id,
+            created_at: _,
+            checked_at: _,
+            consecutive_failures: _,
         } = menu;
 
         assert!(osm_id.is_none());
@@ -149,14 +155,22 @@ async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
 fn get_expired<'a>(
     conn: impl PgExecutor<'a> + 'a,
     max_age: Duration,
+    backoff: Duration,
     limit: Option<i64>,
 ) -> impl Stream<Item = Result<Menu>> + 'a {
     let expires_at = OffsetDateTime::now_utc() - max_age;
 
     sqlx::query_as::<_, Menu>(
-        "SELECT * FROM menus WHERE checked_at < $1 OR checked_at IS NULL LIMIT $2",
+        r#"
+                SELECT * FROM menus
+                WHERE
+                    checked_at IS NULL OR
+                    checked_at < $1 + $2 * (2 ^ (LEAST(consecutive_failures, 4)) - 1)
+                LIMIT $3
+            "#,
     )
     .bind(expires_at)
+    .bind(backoff)
     .bind(limit)
     .fetch(conn)
     .map_err(Into::into)
@@ -197,6 +211,7 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     let expired = get_expired(
         &mut conn,
         Duration::seconds(opt.max_age_secs),
+        Duration::seconds(opt.backoff_secs),
         opt.menu_limit,
     );
 
@@ -216,13 +231,19 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
             let search_txn = search_txn.clone();
             async move {
                 match result {
-                    Ok(mut menu) => match process_menu(&client, &mut menu, start, end, opt.days, search_txn.as_deref()).await {
-                        Ok(days) => Ok((menu, days)),
-                        Err(e) => {
-                            warn!(supplier = ?menu.supplier, menu = %menu.id, supplier_reference = ?menu.supplier_reference, "{e}");
-                            Err(e)
-                        },
-                    },
+                    Ok(mut menu) => {
+                        let days = process_menu(
+                            &client,
+                            &mut menu,
+                            start,
+                            end,
+                            opt.days,
+                            search_txn.as_deref(),
+                        )
+                        .await;
+
+                        Ok((menu, days))
+                    }
                     Err(e) => Err(e),
                 }
             }
@@ -247,30 +268,38 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
             Err(_) => continue,
         };
 
-        for day in days {
-            let Day { date, meals } = day;
+        let success = days.is_ok();
+        match days {
+            Ok(days) => {
+                for day in days {
+                    let Day { date, meals } = day;
 
-            sqlx::query!(
-                r#"
-                    INSERT INTO days (menu_id, date, meals)
-                    VALUES ($1, $2, $3)
-                    ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE
-                    SET meals = excluded.meals
-                "#,
-                menu.id,
-                date,
-                meals as _
-            )
-            .execute(&mut txn)
-            .await
-            .context("failed to insert days")?;
+                    sqlx::query!(
+                        r#"
+                            INSERT INTO days (menu_id, date, meals)
+                            VALUES ($1, $2, $3)
+                            ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE
+                            SET meals = excluded.meals
+                        "#,
+                        menu.id,
+                        date,
+                        meals as _
+                    )
+                    .execute(&mut txn)
+                    .await
+                    .context("failed to insert days")?;
 
-            uncommitted_queries += 1;
+                    uncommitted_queries += 1;
 
-            if uncommitted_queries >= INSERTION_BATCH_SIZE {
-                txn.commit().await?;
-                uncommitted_queries = 0;
-                txn = pool.begin().await?;
+                    if uncommitted_queries >= INSERTION_BATCH_SIZE {
+                        txn.commit().await?;
+                        uncommitted_queries = 0;
+                        txn = pool.begin().await?;
+                    }
+                }
+            }
+            Err(e) => {
+                warn!(supplier = ?menu.supplier, menu = %menu.id, supplier_reference = ?menu.supplier_reference, "{e}");
             }
         }
 
@@ -283,6 +312,9 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
             supplier_reference: _,
             location,
             osm_id,
+            created_at: _,
+            checked_at: _,
+            consecutive_failures: _,
         } = menu;
 
         let (longitude, latitude) = match location {
@@ -297,13 +329,18 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
                 title = $2,
                 longitude = $3,
                 latitude = $4,
-                osm_id = $5
-            WHERE id = $6",
+                osm_id = $5,
+                consecutive_failures = CASE
+                    WHEN $6 THEN 0
+                    ELSE consecutive_failures + 1
+                END
+            WHERE id = $7",
             now,
             title,
             longitude,
             latitude,
             osm_id,
+            success,
             id,
         )
         .execute(&mut txn)
@@ -449,7 +486,7 @@ mod meili {
     use serde::{Serialize, Serializer};
     use sqlx::FromRow;
     use stor::menu::Supplier;
-    use time::Date;
+    use time::{Date, OffsetDateTime};
     use tracing::info;
     use uuid::Uuid;
 
@@ -479,6 +516,9 @@ mod meili {
                 supplier_reference: _,
                 location,
                 osm_id,
+                created_at,
+                checked_at,
+                consecutive_failures,
             } = inner;
 
             #[derive(Debug, Serialize)]
@@ -490,6 +530,11 @@ mod meili {
                 last_day: Option<Date>,
                 supplier: Supplier,
                 osm_id: Option<OsmId>,
+                #[serde(with = "time::serde::rfc3339::option")]
+                created_at: Option<OffsetDateTime>,
+                #[serde(with = "time::serde::rfc3339::option")]
+                checked_at: Option<OffsetDateTime>,
+                consecutive_failures: i32,
             }
 
             Doc {
@@ -502,6 +547,9 @@ mod meili {
                 last_day: *last_day,
                 supplier: *supplier,
                 osm_id: *osm_id,
+                created_at: *created_at,
+                checked_at: *checked_at,
+                consecutive_failures: *consecutive_failures,
             }
             .serialize(serializer)
         }
