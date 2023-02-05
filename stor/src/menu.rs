@@ -4,6 +4,7 @@ use serde::{Deserialize, Serialize};
 #[cfg(feature = "db")]
 use sqlx::{postgres::PgRow, FromRow, Row};
 use strum::{EnumIter, EnumString};
+use time::OffsetDateTime;
 use uuid::Uuid;
 
 pub const UUID_NAMESPACE: Uuid = Uuid::from_bytes([
@@ -29,7 +30,7 @@ pub enum Supplier {
     Matilda,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Menu {
     pub id: Uuid,
     pub title: String,
@@ -37,6 +38,11 @@ pub struct Menu {
     pub supplier_reference: String,
     pub location: Option<Point>,
     pub osm_id: Option<OsmId>,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub created_at: Option<OffsetDateTime>,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub checked_at: Option<OffsetDateTime>,
+    pub consecutive_failures: i32,
 }
 
 impl Menu {
@@ -58,6 +64,9 @@ impl Menu {
             supplier_reference,
             location: None,
             osm_id: None,
+            created_at: None,
+            checked_at: None,
+            consecutive_failures: 0,
         }
     }
 }
@@ -85,6 +94,9 @@ impl FromRow<'_, PgRow> for Menu {
             supplier_reference: row.try_get("supplier_reference")?,
             osm_id,
             location,
+            created_at: row.try_get("created_at")?,
+            checked_at: row.try_get("checked_at")?,
+            consecutive_failures: row.try_get("consecutive_failures")?,
         })
     }
 }

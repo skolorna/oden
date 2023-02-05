@@ -1,9 +1,22 @@
-FROM clux/muslrust:1.67.0 as build-env
-WORKDIR /app
-COPY . .
-RUN cargo build --release --bin hugin
+ARG RUST_VERSION=1.67.0
 
-FROM gcr.io/distroless/static:nonroot
-COPY --from=build-env --chown=nonroot:nonroot /app/target/x86_64-unknown-linux-musl/release/hugin /
+FROM clux/muslrust:$RUST_VERSION AS planner
+RUN cargo install cargo-chef
+COPY . .
+RUN cargo chef prepare --bin hugin --recipe-path recipe.json
+
+FROM clux/muslrust:$RUST_VERSION AS cacher
+RUN cargo install cargo-chef
+COPY --from=planner /volume/recipe.json recipe.json
+RUN cargo chef cook --bin hugin --release --target x86_64-unknown-linux-musl --recipe-path recipe.json
+
+FROM clux/muslrust:$RUST_VERSION AS builder
+COPY . .
+COPY --from=cacher /volume/target target
+COPY --from=cacher /root/.cargo /root/.cargo
+RUN cargo build --bin hugin --release
+
+FROM gcr.io/distroless/static
+COPY --from=builder /volume/target/x86_64-unknown-linux-musl/release/hugin /hugin
 EXPOSE 8000
-ENTRYPOINT ["/hugin"]
+CMD ["/hugin"]
