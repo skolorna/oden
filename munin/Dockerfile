@@ -18,4 +18,4 @@ RUN cargo build --bin munin --release
 
 FROM gcr.io/distroless/static
 COPY --from=builder /volume/target/x86_64-unknown-linux-musl/release/munin /munin
-CMD ["/munin"]
+ENTRYPOINT ["/munin"]
