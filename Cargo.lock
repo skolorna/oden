@@ -208,16 +208,13 @@ dependencies = [
 
 [[package]]
 name = "axum-tracing-opentelemetry"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f18efdb18c78fee671e85e8fe160821d61f0b3ab787fca9b1550b7ae9c88c36"
+version = "0.9.0"
+source = "git+https://github.com/akeamc/axum-tracing-opentelemetry#630a7f7a4acf52bacb4c49ee1767be4c51b6f029"
 dependencies = [
  "axum",
  "futures",
  "http",
  "opentelemetry",
- "opentelemetry-otlp",
- "opentelemetry-semantic-conventions",
  "tower",
  "tower-http",
  "tracing",
@@ -2194,18 +2191,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "opentelemetry-http"
-version = "0.7.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1edc79add46364183ece1a4542592ca593e6421c60807232f5b8f7a31703825d"
-dependencies = [
- "async-trait",
- "bytes",
- "http",
- "opentelemetry_api",
-]
-
-[[package]]
 name = "opentelemetry-otlp"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2216,7 +2201,6 @@ dependencies = [
  "futures-util",
  "http",
  "opentelemetry",
- "opentelemetry-http",
  "opentelemetry-proto",
  "prost",
  "thiserror",

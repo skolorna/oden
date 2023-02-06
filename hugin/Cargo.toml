@@ -12,7 +12,7 @@ axum = { version = "0.6.2", default-features = false, features = [
   "tower-log",
   "query",
 ] }
-axum-tracing-opentelemetry = { version = "0.8.2", features = ["otlp"] }
+axum-tracing-opentelemetry = { git = "https://github.com/akeamc/axum-tracing-opentelemetry" }
 dotenv = "0.15.0"
 meilisearch-sdk = { workspace = true }
 opentelemetry = { workspace = true }
