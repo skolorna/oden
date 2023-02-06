@@ -3847,7 +3847,7 @@ dependencies = [
 [[package]]
 name = "trast-proto"
 version = "0.2.0"
-source = "git+https://github.com/akeamc/trast#341c0dfea64678ef5d84dc0563c1e94c788f32b7"
+source = "git+https://github.com/akeamc/trast#18e2c437f0c64c5078e35e5bcde8f3f796b56a36"
 dependencies = [
  "prost",
  "tonic",
