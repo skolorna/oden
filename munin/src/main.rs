@@ -1,3 +1,5 @@
+use std::env;
+
 use clap::Parser;
 use clap::Subcommand;
 use dotenv::dotenv;
@@ -67,6 +69,11 @@ async fn main() -> anyhow::Result<()> {
 fn init_telemetry(otlp_endpoint: impl Into<String>) -> anyhow::Result<()> {
     opentelemetry::global::set_text_map_propagator(TraceContextPropagator::new());
 
+    let sample_rate = env::var("TRACE_SAMPLE_RATE")
+        .ok()
+        .and_then(|v| v.parse().ok())
+        .unwrap_or(0.01);
+
     let exporter = opentelemetry_otlp::new_exporter()
         .tonic()
         .with_endpoint(otlp_endpoint);
@@ -76,7 +83,7 @@ fn init_telemetry(otlp_endpoint: impl Into<String>) -> anyhow::Result<()> {
         .with_exporter(exporter)
         .with_trace_config(
             trace::config()
-                .with_sampler(Sampler::TraceIdRatioBased(0.1))
+                .with_sampler(Sampler::TraceIdRatioBased(sample_rate))
                 .with_resource(Resource::new(vec![
                     KeyValue::new(
                         opentelemetry_semantic_conventions::resource::SERVICE_NAME,

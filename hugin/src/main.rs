@@ -22,7 +22,7 @@ use std::{env, net::SocketAddr};
 use stor::Menu;
 use time::Date;
 use tower_http::cors::CorsLayer;
-use tracing::warn;
+use tracing::info;
 use tracing_subscriber::{
     filter::LevelFilter, fmt, layer::SubscriberExt, util::SubscriberInitExt, EnvFilter,
 };
@@ -32,11 +32,9 @@ use uuid::Uuid;
 async fn main() -> anyhow::Result<()> {
     dotenv::dotenv().ok();
 
-    if let Ok(otlp_endpoint) = env::var("OTLP_ENDPOINT") {
-        init_telemetry(otlp_endpoint)?;
-    } else {
-        warn!("OTLP_ENDPOINT not set");
-    }
+    init_telemetry(
+        env::var("OTLP_ENDPOINT").unwrap_or_else(|_| "http://localhost:4317".to_owned()),
+    )?;
 
     let pg = PgPoolOptions::new()
         .connect(&env::var("DATABASE_URL")?)
@@ -59,6 +57,8 @@ async fn main() -> anyhow::Result<()> {
         .with_state(state);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 8000));
+
+    info!("listening on {addr}");
 
     axum::Server::bind(&addr)
         .serve(app.into_make_service())
