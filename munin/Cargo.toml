@@ -28,7 +28,7 @@ sqlx = "0.6.2"
 reqwest = { version = "0.11.13", features = ["json"] }
 async_zip = "0.0.9"
 tokio-stream = "0.1.11"
-tokio-util = "0.7.4"
+tokio-util = "0.7.5"
 csv-async = { version = "1.2.5", features = ["tokio"] }
 milli = { git = "https://github.com/meilisearch/milli", default-features = false }
 osm = { workspace = true }
