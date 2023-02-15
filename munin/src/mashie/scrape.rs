@@ -3,7 +3,7 @@ use select::{
     node::Node,
     predicate::{Class, Predicate},
 };
-use stor::{Day, Meal};
+use stor::{meal::sanitize_meal_value, Day};
 use time::{Date, Month, OffsetDateTime};
 use time_tz::OffsetDateTimeExt;
 use tracing::{error, instrument};
@@ -59,10 +59,10 @@ fn parse_day_node(node: &Node) -> Option<Day> {
 
     let meals = node
         .find(Class("app-daymenu-name"))
-        .filter_map(|n| n.text().parse().ok())
-        .collect::<Vec<Meal>>();
+        .filter_map(|n| sanitize_meal_value(&n.text()))
+        .collect();
 
-    Day::new(date, meals)
+    Some(Day::new(date, meals))
 }
 
 #[allow(clippy::module_name_repetitions)]

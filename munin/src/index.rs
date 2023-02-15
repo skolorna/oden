@@ -276,20 +276,32 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
 
                     sqlx::query!(
                         r#"
-                            INSERT INTO days (menu_id, date, meals)
-                            VALUES ($1, $2, $3)
-                            ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE
-                            SET meals = excluded.meals
+                            DELETE FROM meals WHERE menu_id = $1 AND date = $2
                         "#,
                         menu.id,
-                        date,
-                        meals as _
+                        date
                     )
                     .execute(&mut txn)
                     .await
-                    .context("failed to insert days")?;
+                    .context("failed to delete old meals")?;
 
-                    uncommitted_queries += 1;
+                    for meal in meals {
+                        sqlx::query!(
+                            r#"
+                                INSERT INTO meals (menu_id, date, meal)
+                                    VALUES ($1, $2, $3)
+                                    ON CONFLICT DO NOTHING
+                            "#,
+                            menu.id,
+                            date,
+                            meal
+                        )
+                        .execute(&mut txn)
+                        .await
+                        .context("failed to insert meal")?;
+
+                        uncommitted_queries += 1;
+                    }
 
                     if uncommitted_queries >= INSERTION_BATCH_SIZE {
                         txn.commit().await?;
@@ -365,10 +377,10 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
 
         let menus = sqlx::query_as::<_, meili::Menu>(
             r#"
-            SELECT m.*, MAX(d.date) AS last_day FROM menus AS m
-            LEFT JOIN days AS d ON d.menu_id = m.id
-            GROUP BY m.id
-        "#,
+                SELECT m.*, MAX(d.date) AS last_day FROM menus AS m
+                LEFT JOIN meals AS d ON d.menu_id = m.id
+                GROUP BY m.id
+            "#,
         )
         .fetch_all(pool)
         .await?;

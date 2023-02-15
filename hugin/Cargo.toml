@@ -5,6 +5,7 @@ edition = "2021"
 
 [dependencies]
 anyhow = "1.0.68"
+auth1-sdk = { git = "https://github.com/skolorna/auth1", features = ["axum"] }
 axum = { version = "0.6.2", default-features = false, features = [
   "http1",
   "json",
@@ -14,12 +15,13 @@ axum = { version = "0.6.2", default-features = false, features = [
 ] }
 axum-tracing-opentelemetry = { git = "https://github.com/akeamc/axum-tracing-opentelemetry" }
 dotenv = "0.15.0"
+itertools = "0.10.5"
 meilisearch-sdk = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true }
 opentelemetry-semantic-conventions = { workspace = true }
 serde = { version = "1.0.152", features = ["derive"] }
-sqlx = "0.6.2"
+sqlx = { version = "0.6.2", features = ["bigdecimal"] }
 stor = { workspace = true }
 thiserror = "1.0.38"
 time = "0.3.17"

@@ -34,8 +34,8 @@ mod tests {
         assert!(days.len() > 5);
 
         for day in days {
-            assert!(*day.date() >= first);
-            assert!(*day.date() <= last);
+            assert!(day.date >= first);
+            assert!(day.date <= last);
         }
     }
 }
