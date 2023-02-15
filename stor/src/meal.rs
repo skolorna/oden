@@ -1,67 +1,46 @@
-use std::str::FromStr;
-
 use serde::{Deserialize, Serialize};
+use time::Date;
+use uuid::Uuid;
 
-#[derive(Debug, Serialize, Deserialize, PartialEq, Eq, PartialOrd, Ord)]
-#[cfg_attr(feature = "db", derive(sqlx::Encode, sqlx::Decode))]
-pub struct Meal(pub String);
-
-#[cfg(feature = "db")]
-impl sqlx::Type<sqlx::Postgres> for Meal {
-    fn type_info() -> <sqlx::Postgres as sqlx::Database>::TypeInfo {
-        <String as sqlx::Type<sqlx::Postgres>>::type_info()
-    }
+#[derive(Debug, Serialize, Deserialize)]
+#[cfg_attr(feature = "db", derive(sqlx::FromRow))]
+pub struct Meal {
+    pub menu_id: Uuid,
+    pub meal: String,
+    pub date: Date,
 }
 
-#[cfg(feature = "db")]
-impl sqlx::postgres::PgHasArrayType for Meal {
-    fn array_type_info() -> sqlx::postgres::PgTypeInfo {
-        <String as sqlx::postgres::PgHasArrayType>::array_type_info()
-    }
-}
+pub fn sanitize_meal_value(s: &str) -> Option<String> {
+    let value = s
+        .split_whitespace()
+        .fold(String::new(), |mut result, word| {
+            if !result.is_empty() {
+                result.push(' ');
+            }
+            result.push_str(word);
+            result
+        });
 
-#[derive(Debug)]
-pub struct ParseError;
-
-impl FromStr for Meal {
-    type Err = ParseError;
-
-    fn from_str(s: &str) -> Result<Self, Self::Err> {
-        let value = s
-            .split_whitespace()
-            .fold(String::new(), |mut result, word| {
-                if !result.is_empty() {
-                    result.push(' ');
-                }
-                result.push_str(word);
-                result
-            });
-
-        if value.is_empty() {
-            Err(ParseError)
-        } else {
-            Ok(Self(value))
-        }
+    if value.is_empty() {
+        None
+    } else {
+        Some(value)
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use std::str::FromStr;
-
-    use super::Meal;
+    use crate::meal::sanitize_meal_value;
 
     #[test]
     fn meal() {
-        assert!(Meal::from_str("      \t\n    ").is_err());
+        assert!(sanitize_meal_value("      \t\n    ").is_none());
         assert_eq!(
-            Meal::from_str("              Fisk Björkeby ").unwrap().0,
+            sanitize_meal_value("              Fisk Björkeby ").unwrap(),
             "Fisk Björkeby"
         );
         assert_eq!(
-            Meal::from_str("Fisk\t\t          Björkeby med ris     \n")
-                .unwrap()
-                .0,
+            sanitize_meal_value("Fisk\t\t          Björkeby med ris     \n").unwrap(),
             "Fisk Björkeby med ris"
         );
     }

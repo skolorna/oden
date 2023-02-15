@@ -3,8 +3,7 @@ use std::env;
 use clap::Parser;
 use clap::Subcommand;
 use dotenv::dotenv;
-use munin::import::import;
-use munin::{import, index};
+use munin::index;
 use opentelemetry::sdk::propagation::TraceContextPropagator;
 use opentelemetry::sdk::trace;
 use opentelemetry::sdk::trace::Sampler;
@@ -33,8 +32,6 @@ struct Opt {
 
 #[derive(Debug, Subcommand)]
 enum Command {
-    Import(import::Args),
-
     /// Fetch new menus and days
     Index(index::Args),
 }
@@ -53,9 +50,6 @@ async fn main() -> anyhow::Result<()> {
     stor::db::MIGRATOR.run(&pool).await?;
 
     match opt.cmd {
-        Command::Import(opt) => {
-            import(opt, &pool).await?;
-        }
         Command::Index(opt) => {
             index(opt, &pool).await?;
         }

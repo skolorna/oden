@@ -97,7 +97,7 @@ pub async fn list_days(
     let html = reqwest::get(&menu_url).await?.text().await?;
     let doc = Document::from(html.as_str());
     let days = mashie::scrape_days(&doc)
-        .filter(|day| (first..=last).contains(day.date()))
+        .filter(|day| (first..=last).contains(&day.date))
         .collect();
 
     Ok(ListDays { menu: None, days })

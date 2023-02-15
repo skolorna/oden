@@ -6,7 +6,7 @@ use futures::{
 };
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
-use stor::menu::Supplier;
+use stor::{meal::sanitize_meal_value, menu::Supplier};
 use time::{Date, Month};
 use tracing::{error, instrument};
 
@@ -166,12 +166,6 @@ struct Meal {
     value: String,
 }
 
-impl Meal {
-    fn normalize(self) -> Option<stor::Meal> {
-        self.value.parse().ok()
-    }
-}
-
 #[derive(Deserialize, Debug)]
 struct Day {
     year: i32,
@@ -202,13 +196,14 @@ impl Day {
             self.day,
         )
         .ok()?;
-        let meals: Vec<stor::Meal> = self
+
+        let meals = self
             .meals?
             .into_iter()
-            .filter_map(Meal::normalize)
+            .filter_map(|m| sanitize_meal_value(&m.value))
             .collect();
 
-        stor::Day::new(date, meals)
+        Some(stor::Day::new(date, meals))
     }
 }
 
@@ -334,14 +329,14 @@ pub async fn list_days(
             res.weeks
                 .into_iter()
                 .flat_map(|w| w.days.into_iter().filter_map(Day::normalize))
-                .filter(|d| range.contains(d.date())),
+                .filter(|d| range.contains(&d.date)),
         );
 
         menu = menu.or_else(|| res.station.to_menu(None));
     }
 
     days.sort();
-    days.dedup_by_key(|d| *d.date());
+    days.dedup_by_key(|d| d.date);
 
     Ok(ListDays { menu, days })
 }
@@ -429,7 +424,6 @@ mod tests {
             .normalize()
             .unwrap()
             .meals
-            .into_inner()
             .len(),
             1
         );

@@ -1,6 +1,6 @@
 {
   "db": "PostgreSQL",
-  "17cb9c599e5d2132605d15c4a0ac405843d7555b5b77ba07551b70349d0171ca": {
+  "26d8d4c116154a79eeccf977b346d099ab129485f708844010aeb2529e8df339": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -8,72 +8,76 @@
         "Left": [
           "Uuid",
           "Date",
-          "TextArray"
-        ]
-      }
-    },
-    "query": "INSERT INTO days (menu_id, date, meals) VALUES ($1, $2, $3) ON CONFLICT DO NOTHING"
-  },
-  "320c4204fe1289d63ee700144ada0c7781067e423b2c3ee1ead59f660d3b6d20": {
-    "describe": {
-      "columns": [],
-      "nullable": [],
-      "parameters": {
-        "Left": [
-          "Uuid",
-          "Text",
-          {
-            "Custom": {
-              "kind": {
-                "Enum": [
-                  "skolmaten",
-                  "sodexo",
-                  "mpi",
-                  "kleins",
-                  "sabis",
-                  "matilda"
-                ]
-              },
-              "name": "supplier"
-            }
-          },
           "Text"
         ]
       }
     },
-    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference)\n                VALUES ($1, $2, $3, $4)\n                ON CONFLICT DO NOTHING\n            "
+    "query": "\n                                INSERT INTO meals (menu_id, date, meal)\n                                    VALUES ($1, $2, $3)\n                                    ON CONFLICT DO NOTHING\n                            "
   },
-  "32eaa3aea4c784822145e61f18db34aef40f2ac194eb7e284fda1bd142f2e49a": {
+  "59ea5f796246def9945fcb015b15c9addcbae1b09a77496281348208bd60b93a": {
     "describe": {
       "columns": [],
       "nullable": [],
       "parameters": {
         "Left": [
           "Uuid",
-          "Date",
-          "TextArray"
+          "Uuid"
         ]
       }
     },
-    "query": "\n                            INSERT INTO days (menu_id, date, meals)\n                            VALUES ($1, $2, $3)\n                            ON CONFLICT ON CONSTRAINT days_pkey DO UPDATE\n                            SET meals = excluded.meals\n                        "
+    "query": "DELETE FROM reviews WHERE id = $1 AND author = $2"
   },
-  "6ee5fc2b0e506e5abb675c72bec706e91e93c6fe8aa567cc54cb1087577b8171": {
+  "728d1c57c338791ca399d867370dd8bb7bddaea6019a2eab62d6e926dce96ed0": {
     "describe": {
       "columns": [
         {
-          "name": "count",
+          "name": "date",
           "ordinal": 0,
+          "type_info": "Date"
+        },
+        {
+          "name": "meal",
+          "ordinal": 1,
+          "type_info": "Text"
+        },
+        {
+          "name": "rating",
+          "ordinal": 2,
+          "type_info": "Float4"
+        },
+        {
+          "name": "reviews",
+          "ordinal": 3,
           "type_info": "Int8"
         }
       ],
       "nullable": [
+        false,
+        false,
+        null,
         null
       ],
       "parameters": {
-        "Left": []
+        "Left": [
+          "Uuid",
+          "DateRange"
+        ]
       }
     },
-    "query": "SELECT COUNT(*) FROM days"
+    "query": "SELECT\n  meals.date,\n  meals.meal,\n  AVG(rating)::FLOAT4 AS rating,\n  COUNT(rating) AS reviews\nFROM\n  meals\n  LEFT JOIN reviews ON reviews.meal = meals.meal\n  AND reviews.menu_id = meals.menu_id\nWHERE\n  meals.menu_id = $1\n  AND $2::DATERANGE @> meals.date\nGROUP BY\n  meals.date,\n  meals.meal\nORDER BY\n  meals.date ASC\n"
+  },
+  "7fea9bb03c160e269eda69ad2bba145ef6719bc3b835eba11903ee7e6829cf19": {
+    "describe": {
+      "columns": [],
+      "nullable": [],
+      "parameters": {
+        "Left": [
+          "Uuid",
+          "Date"
+        ]
+      }
+    },
+    "query": "\n                            DELETE FROM meals WHERE menu_id = $1 AND date = $2\n                        "
   },
   "da4e5e3e372f27ce9b82b10310d43e416f09109b70993ee83fbfd2e8a06d6fa3": {
     "describe": {
@@ -141,5 +145,23 @@
       }
     },
     "query": "UPDATE menus SET\n                checked_at = $1,\n                title = $2,\n                longitude = $3,\n                latitude = $4,\n                osm_id = $5,\n                consecutive_failures = CASE\n                    WHEN $6 THEN 0\n                    ELSE consecutive_failures + 1\n                END\n            WHERE id = $7"
+  },
+  "fe38a6161ae91f21fb13b26b5224768e38522faad2a2adc15d6bea9225ca3ebd": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(*) FROM meals"
   }
 }

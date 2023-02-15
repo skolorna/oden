@@ -8,7 +8,7 @@ use select::{
     predicate::{Attr, Class, Name, Predicate},
 };
 use serde::{Deserialize, Serialize};
-use stor::{menu::Supplier, Day, Meal, Menu};
+use stor::{meal::sanitize_meal_value, menu::Supplier, Day, Menu};
 use time::{Date, Duration, OffsetDateTime, Weekday};
 use time_tz::OffsetDateTimeExt;
 use tracing::{error, instrument, trace};
@@ -304,7 +304,7 @@ struct ListDaysQuery<'m> {
 fn parse_day_node_opt(node: &Node, year: i32, week_num: u8) -> Option<Day> {
     let meals = node
         .find(Class("meal-text"))
-        .filter_map(|n| Meal::from_str(&n.text()).ok())
+        .filter_map(|n| sanitize_meal_value(&n.text()))
         .collect();
 
     let date = node.find(Class("date-container")).next()?.text();
@@ -312,7 +312,7 @@ fn parse_day_node_opt(node: &Node, year: i32, week_num: u8) -> Option<Day> {
     let weekday = date_parts.next().and_then(parse_weekday)?;
     let date = Date::from_iso_week_date(year, week_num, weekday).ok()?;
 
-    Day::new(date, meals)
+    Some(Day::new(date, meals))
 }
 
 #[instrument(skip(client))]

@@ -12,7 +12,6 @@ use tracing::{debug, instrument};
 use crate::supplier::{kleins, matilda, mpi, skolmaten, sodexo};
 
 pub mod geosearch;
-pub mod import;
 pub mod index;
 mod mashie;
 #[cfg(feature = "nlp")]

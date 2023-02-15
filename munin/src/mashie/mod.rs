@@ -64,7 +64,7 @@ pub async fn list_days(
     let doc = Document::from(html.as_str());
     let days = scrape_days(&doc)
         .into_iter()
-        .filter(|day| (first..=last).contains(day.date()))
+        .filter(|day| (first..=last).contains(&day.date))
         .collect();
 
     // debug_assert!(is_sorted(&days));
