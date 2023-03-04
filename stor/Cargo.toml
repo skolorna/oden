@@ -4,7 +4,7 @@ version = "0.1.0"
 edition = "2021"
 
 [dependencies]
-anyhow = "1.0.66"
+anyhow = "1.0.69"
 geo = { version = "0.23.1", features = ["use-serde"] }
 reqwest = { version = "0.11.13", features = ["stream"], optional = true }
 serde = { version = "1.0.149", features = ["derive"] }
