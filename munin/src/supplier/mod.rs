@@ -3,6 +3,7 @@ use stor::{Day, Menu};
 pub mod kleins;
 pub mod matilda;
 pub mod mpi;
+pub mod sabis;
 pub mod skolmaten;
 pub mod sodexo;
 

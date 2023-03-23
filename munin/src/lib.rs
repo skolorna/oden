@@ -9,13 +9,11 @@ use thiserror::Error;
 use time::Date;
 use tracing::{debug, instrument};
 
-use crate::supplier::{kleins, matilda, mpi, skolmaten, sodexo};
+use crate::supplier::{kleins, matilda, mpi, sabis, skolmaten, sodexo};
 
 pub mod geosearch;
 pub mod index;
 mod mashie;
-#[cfg(feature = "nlp")]
-mod nlp;
 pub mod supplier;
 mod util;
 
@@ -99,10 +97,7 @@ pub async fn list_days(
         Supplier::Sodexo => sodexo::list_days(client, supplier_reference, first, last).await,
         Supplier::Mpi => mpi::list_days(client, supplier_reference, first, last).await,
         Supplier::Kleins => kleins::list_days(client, supplier_reference, first, last).await,
-        Supplier::Sabis => Ok(ListDays {
-            menu: None,
-            days: Vec::new(),
-        }),
+        Supplier::Sabis => sabis::list_days(client, supplier_reference).await,
         Supplier::Matilda => {
             matilda::list_days(client, &supplier_reference.parse().unwrap(), first, last).await
         }
