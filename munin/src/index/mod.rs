@@ -387,7 +387,7 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
         .fetch_all(pool)
         .await?;
 
-        meili::add_documents(&menus_index, &menus, None).await?;
+        meili::add_documents(&menus_index, &menus, Some("id")).await?;
     }
 
     Ok(())
