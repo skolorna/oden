@@ -45,6 +45,37 @@ pub struct Menu {
     pub consecutive_failures: i32,
 }
 
+/// A patch to a menu.
+///
+/// ```
+/// # use geo::Point;
+/// # use stor::menu::{Menu, Patch, Supplier};
+
+/// let mut menu = Menu::from_supplier(Supplier::Skolmaten, "123", "title");
+/// menu.location = Some(Point::new(1.0, 2.0));
+///
+/// menu.patch(Patch {
+///     title: Some("new title".to_string()),
+///     location: None,
+///     osm_id: None,
+/// });
+///
+/// assert_eq!(menu.title, "new title");
+/// assert_eq!(menu.location, Some(Point::new(1.0, 2.0)));
+/// ```
+#[derive(Debug, Clone, PartialEq, Default)]
+pub struct Patch {
+    pub title: Option<String>,
+    pub location: Option<Point>,
+    pub osm_id: Option<OsmId>,
+}
+
+impl Patch {
+    pub fn is_empty(&self) -> bool {
+        self == &Self::default()
+    }
+}
+
 impl Menu {
     pub fn from_supplier(
         supplier: Supplier,
@@ -67,6 +98,26 @@ impl Menu {
             created_at: None,
             checked_at: None,
             consecutive_failures: 0,
+        }
+    }
+
+    pub fn patch(&mut self, patch: Patch) {
+        let Patch {
+            title,
+            location,
+            osm_id,
+        } = patch;
+
+        if let Some(title) = title {
+            self.title = title;
+        }
+
+        if let Some(location) = location {
+            self.location = Some(location);
+        }
+
+        if let Some(osm_id) = osm_id {
+            self.osm_id = Some(osm_id);
         }
     }
 }
@@ -101,18 +152,17 @@ impl FromRow<'_, PgRow> for Menu {
     }
 }
 
-#[cfg(feature = "db")]
 #[cfg(test)]
 mod tests {
-    use sqlx::PgPool;
     use uuid::Uuid;
 
     use crate::menu::Supplier;
 
     use super::Menu;
 
+    #[cfg(feature = "db")]
     #[sqlx::test]
-    async fn menu_from_row(pool: PgPool) -> sqlx::Result<()> {
+    async fn menu_from_row(pool: sqlx::PgPool) -> sqlx::Result<()> {
         let mut conn = pool.acquire().await?;
 
         let id = Uuid::new_v4();
@@ -140,5 +190,14 @@ mod tests {
         assert_eq!(menu.supplier_reference, supplier_reference);
 
         Ok(())
+    }
+
+    #[test]
+    fn id_generation() {
+        let menu = Menu::from_supplier(Supplier::Skolmaten, "123", "title");
+        assert_eq!(
+            menu.id,
+            Uuid::parse_str("42b0b314-118c-5e1e-8fa7-c0ebdef301b5").unwrap()
+        );
     }
 }

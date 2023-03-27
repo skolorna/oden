@@ -80,26 +80,23 @@ pub async fn list_menus(concurrent: usize) -> Result<Vec<Menu>> {
     Ok(menus)
 }
 
-#[instrument(skip(client), fields(?supplier, %supplier_reference, ?range))]
+#[instrument(skip(client), fields(?supplier, %supplier_reference, ?dates))]
 pub async fn list_days(
     client: &Client,
     supplier: Supplier,
     supplier_reference: &str,
-    range: RangeInclusive<Date>,
+    dates: RangeInclusive<Date>,
 ) -> Result<ListDays> {
-    let first = *range.start();
-    let last = *range.end();
-
     match supplier {
         Supplier::Skolmaten => {
-            skolmaten::list_days(client, supplier_reference.parse().unwrap(), range).await
+            skolmaten::list_days(client, supplier_reference.parse().unwrap(), dates).await
         }
-        Supplier::Sodexo => sodexo::list_days(client, supplier_reference, first, last).await,
-        Supplier::Mpi => mpi::list_days(client, supplier_reference, first, last).await,
-        Supplier::Kleins => kleins::list_days(client, supplier_reference, first, last).await,
+        Supplier::Sodexo => sodexo::list_days(client, supplier_reference, dates).await,
+        Supplier::Mpi => mpi::list_days(client, supplier_reference, dates).await,
+        Supplier::Kleins => kleins::list_days(client, supplier_reference, dates).await,
         Supplier::Sabis => sabis::list_days(client, supplier_reference).await,
         Supplier::Matilda => {
-            matilda::list_days(client, &supplier_reference.parse().unwrap(), first, last).await
+            matilda::list_days(client, &supplier_reference.parse().unwrap(), dates).await
         }
     }
 }
