@@ -3,7 +3,7 @@ members = ["hugin", "euphemism", "munin", "stor"]
 
 [workspace.dependencies]
 clap = "4.0.18"
-meilisearch-sdk = { version = "0.20.1", default-features = false }
+meilisearch-sdk = { version = "0.22.1", default-features = false }
 stor = { path = "stor" }
 uuid = "1.2.2"
 osm = { git = "https://github.com/akeamc/osm.git", version = "0.1.0", default-features = false }
@@ -12,3 +12,7 @@ opentelemetry-otlp = "0.11.0"
 opentelemetry-semantic-conventions = "0.10.0"
 tracing-opentelemetry = "0.18.0"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
+
+[patch.crates-io]
+# remove when https://github.com/meilisearch/charabia/pull/202 is merged
+charabia = { git = "https://github.com/akeamc/charabia" }

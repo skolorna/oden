@@ -1,6 +1,6 @@
 [package]
 name = "munin"
-version = "0.3.13"
+version = "0.3.14"
 edition = "2021"
 repository = "https://github.com/skolorna/oden/"
 
@@ -30,7 +30,7 @@ async_zip = "0.0.9"
 tokio-stream = "0.1.11"
 tokio-util = "0.7.4"
 csv-async = { version = "1.2.5", features = ["tokio"] }
-milli = { git = "https://github.com/meilisearch/milli", default-features = false }
+milli = { git = "https://github.com/meilisearch/meilisearch", default-features = false }
 osm = { workspace = true }
 obkv = "0.2.0"
 indicatif = "0.17.2"

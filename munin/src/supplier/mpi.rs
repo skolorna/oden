@@ -12,12 +12,14 @@ mod tests {
     #[tokio::test]
     async fn sodra_latin() {
         let today = OffsetDateTime::now_utc().date();
-        let days = super::list_days(
+        let res = super::list_days(
             &Client::new(),
-            "c3c75403-6811-400a-96f8-a0e400c020ba",
+            "e4e189ac-f42d-4f82-89a8-aef300d00f33",
             today..=today,
         )
         .await
         .unwrap();
+
+        assert_eq!(res.menu.title.unwrap(), "Södra Latins gymnasium");
     }
 }
