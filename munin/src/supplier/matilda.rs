@@ -1,4 +1,4 @@
-use std::{borrow::Cow, fmt::Display, iter, str::FromStr};
+use std::{borrow::Cow, fmt::Display, iter, ops::RangeInclusive, str::FromStr};
 
 use futures::{stream, StreamExt};
 use reqwest::Client;
@@ -345,16 +345,15 @@ async fn days_by_week(client: &Client, menu: &MenuQuery, week_offset: i64) -> Re
 }
 
 /// List days.
-#[instrument(fields(%first, %last))]
+#[instrument(fields(?dates))]
 pub async fn list_days(
     client: &Client,
     menu: &MenuQuery,
-    first: Date,
-    last: Date,
+    dates: RangeInclusive<Date>,
 ) -> Result<ListDays> {
     let today = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
 
-    let offsets = stream::iter(week_offsets(today, first, last).unwrap());
+    let offsets = stream::iter(week_offsets(today, dates).unwrap());
     let mut days_stream = offsets
         .map(|o| days_by_week(client, menu, o))
         .buffer_unordered(CONCURRENT_REQUESTS);
@@ -365,7 +364,10 @@ pub async fn list_days(
         days.append(&mut result?);
     }
 
-    Ok(ListDays { menu: None, days })
+    Ok(ListDays {
+        menu: Default::default(),
+        days,
+    })
 }
 
 fn rewind_to_weekday(mut date: Date, weekday: Weekday) -> Option<Date> {
@@ -379,11 +381,10 @@ fn rewind_to_weekday(mut date: Date, weekday: Weekday) -> Option<Date> {
 /// Calculate week offsets.
 pub(super) fn week_offsets(
     around: Date,
-    first: Date,
-    last: Date,
+    dates: RangeInclusive<Date>,
 ) -> Option<impl Iterator<Item = i64>> {
-    let mut first = rewind_to_weekday(first, Weekday::Monday)?;
-    let last = rewind_to_weekday(last, Weekday::Monday)?;
+    let mut first = rewind_to_weekday(*dates.start(), Weekday::Monday)?;
+    let last = rewind_to_weekday(*dates.end(), Weekday::Monday)?;
     let around = rewind_to_weekday(around, Weekday::Monday)?;
 
     Some(iter::from_fn(move || {
@@ -427,8 +428,7 @@ mod tests {
         let ListDays { days, .. } = super::list_days(
             &Client::new(),
             &menu,
-            first.date(),
-            (first + Duration::days(30)).date(),
+            first.date()..=(first + Duration::days(30)).date(),
         )
         .await
         .unwrap();
@@ -442,7 +442,7 @@ mod tests {
         let first = date!(2021 - 12 - 12);
         let last = date!(2022 - 01 - 12);
 
-        let offsets: Vec<i64> = super::week_offsets(around, first, last).unwrap().collect();
+        let offsets: Vec<i64> = super::week_offsets(around, first..=last).unwrap().collect();
 
         assert_eq!(offsets, &[-4, -3, -2, -1, 0, 1]);
     }

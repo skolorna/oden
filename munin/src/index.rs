@@ -401,14 +401,10 @@ async fn process_menu(
     search_txn: Option<&SearchTxn<'_>>,
 ) -> Result<Vec<Day>> {
     let days = if num_days > 0 {
-        let ListDays {
-            days,
-            menu: patched,
-        } = crate::list_days(client, menu.supplier, &menu.supplier_reference, start..=end).await?;
+        let ListDays { days, menu: patch } =
+            crate::list_days(client, menu.supplier, &menu.supplier_reference, start..=end).await?;
 
-        if let Some(patched) = patched {
-            *menu = patched;
-        }
+        menu.patch(patch);
 
         days
     } else {

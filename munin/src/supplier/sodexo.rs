@@ -25,8 +25,7 @@ mod tests {
         let ListDays { days, .. } = super::list_days(
             &Client::new(),
             "312dd0ae-3ebd-49d9-870e-abeb008c0e4b",
-            first,
-            last,
+            first..=last,
         )
         .await
         .unwrap();

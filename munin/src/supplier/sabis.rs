@@ -60,7 +60,10 @@ pub async fn list_days(client: &Client, restaurant: &str) -> Result<ListDays> {
         })
         .collect();
 
-    Ok(ListDays { menu: None, days })
+    Ok(ListDays {
+        menu: Default::default(),
+        days,
+    })
 }
 
 #[cfg(test)]

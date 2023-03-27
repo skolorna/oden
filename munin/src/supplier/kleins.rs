@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 use reqwest::{header::USER_AGENT, Client, IntoUrl, Response};
 use select::{
     document::Document,
@@ -83,12 +85,11 @@ async fn query_school(client: &Client, school_slug: &str) -> Result<QuerySchoolR
     Ok(QuerySchoolResponse { menu_url })
 }
 
-#[instrument(fields(%first, %last))]
+#[instrument(fields(?dates))]
 pub async fn list_days(
     client: &Client,
     menu_slug: &str,
-    first: Date,
-    last: Date,
+    dates: RangeInclusive<Date>,
 ) -> Result<ListDays> {
     let menu_url = {
         let res = query_school(client, menu_slug).await?;
@@ -97,10 +98,13 @@ pub async fn list_days(
     let html = reqwest::get(&menu_url).await?.text().await?;
     let doc = Document::from(html.as_str());
     let days = mashie::scrape_days(&doc)
-        .filter(|day| (first..=last).contains(&day.date))
+        .filter(|day| dates.contains(&day.date))
         .collect();
 
-    Ok(ListDays { menu: None, days })
+    Ok(ListDays {
+        menu: Default::default(),
+        days,
+    })
 }
 
 const UA: &str = "Mozilla/5.0 (Windows NT 6.1; Win64; x64; rv:47.0) Gecko/20100101 Firefox/47.0";
@@ -149,8 +153,7 @@ mod tests {
         let ListDays { days, .. } = super::list_days(
             &Client::new(),
             "forskolan-pingvinen",
-            date!(1970 - 01 - 01),
-            date!(2077 - 01 - 01),
+            date!(1970 - 01 - 01)..=date!(2077 - 01 - 01),
         )
         .await
         .unwrap();

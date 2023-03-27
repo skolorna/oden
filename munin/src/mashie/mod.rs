@@ -1,11 +1,13 @@
 mod scrape;
 
+use std::ops::RangeInclusive;
+
 pub use scrape::*;
 
 use reqwest::{header::CONTENT_LENGTH, Client};
-use select::document::Document;
+use select::{document::Document, predicate::Name};
 use serde::Deserialize;
-use stor::menu::Supplier;
+use stor::menu::{Patch, Supplier};
 use time::Date;
 use tracing::instrument;
 
@@ -50,31 +52,38 @@ pub async fn query_menu(client: &Client, host: &str, menu_slug: &str) -> Result<
     Ok(menu)
 }
 
-#[instrument(level = "debug", skip_all, fields(host, menu_slug, %first, %last))]
+#[instrument(level = "debug", skip_all, fields(host, reference, ?dates))]
 pub async fn list_days(
     client: &Client,
     host: &str,
-    menu_slug: &str,
-    first: Date,
-    last: Date,
+    reference: &str,
+    dates: RangeInclusive<Date>,
 ) -> Result<ListDays> {
-    let menu = query_menu(client, host, menu_slug).await?;
+    let menu = query_menu(client, host, reference).await?;
     let url = format!("{}/{}", host, menu.path);
     let html = reqwest::get(&url).await?.text().await?;
     let doc = Document::from(html.as_str());
     let days = scrape_days(&doc)
-        .into_iter()
-        .filter(|day| (first..=last).contains(&day.date))
+        .filter(|day| dates.contains(&day.date))
         .collect();
 
-    // debug_assert!(is_sorted(&days));
+    let title = doc.find(Name("title")).next().map(|t| t.text());
+    let title = title.map(|s| s.trim().to_owned()).filter(|s| !s.is_empty());
 
-    Ok(ListDays { menu: None, days })
+    Ok(ListDays {
+        menu: Patch {
+            title,
+            ..Default::default()
+        },
+        days,
+    })
 }
 
 /// Automagically generate a Mashie client.
 macro_rules! mashie_impl {
     ($host:literal, $supplier:expr) => {
+        use std::ops::RangeInclusive;
+
         use reqwest::Client;
         use stor::Menu;
         use time::Date;
@@ -94,11 +103,10 @@ macro_rules! mashie_impl {
 
         pub async fn list_days(
             client: &Client,
-            menu_slug: &str,
-            first: Date,
-            last: Date,
+            reference: &str,
+            dates: RangeInclusive<Date>,
         ) -> Result<ListDays> {
-            mashie::list_days(client, HOST, menu_slug, first, last).await
+            mashie::list_days(client, HOST, reference, dates).await
         }
 
         #[cfg(test)]

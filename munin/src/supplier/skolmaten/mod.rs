@@ -6,7 +6,10 @@ use futures::{
 };
 use reqwest::{Client, StatusCode};
 use serde::{Deserialize, Serialize};
-use stor::{meal::sanitize_meal_value, menu::Supplier};
+use stor::{
+    meal::sanitize_meal_value,
+    menu::{Patch, Supplier},
+};
 use time::{Date, Month};
 use tracing::{error, instrument};
 
@@ -278,7 +281,7 @@ fn week_spans(range: RangeInclusive<Date>) -> impl Iterator<Item = WeekSpan> {
     let mut span_start = *range.start();
 
     iter::from_fn(move || {
-        if *range.end() <= span_start {
+        if span_start > *range.end() {
             return None;
         }
 
@@ -311,17 +314,17 @@ fn week_spans(range: RangeInclusive<Date>) -> impl Iterator<Item = WeekSpan> {
 }
 
 /// List days of a particular Skolmaten menu.
-#[instrument(skip(client), fields(?range))]
+#[instrument(skip(client), fields(?dates))]
 pub async fn list_days(
     client: &Client,
     station: u64,
-    range: RangeInclusive<Date>,
+    dates: RangeInclusive<Date>,
 ) -> Result<ListDays> {
-    let mut results = stream::iter(week_spans(range.clone()))
+    let mut results = stream::iter(week_spans(dates.clone()))
         .map(|span| fetch_menu(client, station, span))
         .buffer_unordered(4);
 
-    let mut menu = None;
+    let mut menu = Patch::default();
     let mut days = vec![];
 
     while let Some(res) = results.try_next().await? {
@@ -329,10 +332,10 @@ pub async fn list_days(
             res.weeks
                 .into_iter()
                 .flat_map(|w| w.days.into_iter().filter_map(Day::normalize))
-                .filter(|d| range.contains(&d.date)),
+                .filter(|d| dates.contains(&d.date)),
         );
 
-        menu = menu.or_else(|| res.station.to_menu(None));
+        menu.location = res.station.location.map(Into::into).or(menu.location);
     }
 
     days.sort();
@@ -382,7 +385,7 @@ mod tests {
                 .await
                 .unwrap();
 
-        assert!(menu.is_some());
+        assert!(!menu.is_empty());
         assert!(!days.is_empty());
     }
 
