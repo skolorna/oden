@@ -20,7 +20,7 @@ meilisearch-sdk = { workspace = true }
 opentelemetry = { workspace = true }
 opentelemetry-otlp = { workspace = true }
 opentelemetry-semantic-conventions = { workspace = true }
-serde = { version = "1.0.152", features = ["derive"] }
+serde = { version = "1.0.159", features = ["derive"] }
 sqlx = { version = "0.6.2", features = ["bigdecimal"] }
 stor = { workspace = true }
 thiserror = "1.0.38"

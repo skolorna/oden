@@ -7,7 +7,7 @@ edition = "2021"
 anyhow = "1.0.66"
 geo = { version = "0.23.1", features = ["use-serde"] }
 reqwest = { version = "0.11.13", features = ["stream"], optional = true }
-serde = { version = "1.0.149", features = ["derive"] }
+serde = { version = "1.0.159", features = ["derive"] }
 sqlx = { version = "0.6.2", features = [
   "postgres",
   "runtime-tokio-rustls",
