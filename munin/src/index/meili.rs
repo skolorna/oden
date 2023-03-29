@@ -12,7 +12,7 @@ use uuid::Uuid;
 
 #[derive(Debug, Serialize)]
 struct Geo {
-    lon: f64,
+    lng: f64,
     lat: f64,
 }
 
@@ -61,7 +61,7 @@ impl Serialize for Menu {
             id: *id,
             title,
             geo: location.map(|p| Geo {
-                lon: p.x(),
+                lng: p.x(),
                 lat: p.y(),
             }),
             last_day: *last_day,

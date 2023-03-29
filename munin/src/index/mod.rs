@@ -372,10 +372,14 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
 
         let menus_index = meili::get_or_create_index(&client, "menus").await?;
         menus_index
-            .set_sortable_attributes(&["updated_at", "last_day", "_geo"])
+            .set_sortable_attributes(&["checked_at", "last_day", "_geo"])
+            .await?
+            .wait_for_completion(&client, None, None)
             .await?;
         menus_index
-            .set_filterable_attributes(&["slug", "updated_at", "last_day", "_geo"])
+            .set_filterable_attributes(&["slug", "checked_at", "last_day", "_geo"])
+            .await?
+            .wait_for_completion(&client, None, None)
             .await?;
 
         let menus = sqlx::query_as::<_, meili::Menu>(
