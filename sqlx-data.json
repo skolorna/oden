@@ -79,7 +79,7 @@
     },
     "query": "\n                            DELETE FROM meals WHERE menu_id = $1 AND date = $2\n                        "
   },
-  "b9ee5c16db080155081bdbbe4a45b1931818007aa3384406502b9052df433d06": {
+  "c657d492a9452b774e1dfd6eaea26c2bd6ff570f7c56ccb42684be5fa8e75bd1": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -108,7 +108,7 @@
         ]
       }
     },
-    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude\n                WHERE menus.consecutive_failures > 0\n            "
+    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude\n                WHERE menus.consecutive_failures > 0 -- only update if the menu is broken\n            "
   },
   "da4e5e3e372f27ce9b82b10310d43e416f09109b70993ee83fbfd2e8a06d6fa3": {
     "describe": {
