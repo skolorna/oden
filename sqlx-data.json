@@ -79,25 +79,7 @@
     },
     "query": "\n                            DELETE FROM meals WHERE menu_id = $1 AND date = $2\n                        "
   },
-  "da4e5e3e372f27ce9b82b10310d43e416f09109b70993ee83fbfd2e8a06d6fa3": {
-    "describe": {
-      "columns": [
-        {
-          "name": "count",
-          "ordinal": 0,
-          "type_info": "Int8"
-        }
-      ],
-      "nullable": [
-        null
-      ],
-      "parameters": {
-        "Left": []
-      }
-    },
-    "query": "SELECT COUNT(*) FROM menus"
-  },
-  "dc05fb0c3f83d58b8cd634bec7d9b147c2e4c359a66ce5c3efa5d04ebbfbd7cf": {
+  "b9ee5c16db080155081bdbbe4a45b1931818007aa3384406502b9052df433d06": {
     "describe": {
       "columns": [],
       "nullable": [],
@@ -126,7 +108,25 @@
         ]
       }
     },
-    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude\n            "
+    "query": "\n                INSERT INTO menus (id, title, supplier, supplier_reference, longitude, latitude)\n                VALUES ($1, $2, $3, $4, $5, $6)\n                ON CONFLICT (id) DO UPDATE SET\n                    title = excluded.title,\n                    supplier = excluded.supplier,\n                    supplier_reference = excluded.supplier_reference,\n                    longitude = excluded.longitude,\n                    latitude = excluded.latitude\n                WHERE menus.consecutive_failures > 0\n            "
+  },
+  "da4e5e3e372f27ce9b82b10310d43e416f09109b70993ee83fbfd2e8a06d6fa3": {
+    "describe": {
+      "columns": [
+        {
+          "name": "count",
+          "ordinal": 0,
+          "type_info": "Int8"
+        }
+      ],
+      "nullable": [
+        null
+      ],
+      "parameters": {
+        "Left": []
+      }
+    },
+    "query": "SELECT COUNT(*) FROM menus"
   },
   "dc0e4660017adc7b4855ef0d85c8b541e7546c9b04f965ec877859a327d13ed2": {
     "describe": {

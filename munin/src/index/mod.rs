@@ -138,6 +138,7 @@ async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
                     supplier_reference = excluded.supplier_reference,
                     longitude = excluded.longitude,
                     latitude = excluded.latitude
+                WHERE menus.consecutive_failures > 0 -- only update if the menu is broken
             "#,
             id,
             title,
