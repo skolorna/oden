@@ -1809,7 +1809,7 @@ checksum = "c4a1e36c821dbe04574f602848a19f742f4fb3c98d40449f11bcad18d6b17421"
 
 [[package]]
 name = "hugin"
-version = "0.3.17"
+version = "0.3.18"
 dependencies = [
  "anyhow",
  "auth1-sdk",
@@ -2474,7 +2474,7 @@ checksum = "e5ce46fe64a9d73be07dcbe690a38ce1b293be448fd8ce1e6c1b8062c9f72c6a"
 
 [[package]]
 name = "munin"
-version = "0.3.17"
+version = "0.3.18"
 dependencies = [
  "anyhow",
  "async_zip",
