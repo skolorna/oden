@@ -138,6 +138,7 @@ async fn load_menus(conn: &mut PgConnection) -> anyhow::Result<()> {
                     supplier_reference = excluded.supplier_reference,
                     longitude = excluded.longitude,
                     latitude = excluded.latitude
+                WHERE menus.consecutive_failures > 0 -- only update if the menu is broken
             "#,
             id,
             title,
@@ -371,10 +372,10 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
 
         let menus_index = meili::get_or_create_index(&client, "menus").await?;
         menus_index
-            .set_sortable_attributes(&["updated_at", "last_day"])
+            .set_sortable_attributes(&["updated_at", "last_day", "_geo"])
             .await?;
         menus_index
-            .set_filterable_attributes(&["slug", "updated_at", "last_day"])
+            .set_filterable_attributes(&["slug", "updated_at", "last_day", "_geo"])
             .await?;
 
         let menus = sqlx::query_as::<_, meili::Menu>(
