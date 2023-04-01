@@ -3,7 +3,7 @@ use std::{str::FromStr, sync::Arc};
 use anyhow::Context;
 use futures::{Stream, StreamExt, TryStreamExt};
 use geo::VincentyDistance;
-use milli::{heed::RoTxn, FieldsIdsMap, TermsMatchingStrategy};
+use milli::{heed::RoTxn, AscDesc, FieldsIdsMap, TermsMatchingStrategy};
 use opentelemetry::propagation::Injector;
 use reqwest::Client;
 use sqlx::{Acquire, PgConnection, PgExecutor, PgPool};
@@ -455,6 +455,9 @@ async fn process_menu(
         };
 
         let mut search = milli::Search::new(&txn.rtxn, txn.index);
+        search.sort_criteria(vec![AscDesc::Desc(milli::Member::Field(
+            "level".to_owned(),
+        ))]);
         search.limit(1);
 
         if let Some(hit) = recognized_entities
