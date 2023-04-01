@@ -188,6 +188,7 @@ fn record_to_milli_obj(record: osm::Record) -> milli::Object {
         location,
         latitude,
         longitude,
+        level,
     } = record;
 
     let mut map = Map::new();
@@ -197,6 +198,10 @@ fn record_to_milli_obj(record: osm::Record) -> milli::Object {
     map.insert(
         "location".to_owned(),
         Value::Array(location.into_iter().map(Value::String).collect()),
+    );
+    map.insert(
+        "level".to_owned(),
+        Value::Number(serde_json::Number::from(level)),
     );
 
     let geo = {
