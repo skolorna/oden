@@ -259,7 +259,7 @@ async fn fetch_menu(client: &Client, station: u64, span: WeekSpan) -> Result<Men
 
     let path = format!(
         "menu?{}",
-        serde_urlencoded::to_string(&Query { span, station }).unwrap()
+        serde_urlencoded::to_string(Query { span, station }).unwrap()
     );
 
     let res = fetch(client, &path).await?;
