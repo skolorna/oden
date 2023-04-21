@@ -26,8 +26,8 @@ struct Opt {
     #[command(subcommand)]
     cmd: Command,
 
-    #[arg(long, env)]
-    otlp_endpoint: Option<String>,
+    #[arg(long, env, default_value = "http://localhost:4317")]
+    otlp_endpoint: String,
 }
 
 #[derive(Debug, Subcommand)]
@@ -41,9 +41,7 @@ async fn main() -> anyhow::Result<()> {
     dotenv().ok();
     let opt = Opt::parse();
 
-    if let Some(otlp_endpoint) = opt.otlp_endpoint {
-        init_telemetry(otlp_endpoint)?;
-    }
+    init_telemetry(opt.otlp_endpoint)?;
 
     let pool = PgPoolOptions::new().connect(&opt.database_url).await?;
 
@@ -95,11 +93,12 @@ fn init_telemetry(otlp_endpoint: impl Into<String>) -> anyhow::Result<()> {
 
     tracing_subscriber::registry()
         .with(
-            EnvFilter::builder()
-                .with_default_directive(LevelFilter::INFO.into())
-                .from_env_lossy(),
+            fmt::layer().with_filter(
+                EnvFilter::builder()
+                    .with_default_directive(LevelFilter::INFO.into())
+                    .from_env_lossy(),
+            ),
         )
-        .with(fmt::layer())
         .with(otel_layer)
         .init();
 

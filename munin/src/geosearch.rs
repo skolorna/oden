@@ -6,7 +6,7 @@ use geo::Point;
 use milli::{
     documents::{DocumentsBatchBuilder, DocumentsBatchReader},
     heed::EnvOpenOptions,
-    update::{IndexDocuments, IndexDocumentsConfig, IndexerConfig},
+    update::{self, IndexDocuments, IndexDocumentsConfig, IndexerConfig},
 };
 use osm::OsmId;
 use reqwest::{
@@ -127,7 +127,7 @@ pub async fn build_index(gh_pat: &str) -> anyhow::Result<Index> {
 
     let index = {
         let mut options = EnvOpenOptions::new();
-        options.map_size(100 * 1024 * 1024); // 100 MiB
+        options.map_size(200 * 1024 * 1024); // 200 MiB
         milli::Index::new(options, dir.path())?
     };
 
@@ -135,6 +135,13 @@ pub async fn build_index(gh_pat: &str) -> anyhow::Result<Index> {
     let csv = zip.entry_reader().await?.unwrap();
 
     append_csv(index.clone(), csv).await?;
+
+    let mut wtxn = index.write_txn()?;
+    let config = IndexerConfig::default();
+    let mut builder = update::Settings::new(&mut wtxn, &index, &config);
+    builder.set_sortable_fields(["level".to_owned()].into_iter().collect());
+    builder.execute(drop, || false)?;
+    wtxn.commit()?;
 
     Ok(Index { inner: index, dir })
 }
