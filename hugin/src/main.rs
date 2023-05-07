@@ -51,6 +51,7 @@ async fn main() -> anyhow::Result<()> {
     let app = Router::new()
         .route("/stats", get(stats))
         .route("/key", get(meilisearch_key))
+        .route("/menus", get(menus))
         .route("/menus/:menu_id", get(menu))
         .route("/menus/:menu_id/days", get(days))
         .route("/reviews", get(list_reviews).post(create_review))
@@ -164,6 +165,14 @@ async fn stats(State(db): State<PgPool>) -> Result<impl IntoResponse> {
     };
 
     Ok(([("cache-control", "public, max-age=600")], Json(stats)))
+}
+
+async fn menus(State(db): State<PgPool>) -> Result<impl IntoResponse> {
+    let menus = sqlx::query_as::<_, Menu>("SELECT * FROM menus")
+        .fetch_all(&db)
+        .await?;
+
+    Ok(([("cache-control", "public, max-age=60")], Json(menus)))
 }
 
 async fn menu(State(db): State<PgPool>, Path(id): Path<Uuid>) -> Result<impl IntoResponse> {
