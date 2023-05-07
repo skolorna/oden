@@ -16,7 +16,7 @@ use tonic::{
     transport::Channel,
     IntoRequest,
 };
-use tracing::{error, info, instrument, warn, Span};
+use tracing::{debug, error, info, instrument, warn, Span};
 use tracing_opentelemetry::OpenTelemetrySpanExt;
 use trast_proto::{trast_client::TrastClient, NerInput};
 
@@ -169,6 +169,7 @@ fn get_expired<'a>(
                 WHERE
                     checked_at IS NULL OR
                     checked_at < $1 + $2 * (2 ^ (LEAST(consecutive_failures, 4)) - 1)
+                ORDER BY checked_at ASC
                 LIMIT $3
             "#,
     )
@@ -218,7 +219,9 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
         opt.menu_limit,
     );
 
-    let client = Client::new();
+    let client = Client::builder()
+        .timeout(std::time::Duration::from_secs(30))
+        .build()?;
     let start = OffsetDateTime::now_utc().to_timezone(crate::TZ).date();
     let end = start + Duration::days(opt.days.into());
 
@@ -235,6 +238,7 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
             async move {
                 match result {
                     Ok(mut menu) => {
+                        debug!(?menu, "processing menu");
                         let days = process_menu(
                             &client,
                             &mut menu,
@@ -256,6 +260,9 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
     // open a new connection since get_expired uses the current
     let mut txn = pool.begin().await?;
     let mut uncommitted_queries = 0usize;
+
+    let mut total = 0;
+    let mut successful = 0;
 
     let pb = indicatif::ProgressBar::new_spinner()
         .with_style(
@@ -362,10 +369,16 @@ pub async fn index(opt: Args, pool: &PgPool) -> anyhow::Result<()> {
         .await?;
 
         uncommitted_queries += 1;
+        total += 1;
+        if success {
+            successful += 1;
+        }
     }
 
     pb.finish_and_clear();
     txn.commit().await?;
+
+    info!(total, successful, "updated menus");
 
     if let Some(ref meili_url) = opt.meili_url {
         let client = meilisearch_sdk::Client::new(meili_url, &opt.meili_key);
@@ -462,11 +475,10 @@ async fn process_menu(
 
         if let Some(hit) = recognized_entities
             .iter()
-            .map(|q| (q, TermsMatchingStrategy::Any))
+            .map(|q| (q, TermsMatchingStrategy::Last))
             .chain([
                 (&menu.title, TermsMatchingStrategy::Last),
-                (&menu.title, TermsMatchingStrategy::Size),
-                (&menu.title, TermsMatchingStrategy::Any),
+                (&menu.title, TermsMatchingStrategy::All),
             ])
             .find_map(|(query, strategy)| {
                 search.query(query);

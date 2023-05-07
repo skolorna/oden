@@ -1,4 +1,4 @@
-ARG RUST_VERSION=1.67.0
+ARG RUST_VERSION=1.69.0
 
 FROM clux/muslrust:$RUST_VERSION AS planner
 RUN cargo install cargo-chef

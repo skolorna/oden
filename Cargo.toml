@@ -12,7 +12,3 @@ opentelemetry-otlp = "0.11.0"
 opentelemetry-semantic-conventions = "0.10.0"
 tracing-opentelemetry = "0.18.0"
 tracing-subscriber = { version = "0.3.16", features = ["env-filter"] }
-
-[patch.crates-io]
-# remove when https://github.com/meilisearch/charabia/pull/202 is merged
-charabia = { git = "https://github.com/akeamc/charabia" }
